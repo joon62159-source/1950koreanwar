@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useGame } from '../store/gameStore';
 import { buildCasualtyReport, forceStats, type CasualtyReport } from '../game/casualty';
 import { previewMobilization, type MobilizationReport } from '../game/mobilization';
-import { nationalDraftPool } from '../game/manpower';
+import { nationalDraftPool, unReplacementPerDay } from '../game/manpower';
 import { aidPerDay, nationalEquip, producibleKeys, productionMultiplier } from '../game/production';
 import { EQUIP_KEYS } from '../game/types';
 import { ECONOMY } from '../game/balance';
@@ -147,7 +147,11 @@ export function ManagementBody() {
             {echelon === 'division' ? '사단' : '여단'} 창설 (CP2)
           </button>
         </div>
-        <div className="mt-2 mb-0.5 text-slate-400">정원 미달 부대 보충 (훈련병 풀에서 차감, 보급 연결 지역만)</div>
+        <div className="mt-2 rounded bg-ink-900/70 px-2 py-1 text-[11px] text-sky-200">
+          UN군 자체 보충: 매주 약 {fmt(unReplacementPerDay(game) * 7)}명 도착 · 보충 풀 {fmt(me.replacementPool)}명
+          <div className="text-[10px] text-slate-500">미군·UN군은 국가 훈련병이 아니라 본국 보충병으로 자동 보충됩니다(전투하지 않고 보급이 이어진 부대, 정원 충족률이 낮은 부대 우선). 도착량은 미국 개입도·UN 지지·항만 접근에 비례합니다.</div>
+        </div>
+        <div className="mt-2 mb-0.5 text-slate-400">정원 미달 국군 부대 보충 (훈련병 풀에서 차감, 보급 연결 지역만)</div>
         <div className="max-h-[150px] overflow-y-auto">
           {needy.length === 0 && <div className="text-slate-500">보충이 필요한 부대가 없습니다.</div>}
           {needy.map((u) => (

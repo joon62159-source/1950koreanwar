@@ -233,6 +233,20 @@ export const ARMISTICE = {
  *  - 남측: UN군(미국 등) 장비 지원. 미국 개입도·UN 지지·항만 접근(주로 부산)에 비례한다.
  *  - 북측: 소련·중국 장비 지원(상대 진영 균형용). 소련 지원도에 비례하고 항공 차단에 약해진다.
  */
+/**
+ * UN군(미군 등)의 자체 보충 체계. 국군은 국가 훈련병 풀로 직접 보충하지만 UN군은 본국에서 보충병이 도착한다.
+ * 도착량은 미국 개입도·UN 지지·항만 접근(장비 지원과 같은 계수)에 비례한다. 수치는 게임 밸런스용.
+ */
+export const UN_REPLACEMENT = {
+  perDayFull: 900, // 지원 100%일 때 하루 보충병
+  training: 55,
+  organization: 60,
+  morale: 70,
+  maxPerUnitShare: 0.25, // 한 턴에 부대 정원의 이 비율까지만 받는다
+  poolCap: 25000, // 쌓아둘 수 있는 보충병 한도
+  medicalMult: 1.5, // UN군 의무 지원(후송·치료)으로 부상병 복귀가 빠르다
+};
+
 export const AID = {
   un: { rifles: 900, machineGuns: 24, mortars: 14, artillery: 3.5, antiTank: 18, tanks: 0, vehicles: 36 },
   soviet: { rifles: 420, machineGuns: 12, mortars: 8, artillery: 2.2, antiTank: 6, tanks: 0, vehicles: 10 },

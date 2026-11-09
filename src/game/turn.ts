@@ -1,6 +1,6 @@
 import type { BattleReport, GameState, PlaybackStep, RosterEntry, Side, TurnRecord, Unit } from './types';
 import { diffSnap, takeSnap } from './record';
-import { AI_BALANCE, ARMISTICE, ATTRITION, ENCIRCLE, COMBAT, ECONOMY, MEDICAL, RECOVERY, SUPPLY } from './balance';
+import { AI_BALANCE, ARMISTICE, ATTRITION, ENCIRCLE, COMBAT, ECONOMY, MEDICAL, RECOVERY, SUPPLY, UN_REPLACEMENT } from './balance';
 import { MAP } from './map';
 import { resolveBattle } from './combat';
 import { advanceAlongPath, attackableTargets } from './orders';
@@ -8,7 +8,7 @@ import { computeSupply, localSupplyLevel } from './supply';
 import { advanceEconomy, advanceNations, computeWarCapacity } from './economy';
 import { applyLosses, dissolveUnit, reinforceUnit, unitsAt } from './units';
 import { autoDistribute, autoExternalAid, autoProduction } from './production';
-import { autoTrainTrainees, updatePopulation } from './manpower';
+import { autoTrainTrainees, autoUnReplacements, updatePopulation } from './manpower';
 import { checkEvents } from './events';
 import { applyReinforcement } from './scenario';
 import { REINFORCEMENTS } from '../data/orbat';
@@ -289,7 +289,7 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
       // 완전 휴식(휴식 명령)이 가장 크고, 이동만 한 부대는 낮으며, 전투 참여 부대는 휴식 보너스를 받지 못한다
       const activity = fought ? MEDICAL.fightMult : moved ? MEDICAL.movedMult : order === 'rest' ? MEDICAL.restMult * stack : 1 + (stack - 1) * 0.5;
       const medical = 0.6 + 0.4 * (prov.infrastructure / 100);
-      const rate = clamp(MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1), 0, 0.9);
+      const rate = clamp(MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1) * (u.faction === 'UN' ? UN_REPLACEMENT.medicalMult : 1), 0, 0.9);
       if (u.wounded > 0) {
         const ret = Math.min(u.wounded, u.maxStrength - u.strength, Math.max(rate > 0.03 ? 1 : 0, Math.round(u.wounded * rate)));
         if (ret > 0) {
@@ -380,6 +380,8 @@ export function endTurn(state: GameState): { ok: boolean; reason?: string } {
   advanceNations(state, days);
   updatePopulation(state, days);
   autoTrainTrainees(state, days);
+  const unGiven = autoUnReplacements(state, days, fought); // 미군·UN군 자체 보충병 도착
+  if (unGiven > 0) summary.push(`【UN군 보충】 미군·UN군 부대에 보충병 ${unGiven.toLocaleString('ko-KR')}명이 도착했습니다. (보충 풀 잔여 ${Math.round(state.nations.south.replacementPool).toLocaleString('ko-KR')}명)`);
   for (const side of ['south', 'north'] as Side[]) {
     autoProduction(state, side, days); // 국가 군수 재고에 합산
     const aid = autoExternalAid(state, side, days); // UN(남) / 소련·중국(북) 장비 지원 도착

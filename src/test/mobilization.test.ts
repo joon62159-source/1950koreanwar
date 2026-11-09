@@ -5,7 +5,7 @@ import { endTurn } from '../game/turn';
 import { applyLosses, createUnit, dissolveUnit, fillRatio, needsRest, unitsAt } from '../game/units';
 import { forceStats, buildCasualtyReport } from '../game/casualty';
 import { mobilize, previewMobilization } from '../game/mobilization';
-import { draftEfficiency, drawFromProvinces, nationalDraft, nationalDraftPool, createFormation } from '../game/manpower';
+import { autoUnReplacements, draftEfficiency, drawFromProvinces, nationalDraft, nationalDraftPool, createFormation, unReplacementPerDay } from '../game/manpower';
 import { autoDistribute, autoProduction, producibleKeys } from '../game/production';
 import { computeSupply } from '../game/supply';
 import { deserialize, serialize } from '../game/save';
@@ -855,5 +855,73 @@ describe('도시 내정 탭의 부대 창설 (징집은 국가 단위)', () => {
     expect(nationalDraftPool(useGame.getState().game, 'south')).toBe(before);
     useGame.getState().nation('draft');
     expect(nationalDraftPool(useGame.getState().game, 'south')).toBeLessThan(before);
+  });
+});
+
+describe('미군·UN군 자동 보충', () => {
+  const setup = () => {
+    const g = fresh();
+    empty(g);
+    g.diplomacy.usCommitment = 80;
+    g.diplomacy.unSupport = 80;
+    const un = spawn(g, 'UN', 'busan', { strength: 1200 });
+    const rok = spawn(g, 'ROK', 'busan', { strength: 1200 });
+    computeSupply(g);
+    return { g, un, rok };
+  };
+  it('UN군은 국가 훈련병 풀이 없어도 턴이 지나면 자동으로 보충된다', () => {
+    const { g, un } = setup();
+    clearEvents(g);
+    const un0 = un.strength;
+    endTurn(g);
+    expect(g.units[un.id].strength).toBeGreaterThan(un0);
+    expect(g.briefing.some((l) => l.includes('UN군 보충'))).toBe(true);
+  });
+  it('정원을 넘기지 않고 보충병이 섞여 훈련도·경험은 내려가며 장비는 따라오지 않는다', () => {
+    const { g, un } = setup();
+    clearEvents(g);
+    un.experience = 60;
+    un.training = 80;
+    for (let i = 0; i < 30; i++) { endTurn(g); clearEvents(g); }
+    const u = g.units[un.id];
+    expect(u.strength).toBeLessThanOrEqual(u.maxStrength);
+    expect(u.experience).toBeLessThan(60);
+    expect(u.training).toBeLessThan(80);
+  });
+  it('개입도가 0이면 보충이 오지 않고, 높을수록 많이 온다', () => {
+    const { g } = setup();
+    const hi = unReplacementPerDay(g);
+    g.diplomacy.usCommitment = 20;
+    const lo = unReplacementPerDay(g);
+    g.diplomacy.usCommitment = 0;
+    expect(unReplacementPerDay(g)).toBe(0);
+    expect(hi).toBeGreaterThan(lo * 3);
+  });
+  it('전투에 참여한 부대나 보급이 끊긴 부대는 보충받지 못한다', () => {
+    const { g, un } = setup();
+    clearEvents(g);
+    const un0 = un.strength;
+    g.nations.south.replacementPool = 5000;
+    autoUnReplacements(g, 1, new Set([un.id]));
+    expect(g.units[un.id].strength).toBe(un0);
+    for (const nb of MAP.adjacency.busan) g.provinces[nb].owner = 'north';
+    const daegu = spawn(g, 'UN', 'daegu', { strength: 1000 });
+    computeSupply(g);
+    autoUnReplacements(g, 1);
+    expect(g.units[daegu.id].strength).toBe(1000);
+  });
+  it('UN군 부상병은 국군보다 빠르게 복귀한다', () => {
+    const run = (f: 'UN' | 'ROK') => {
+      const g = fresh();
+      clearEvents(g);
+      empty(g);
+      g.date = '1950-08-12';
+      g.diplomacy.usCommitment = 0;
+      const u = spawn(g, f, 'busan', { strength: 2000 });
+      u.wounded = 1000;
+      endTurn(g);
+      return 1000 - g.units[u.id].wounded;
+    };
+    expect(run('UN')).toBeGreaterThan(run('ROK'));
   });
 });

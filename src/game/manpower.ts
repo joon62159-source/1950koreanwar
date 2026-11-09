@@ -1,5 +1,5 @@
 import type { GameState, Province, Side } from './types';
-import { ECONOMY } from './balance';
+import { ECONOMY, UN_REPLACEMENT } from './balance';
 import { clamp } from './util';
 import { newFormation, reinforceUnit } from './units';
 import { spendCP } from './economy';
@@ -82,6 +82,36 @@ export function autoTrainTrainees(state: GameState, days: number): void {
     const t = state.nations[side].trainees;
     if (t.count > 0) t.training = Math.min(ECONOMY.trainingCap.recruits, t.training + ECONOMY.traineeAutoTrainPerWeek * (days / 7));
   }
+}
+
+/** UN군 보충병 하루 도착량: 미국 개입도·UN 지지·항만 접근에 비례 (순수 계산) */
+export function unReplacementPerDay(state: GameState): number {
+  const ports = Object.values(state.provinces).filter((p) => p.owner === 'south' && p.portCapacity > 0).reduce((s, p) => s + p.portCapacity, 0);
+  const portF = clamp(ports / 12, 0, 1);
+  const d = state.diplomacy;
+  return UN_REPLACEMENT.perDayFull * (d.usCommitment / 100) * (0.5 + 0.5 * (d.unSupport / 100)) * portF;
+}
+
+/**
+ * UN군 자동 보충. 보충병이 UN 보충 풀(nations.south.replacementPool)에 쌓이고, 이번 턴 전투하지 않았고
+ * 보급이 연결된 UN군 부대 중 정원 충족률이 낮은 부대부터 채운다. 평균 훈련도·경험은 병력 가중으로 섞이며 장비는 자동 배분이 별도로 채운다.
+ * 반환: 이번 턴 실제로 보충된 인원
+ */
+export function autoUnReplacements(state: GameState, days: number, fought: Set<string> = new Set()): number {
+  const nat = state.nations.south;
+  nat.replacementPool = Math.min(UN_REPLACEMENT.poolCap, nat.replacementPool + unReplacementPerDay(state) * days);
+  const needy = Object.values(state.units)
+    .filter((u) => u.faction === 'UN' && !fought.has(u.id) && u.strength < u.maxStrength * 0.95 && state.provinces[u.location].owner === 'south' && state.provinces[u.location].supplied)
+    .sort((a, b) => a.strength / a.maxStrength - b.strength / b.maxStrength);
+  let given = 0;
+  for (const u of needy) {
+    if (nat.replacementPool < 1) break;
+    const want = Math.min(u.maxStrength - u.strength, u.maxStrength * UN_REPLACEMENT.maxPerUnitShare, nat.replacementPool);
+    const add = reinforceUnit(u, want, UN_REPLACEMENT.training, { organization: UN_REPLACEMENT.organization, morale: UN_REPLACEMENT.morale });
+    nat.replacementPool -= add;
+    given += add;
+  }
+  return given;
 }
 
 /** 훈련병으로 기존 부대를 보충. 훈련병 풀에서 차감하며 부대 평균 숙련도가 섞인다. */
