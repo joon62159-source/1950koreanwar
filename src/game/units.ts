@@ -159,6 +159,7 @@ export function applyLosses(u: Unit, lost: number, kind: LossKind = 'combat', st
     nat.stats.killed += killed;
     nat.stats.wounded += wounded;
     nat.stats.missing += missing;
+    nat.stats.prisoners += Math.round(missing * CASUALTY.powShare[kind]);
     nat.casualties += real;
   }
   for (const k of EQUIP_KEYS) {
@@ -189,6 +190,7 @@ export function dissolveUnit(state: GameState, u: Unit, kind: 'annihilated' | 'd
   const nat = state.nations[u.side];
   nat.stats.killed += killed;
   nat.stats.missing += missing;
+  nat.stats.prisoners += kind === 'annihilated' ? missing : Math.round(missing * 0.3); // 전멸하면 잔존 병력·부상병이 포로가 된다
   nat.stats.wounded -= u.wounded; // 부상으로 집계된 인원이 포로·실종으로 재분류됨 (중복 집계 방지)
   nat.stats.unitsDestroyed += 1;
   nat.casualties += rem;

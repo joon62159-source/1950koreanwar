@@ -136,7 +136,8 @@ export interface NationStats {
   killed: number; // 누적 전사
   wounded: number; // 누적 부상 발생(복귀 포함, 실종 전환분 제외)
   returned: number; // 치료 후 복귀
-  missing: number; // 누적 실종·포로
+  missing: number; // 누적 실종·포로 (prisoners 를 포함한 총수)
+  prisoners: number; // 그중 포로가 된 인원 (실종 = missing - prisoners)
   unitsDestroyed: number; // 전멸·해체된 부대 수
 }
 

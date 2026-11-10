@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '../store/gameStore';
 import { turnDaysFor, formatDate, addDays } from '../game/util';
+import { sideTotals } from '../game/casualty';
+import { fmt } from './common';
 
 const KIND_COLOR: Record<string, string> = { info: 'text-slate-300', battle: 'text-orange-300', event: 'text-yellow-200', warn: 'text-red-300', good: 'text-emerald-300' };
 
@@ -20,10 +22,10 @@ export default function BottomPanel() {
   const days = turnDaysFor(game.date);
   const blocked = game.pendingEvents.length > 0 || !!game.outcome || playing;
   return (
-    <footer className="panel flex h-[150px] shrink-0 border-x-0 border-b-0">
+    <footer className="panel flex h-[176px] shrink-0 border-x-0 border-b-0">
       <div className="flex w-[260px] shrink-0 flex-col gap-1 border-r border-ink-700 p-2">
         <div className="flex items-center justify-between"><div className="panel-title">▍직전 전투 결과</div><button className="text-[10px] text-sky-300 hover:underline" onClick={() => setModal('allBattles')}>전체 보기</button></div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {playing && <div className="text-[11px] text-slate-500">전투 재생이 끝나면 표시됩니다.</div>}
           {!playing && game.reports.length === 0 && <div className="text-[11px] text-slate-500">아직 전투가 없습니다.</div>}
           {(playing ? [] : game.reports).map((r) => {
@@ -37,6 +39,33 @@ export default function BottomPanel() {
               </button>
             );
           })}
+        </div>
+        <div className="mt-0.5 shrink-0 border-t border-ink-700 pt-1">
+          <div className="panel-title">▍총 사상자 (누적)</div>
+          {playing ? (
+            <div className="text-[10.5px] text-slate-500">재생이 끝나면 표시됩니다.</div>
+          ) : (
+            <table className="w-full text-[10.5px] leading-[1.35]">
+              <thead>
+                <tr className="text-slate-500"><th className="text-left font-normal"> </th><th className="text-right font-normal">전사</th><th className="text-right font-normal">부상</th><th className="text-right font-normal">실종</th><th className="text-right font-normal">포로</th><th className="text-right font-normal">합계</th></tr>
+              </thead>
+              <tbody>
+                {([['한국·UN', 'south', 'text-sky-300'], ['북한·중공', 'north', 'text-red-300']] as const).map(([label, side, cls]) => {
+                  const t = sideTotals(game, side);
+                  return (
+                    <tr key={side} title={side === 'south' ? '국군 + 미군 + UN군 합산' : '북한군 + 중국군 합산'}>
+                      <td className={'whitespace-nowrap font-bold ' + cls}>{label}</td>
+                      <td className="text-right tabular-nums">{fmt(t.killed)}</td>
+                      <td className="text-right tabular-nums">{fmt(t.wounded)}</td>
+                      <td className="text-right tabular-nums">{fmt(t.missing)}</td>
+                      <td className="text-right tabular-nums">{fmt(t.prisoners)}</td>
+                      <td className="text-right font-bold tabular-nums">{fmt(t.total)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
       <div className="flex min-w-0 flex-1 flex-col p-2">

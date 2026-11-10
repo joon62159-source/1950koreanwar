@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useGame } from '../store/gameStore';
-import { EVENT_BY_ID } from '../data/events';
+import { EVENT_BY_ID, type Effect } from '../data/events';
+import { NARRATIVES, describeEffects, situationLines } from '../data/eventNarrative';
+import EventScene from './EventScene';
 import { formatDate } from '../game/util';
 import { fmt } from './common';
 import { SCORE } from '../game/balance';
@@ -17,48 +19,96 @@ function Shell({ children, width = 640, z = 40 }: { children: React.ReactNode; w
   );
 }
 
+const TONE: Record<string, string> = {
+  good: 'border-emerald-700/70 bg-emerald-950/50 text-emerald-200',
+  bad: 'border-red-800/70 bg-red-950/50 text-red-200',
+  neutral: 'border-slate-600/70 bg-slate-800/50 text-slate-200',
+};
+
+function EffectChips({ effects }: { effects: Effect[] }) {
+  const game = useGame((s) => s.game);
+  const lines = useMemo(() => describeEffects(effects, game), [effects, game]);
+  if (!lines.length) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {lines.map((l, i) => <span key={i} className={'rounded border px-1.5 py-0.5 text-[11px] ' + TONE[l.tone]}>{l.text}</span>)}
+    </div>
+  );
+}
+
+/** HOI4식 이벤트 창: 장면 그림 → 서술 → 전황 보고 → 선택지(효과 목록) */
 export function EventModal() {
   const game = useGame((s) => s.game);
   const choose = useGame((s) => s.chooseEvent);
   const pending = game.pendingEvents[0];
   const [pick, setPick] = useState<string | null>(null);
-  if (!pending) return null;
-  const ev = EVENT_BY_ID[pending.eventId];
+  const ev = pending ? EVENT_BY_ID[pending.eventId] : null;
+  const nar = ev ? NARRATIVES[ev.id] : undefined;
+  const sit = useMemo(() => (ev ? situationLines(game, ev.id) : []), [game, ev]);
+  if (!pending || !ev) return null;
   const needChoice = ev.choices.length > 0;
   return (
-    <Shell width={700} z={60}>
-      <div className="parchment rounded p-6">
-        <div className="mb-1 flex items-center gap-2 text-[11px] tracking-widest text-[#6b5a2a]">
-          <span>{formatDate(game.date)}</span>
-          {ev.isCounterfactual ? <span className="tag tag-fake">가상 사건 (실제로 일어나지 않음)</span> : <span className="tag tag-real">역사적 사건</span>}
-        </div>
-        <h2 className="font-serif text-[26px] font-black leading-tight">{ev.title}</h2>
-        <p className="mt-3 text-[14px] leading-[1.7]">{ev.description}</p>
-        <div className="mt-4 rounded border border-[#8a7a4f]/60 bg-[#cfc19a]/50 p-3 text-[12px] leading-[1.6]">
-          <b>실제 역사</b> ({ev.historicalDate}){ev.needsVerification && <span className="ml-1 text-[#8a4a1a]">※ 세부 일자·표현은 추가 검증 필요</span>}
-          <div className="mt-1">{ev.historicalContext}</div>
-          <div className="mt-1 text-[11px] text-[#6b5a2a]">출처: {ev.source}</div>
-        </div>
-        {ev.operation && <LandingPlanPanel opId={ev.operation} />}
-        {ev.mobilization && <div className="mt-4"><MobilizationPreview /></div>}
-        {ev.casualtyReport && <div className="mt-4"><CasualtyPanel /></div>}
-        {needChoice && (
-          <div className="mt-4 flex flex-col gap-2">
-            {ev.choices.map((c) => (
-              <button key={c.id} onClick={() => setPick(c.id)} className={'rounded border p-3 text-left transition ' + (pick === c.id ? 'border-[#7b2a2a] bg-[#e9d9b0] shadow-inner' : 'border-[#8a7a4f]/70 bg-[#e3d6b4] hover:bg-[#ebdfc0]')}>
-                <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-bold">{c.label}</span>
-                  {c.isCounterfactual ? <span className="tag tag-fake">가상의 선택</span> : <span className="tag tag-real">역사적 선택</span>}
-                </div>
-                <div className="mt-1 text-[12.5px] leading-[1.55]">{c.description}</div>
-              </button>
-            ))}
+    <Shell width={760} z={60}>
+      <div className="overflow-hidden rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
+        <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date)} />
+        <div className="p-5">
+          {ev.isCounterfactual && <div className="mb-2"><span className="tag tag-fake">가상 시나리오</span></div>}
+          {nar ? (
+            <div className="flex flex-col gap-2.5 font-serif text-[14.5px] leading-[1.8] text-[#efe6cb]">
+              {nar.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+              {nar.quote && (
+                <blockquote className="border-l-2 border-[#c9a24b] pl-3 italic text-[#e1c274]">
+                  “{nar.quote.text}”<span className="ml-2 text-[12px] not-italic text-[#a99a6e]">— {nar.quote.by}</span>
+                </blockquote>
+              )}
+            </div>
+          ) : (
+            <p className="font-serif text-[14.5px] leading-[1.8] text-[#efe6cb]">{ev.description}</p>
+          )}
+
+          <div className="mt-4 rounded border border-[#3a3220] bg-black/30 p-3">
+            <div className="mb-1 text-[11px] font-bold tracking-[0.25em] text-[#c9a24b]">현재 전황</div>
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-0.5 text-[12.5px] leading-[1.55] text-[#d9ceb0] sm:grid-cols-2">
+              {sit.map((l, i) => <li key={i} className="flex gap-1.5"><span className="text-[#c9a24b]">▸</span><span>{l}</span></li>)}
+            </ul>
           </div>
-        )}
-        <div className="mt-5 flex justify-end">
-          <button className="btn btn-primary px-6 py-2 text-[14px]" disabled={needChoice && !pick} onClick={() => { choose(ev.id, pick ?? undefined); setPick(null); }}>
-            {needChoice ? '결정' : '확인'}
-          </button>
+
+          {ev.effects.length > 0 && (
+            <div className="mt-3">
+              <div className="text-[11px] font-bold tracking-[0.25em] text-[#c9a24b]">즉시 반영된 영향</div>
+              <EffectChips effects={ev.effects} />
+            </div>
+          )}
+
+          <div className="mt-3 text-[#2a2418]">
+            {ev.operation && <LandingPlanPanel opId={ev.operation} />}
+            {ev.mobilization && <div className="mt-3"><MobilizationPreview /></div>}
+            {ev.casualtyReport && <div className="mt-3"><CasualtyPanel /></div>}
+          </div>
+
+          {needChoice && (
+            <div className="mt-4 flex flex-col gap-2">
+              {ev.choices.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setPick(c.id)}
+                  className={'rounded border p-3 text-left transition ' + (pick === c.id ? 'border-[#e1c274] bg-[#2d2616] shadow-[inset_0_0_0_1px_#e1c274]' : 'border-[#4a3f26] bg-[#1d1910] hover:border-[#a88c4a] hover:bg-[#25201a]')}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[14.5px] font-bold text-[#f4ead0]">{c.label}</span>
+                    {c.isCounterfactual && <span className="tag tag-fake">가상</span>}
+                  </div>
+                  <div className="mt-1 text-[12.5px] leading-[1.55] text-[#c9bd9a]">{c.description}</div>
+                  <EffectChips effects={c.effects} />
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="mt-5 flex justify-end">
+            <button className="btn btn-primary px-6 py-2 text-[14px]" disabled={needChoice && !pick} onClick={() => { choose(ev.id, pick ?? undefined); setPick(null); }}>
+              {needChoice ? '결정' : '확인'}
+            </button>
+          </div>
         </div>
       </div>
     </Shell>
@@ -239,7 +289,7 @@ function LandingPlanPanel({ opId }: { opId: string }) {
       <div className="text-[14px] font-bold text-[#7b2a2a]">
         총 {plan.brigadesTotal}개 여단급 부대가 {plan.op.name} 작전에 투입됩니다. <span className="text-[12px] font-normal">(외부 도착 {plan.brigadesTotal - plan.op.drawn} + 현지 차출 {plan.op.drawn})</span>
       </div>
-      <div className="text-[11px] text-[#8a4a1a]">※ 이 11개 여단 규모(외부 7 · 현지 4)는 이번 게임이 정한 가상의 작전 규모이며 실제 역사적 상륙부대 편제를 의미하지 않습니다.</div>
+      <div className="text-[11px] text-[#8a4a1a]">※ 11개 여단(외부 도착 7 · 현지 차출 4)은 이 게임의 작전 규모입니다.</div>
       <div className="mt-1.5">
         기존 부대 차출 <b>{plan.drawnCount}</b>개 · 외부 증원 <b>{plan.externalCount}</b>개 (새로 편성) · 합계 <b>{plan.brigadesTotal}</b>개 여단 · 총 병력 <b>{fmt(plan.totalStrength)}</b>명 · 도착지 <b>{pname(plan.op.target)}</b>
       </div>

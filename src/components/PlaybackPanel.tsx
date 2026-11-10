@@ -78,7 +78,7 @@ export default function PlaybackPanel() {
   const isLast = pb.index >= steps.length - 1;
 
   return (
-    <div className="fade-in pointer-events-auto fixed bottom-[158px] left-[262px] right-[312px] z-30 rounded border border-yellow-700/70 bg-[#0d141c]/95 p-3 shadow-2xl">
+    <div className="fade-in pointer-events-auto fixed bottom-[184px] left-[262px] right-[312px] z-30 rounded border border-yellow-700/70 bg-[#0d141c]/95 p-3 shadow-2xl">
       <div className="mb-1.5 flex items-center justify-between">
         <div className="panel-title">
           ▍{formatDate(game.lastTurn!.date)} 턴 진행 — {step.kind === 'movement' ? '부대 이동' : `전투 ${nth}/${battleSteps.length}`}

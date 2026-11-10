@@ -105,6 +105,8 @@ export const CASUALTY = {
     attrition: { killed: 0.1, wounded: 0.3, missing: 0.6 }, // 굶주림·탈영·질병
     event: { killed: 0.35, wounded: 0.45, missing: 0.2 }, // 사건에 의한 손실
   },
+  /** 실종·포로 중 포로가 되는 비율 (나머지는 단순 실종·탈영). 전멸 시에는 전원 포로로 본다 */
+  powShare: { combat: 0.5, rout: 0.7, attrition: 0, event: 0.3 },
   /** 손실된 장비 중 수리 가능한(손상) 비율. 나머지는 파괴·유실 */
   equipDamagedShare: 0.35,
   annihilatedKilledShare: 0.2, // 전멸 시 잔존 병력 중 전사 비율, 나머지는 포로·실종
@@ -155,6 +157,8 @@ export const SUPPLY = {
   hopCostRoad: 12,
   infraAdjust: 0.4, // 기반시설이 나쁠수록 비용 증가
   hubLevel: 100,
+  /** 보급 거점과 연결(포위되지 않음)되어 있으면 아무리 멀어도 최소 이 수준의 보급은 도달한다 */
+  minConnectedLevel: 15,
   /** 주 거점에서 끊긴 전진 보급소: 이 턴 수만큼은 비축분으로 유지, 이후 턴마다 이 비율씩 약해진다 */
   depotGraceTurns: 1,
   depotDecayPerTurn: 0.25,

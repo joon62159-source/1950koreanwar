@@ -115,8 +115,9 @@ export function computeSupply(state: GameState): void {
         p.supplied = false;
         p.supplyLevel = 0;
       } else {
-        p.supplyLevel = Math.round(clamp(SUPPLY.hubLevel - d, 0, 100));
-        p.supplied = p.supplyLevel > 0;
+        // 거점과 이어져 있으면(포위 아님) 멀어도 최저 보급은 유지된다. 단절된 지역만 0이 된다.
+        p.supplyLevel = Math.round(clamp(SUPPLY.hubLevel - d, SUPPLY.minConnectedLevel, 100));
+        p.supplied = true;
       }
     }
   }

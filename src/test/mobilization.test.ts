@@ -3,7 +3,7 @@ import { createGame } from '../game/engine';
 import { checkEvents, resolveEvent } from '../game/events';
 import { endTurn } from '../game/turn';
 import { applyLosses, createUnit, dissolveUnit, fillRatio, needsRest, unitsAt } from '../game/units';
-import { forceStats, buildCasualtyReport } from '../game/casualty';
+import { forceStats, buildCasualtyReport, sideTotals } from '../game/casualty';
 import { mobilize, previewMobilization } from '../game/mobilization';
 import { autoUnReplacements, draftEfficiency, drawFromProvinces, nationalDraft, nationalDraftPool, createFormation, unReplacementPerDay } from '../game/manpower';
 import { autoDistribute, autoProduction, producibleKeys } from '../game/production';
@@ -396,7 +396,7 @@ describe('전사자·부상자·실종 구분', () => {
     const u = spawn(g, 'ROK', 'busan', { strength: 2000, organization: 90 });
     u.wounded = 800;
     u.record = { killed: 100, wounded: 800, missing: 50 };
-    g.nations.south.stats = { killed: 100, wounded: 800, returned: 0, missing: 50, unitsDestroyed: 0 };
+    g.nations.south.stats = { killed: 100, wounded: 800, returned: 0, missing: 50, prisoners: 0, unitsDestroyed: 0 };
     u.order = { type: 'rest', issuedTurn: g.turn - 1 };
     const pool = rawPool(g), drafted = Object.values(g.provinces).reduce((s, p) => s + p.drafted, 0);
     endTurn(g);
@@ -923,5 +923,92 @@ describe('미군·UN군 자동 보충', () => {
       return 1000 - g.units[u.id].wounded;
     };
     expect(run('UN')).toBeGreaterThan(run('ROK'));
+  });
+});
+
+describe('진영별 총 사상자(한국·UN / 북한·중공)와 포로', () => {
+  it('남측 합계에는 국군·미군·UN군이, 북측 합계에는 북한군·중국군이 함께 집계된다', () => {
+    const g = fresh();
+    empty(g);
+    const rok = spawn(g, 'ROK', 'busan', { strength: 3000 });
+    const un = spawn(g, 'UN', 'busan', { strength: 3000 });
+    const kpa = spawn(g, 'KPA', 'cheorwon', { strength: 3000 });
+    const pla = spawn(g, 'KPA', 'sinuiju', { strength: 3000 });
+    pla.faction = 'PLA';
+    applyLosses(rok, 400, 'combat', g);
+    applyLosses(un, 600, 'combat', g);
+    applyLosses(kpa, 500, 'combat', g);
+    applyLosses(pla, 300, 'combat', g);
+    const s = sideTotals(g, 'south'), n = sideTotals(g, 'north');
+    expect(s.total).toBe(1000);
+    expect(n.total).toBe(800);
+    expect(s.killed + s.wounded + s.missing + s.prisoners).toBe(s.total);
+    expect(n.killed + n.wounded + n.missing + n.prisoners).toBe(n.total);
+  });
+  it('포로는 실종의 부분집합으로 따로 집계되고 이중 계산되지 않는다', () => {
+    const g = fresh();
+    empty(g);
+    const u = spawn(g, 'ROK', 'daegu', { strength: 3000 });
+    applyLosses(u, 1000, 'rout', g);
+    const st = g.nations.south.stats;
+    expect(st.prisoners).toBeGreaterThan(0);
+    expect(st.prisoners).toBeLessThanOrEqual(st.missing);
+    const t = sideTotals(g, 'south');
+    expect(t.missing + t.prisoners).toBe(st.missing);
+    expect(t.total).toBe(1000);
+    // 굶주림·탈영(attrition)은 포로가 아니라 실종·탈영
+    const g2 = fresh();
+    empty(g2);
+    const v = spawn(g2, 'ROK', 'daegu', { strength: 3000 });
+    applyLosses(v, 1000, 'attrition', g2);
+    expect(g2.nations.south.stats.prisoners).toBe(0);
+  });
+  it('전멸한 부대의 잔존 병력과 부상병은 포로로 집계된다', () => {
+    const g = fresh();
+    empty(g);
+    const u = spawn(g, 'ROK', 'daegu', { strength: 1000 });
+    u.wounded = 200;
+    dissolveUnit(g, u, 'annihilated');
+    const t = sideTotals(g, 'south');
+    expect(t.prisoners).toBeGreaterThanOrEqual(900);
+    expect(t.total).toBe(1000);
+  });
+  it('사상자 보고에도 포로가 포함된다', () => {
+    const g = fresh();
+    const u = Object.values(g.units).find((x) => x.side === 'south')!;
+    applyLosses(u, 800, 'rout', g);
+    expect(buildCasualtyReport(g, 'south').prisoners).toBe(g.nations.south.stats.prisoners);
+  });
+});
+
+describe('보급 최저 수준 (포위되지 않은 한 15)', () => {
+  it('거점과 연결된 지역은 아무리 멀어도 보급이 0이 되지 않는다 (북한 산지 포함)', () => {
+    const g = fresh();
+    computeSupply(g);
+    for (const p of Object.values(g.provinces)) {
+      if (p.supplied) expect(p.supplyLevel).toBeGreaterThanOrEqual(15);
+    }
+    // 평양에서 가장 먼 북한 지역도 연결되어 있으면 최저 15
+    for (const id of ['hoeryong', 'musan', 'hyesan', 'gangye', 'najin']) {
+      expect(g.provinces[id].supplied).toBe(true);
+      expect(g.provinces[id].supplyLevel).toBeGreaterThanOrEqual(15);
+    }
+  });
+  it('포위(거점과 단절)되면 보급이 0이다', () => {
+    const g = fresh();
+    for (const nb of MAP.adjacency.hoeryong) g.provinces[nb].owner = 'south';
+    computeSupply(g);
+    expect(g.provinces.hoeryong.supplied).toBe(false);
+    expect(g.provinces.hoeryong.supplyLevel).toBe(0);
+  });
+  it('최저 보급 지역의 부대는 포위 효과(조직력 -20% 등)를 받지 않는다', () => {
+    const g = fresh();
+    clearEvents(g);
+    empty(g);
+    g.date = '1950-08-12';
+    const u = spawn(g, 'KPA', 'musan', { organization: 100, supply: 60 });
+    computeSupply(g);
+    endTurn(g);
+    expect(g.units[u.id].encircledTurns ?? 0).toBe(0);
   });
 });

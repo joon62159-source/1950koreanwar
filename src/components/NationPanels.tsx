@@ -19,6 +19,7 @@ export function CasualtyPanel({ report }: { report?: CasualtyReport }) {
     ['현재 치료 중인 부상병', r.woundedInCare, '가용 병력 아님'],
     ['치료 후 복귀', r.returned, '새 징집이 아님'],
     ['누적 실종·포로', r.missing, '자연 회복 없음'],
+    ['  그중 포로', r.prisoners],
     ['전멸·해체된 부대', r.unitsDestroyed],
     ['현재 총 가용 병력', r.available],
     ['현재 군 전체 편제 정원', r.authorized],
@@ -68,7 +69,7 @@ export function MobilizationComparison({ report, preview, title }: { report: Mob
       </div>
       <div className="mt-1 text-[11px] text-[#8a4a1a]">
         긴급 동원병은 훈련·경험·조직력이 낮고 장비가 따라오지 않아, 병력이 늘어도 전투력은 그만큼 늘지 않습니다. 소모한 징병 자원은 이후 일반 징집에서 다시 쓸 수 없습니다.
-        이 전환은 역사적 사단 창설의 재현이 아니라 게임상 조작 단위 변경이며, 수치는 가상의 밸런스 값입니다.
+        ※ 게임상 조작 단위 변경이며 수치는 밸런스 값입니다.
       </div>
     </div>
   );

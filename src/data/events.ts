@@ -172,7 +172,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'blow_early',
         label: '한강 교량을 조기에 폭파한다',
-        description: '북한군 추격이 지연되지만, 한강 이북에 남은 부대는 병력과 중장비를 크게 잃습니다. 민간인 피해로 국민 지지도 하락합니다. (역사적 결정)',
+        description: '북한군 추격이 지연되지만, 한강 이북에 남은 부대는 병력과 중장비를 크게 잃습니다. 민간인 피해로 국민 지지도 하락합니다.',
         isCounterfactual: false,
         effects: [
           { kind: 'units', side: 'south', area: NORTH_BANK, lossFraction: 0.3, equipLossFraction: 0.5, morale: -12, organization: -20 },
@@ -184,7 +184,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'delay_demolition',
         label: '폭파를 늦추고 질서 있게 철수시킨다',
-        description: '한강 이북 부대의 손실은 적지만 북한군이 교량을 이용해 빠르게 추격할 수 있습니다. (가상의 선택)',
+        description: '한강 이북 부대의 손실은 적지만 북한군이 교량을 이용해 빠르게 추격할 수 있습니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'units', side: 'south', area: NORTH_BANK, lossFraction: 0.07, morale: -4, organization: -6 },
@@ -195,7 +195,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'hold_seoul',
         label: '서울 사수를 명령한다',
-        description: '서울의 부대 사기가 오르고 방어시설이 강화되지만, 서울이 포위되면 퇴각 없이 끝까지 싸우다 전멸할 수 있습니다. (가상의 선택)',
+        description: '서울의 부대 사기가 오르고 방어시설이 강화되지만, 서울이 포위되면 퇴각 없이 끝까지 싸우다 전멸할 수 있습니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'units', side: 'south', area: ['seoul', 'uijeongbu', 'gimpo'], morale: 14, organization: 6 },
@@ -246,7 +246,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'forward',
         label: '선견대를 오산·천안 방면에 전진 배치한다',
-        description: '북한군의 진격을 늦추고 국제사회에 미군 참전 의지를 알립니다. 선견대는 큰 손실을 입기 쉽습니다. (역사적 결정)',
+        description: '북한군의 진격을 늦추고 국제사회에 미군 참전 의지를 알립니다. 선견대는 큰 손실을 입기 쉽습니다.',
         isCounterfactual: false,
         effects: [
           { kind: 'relocate', faction: 'UN', from: 'busan', to: 'cheonan' },
@@ -257,7 +257,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'consolidate',
         label: '선견대를 대구에 집결시킨다',
-        description: '전투력을 보존하며 낙동강 방어선 준비 시간을 법니다. 대신 북한군의 속도는 늦춰지지 않습니다. (가상의 선택)',
+        description: '전투력을 보존하며 낙동강 방어선 준비 시간을 법니다. 대신 북한군의 속도는 늦춰지지 않습니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'relocate', faction: 'UN', from: 'busan', to: 'daegu' },
@@ -288,7 +288,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'stand',
         label: '"현 위치 사수" 지침을 하달한다',
-        description: '전 부대 사기가 오르고 낙동강 요충의 방어시설이 강화됩니다. 대신 후퇴 시 사기 붕괴가 큽니다. (역사적 결정)',
+        description: '전 부대 사기가 오르고 낙동강 요충의 방어시설이 강화됩니다. 대신 후퇴 시 사기 붕괴가 큽니다.',
         isCounterfactual: false,
         effects: [
           { kind: 'units', side: 'south', area: 'all', morale: 10 },
@@ -303,7 +303,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'elastic',
         label: '유연한 종심 방어를 지시한다',
-        description: '조직력과 보급이 보존되고 철수가 자유롭습니다. 하지만 사기 상승 효과는 없습니다. (가상의 선택)',
+        description: '조직력과 보급이 보존되고 철수가 자유롭습니다. 하지만 사기 상승 효과는 없습니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'units', side: 'south', area: 'all', organization: 8, recovery: 8 },
@@ -330,7 +330,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'masan_axis',
         label: '마산·창녕(낙동강 남부 축)에 투입한다',
-        description: '실제로 해병 임시여단과 미 제25사단이 남부 돌출부 방어에 투입되었습니다. (역사적 결정)',
+        description: '실제로 해병 임시여단과 미 제25사단이 남부 돌출부 방어에 투입되었습니다.',
         isCounterfactual: false,
         effects: [
           { kind: 'units', side: 'south', area: ['masan', 'changnyeong', 'jinju', 'miryang', 'gimhae'], morale: 12, organization: 10, recovery: 15, fatigue: -10 },
@@ -341,7 +341,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'daegu_axis',
         label: '왜관·대구(중앙 축)에 투입한다',
-        description: '수도 대구 방어를 우선합니다. 남부와 동부는 현재 병력으로 버텨야 합니다. (가상의 선택)',
+        description: '수도 대구 방어를 우선합니다. 남부와 동부는 현재 병력으로 버텨야 합니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'units', side: 'south', area: ['waegwan', 'daegu', 'sangju', 'andong'], morale: 12, organization: 10, recovery: 15, fatigue: -10 },
@@ -352,7 +352,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'east_axis',
         label: '영천·포항(동해안 축)에 투입한다',
-        description: '동해안 보급 거점 포항과 경주 방면을 지킵니다. (가상의 선택)',
+        description: '동해안 보급 거점 포항과 경주 방면을 지킵니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'units', side: 'south', area: ['yeongcheon', 'pohang', 'gyeongju'], morale: 12, organization: 10, recovery: 15, fatigue: -10 },
@@ -385,7 +385,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'incheon',
         label: '인천 상륙을 승인한다 (9월 15일 목표)',
-        description: '서울과 가까운 인천에 상륙해 북한군 보급선을 끊습니다. 위험하지만 성공하면 전황이 뒤집힙니다. (역사적 결정)',
+        description: '서울과 가까운 인천에 상륙해 북한군 보급선을 끊습니다. 위험하지만 성공하면 전황이 뒤집힙니다.',
         isCounterfactual: false,
         effects: [
           { kind: 'nation', side: 'south', field: 'supplyStock', delta: -40 },
@@ -396,7 +396,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'gunsan',
         label: '군산 상륙으로 계획을 바꾼다',
-        description: '위험이 작은 군산에 상륙합니다. 북한군 배후 타격 효과는 작습니다. (가상의 선택)',
+        description: '위험이 작은 군산에 상륙합니다. 북한군 배후 타격 효과는 작습니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'nation', side: 'south', field: 'supplyStock', delta: -30 },
@@ -406,7 +406,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'none',
         label: '상륙을 보류하고 낙동강 정면 방어에 전념한다',
-        description: '자원을 아끼지만 북한군 보급선은 그대로입니다. 반격 시점이 크게 늦어집니다. (가상의 선택)',
+        description: '자원을 아끼지만 북한군 보급선은 그대로입니다. 반격 시점이 크게 늦어집니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'nation', side: 'south', field: 'supplyStock', delta: 30 },
@@ -433,14 +433,14 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'execute',
         label: '상륙작전을 실행한다',
-        description: '확인 화면의 구성대로 병력을 차출·편성하고 인천에 상륙합니다. (역사적 결정)',
+        description: '확인 화면의 구성대로 병력을 차출·편성하고 인천에 상륙합니다.',
         isCounterfactual: false,
         effects: [{ kind: 'landing', opId: 'incheon_landing' }],
       },
       {
         id: 'postpone',
         label: '작전을 1주 연기한다',
-        description: '전황을 더 지켜봅니다. 다음 턴에 다시 결정해야 하며, 시간이 지체됩니다. (가상의 선택)',
+        description: '전황을 더 지켜봅니다. 다음 턴에 다시 결정해야 하며, 시간이 지체됩니다.',
         isCounterfactual: true,
         effects: [{ kind: 'postpone', eventId: 'incheon_landing' }],
       },
@@ -556,7 +556,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'cross',
         label: '38선 이북으로 진격한다',
-        description: '북한군 완전 붕괴의 기회지만 중국 개입 위험이 크게 상승합니다. (역사적 결정)',
+        description: '북한군 완전 붕괴의 기회지만 중국 개입 위험이 크게 상승합니다.',
         isCounterfactual: false,
         effects: [
           { kind: 'diplomacy', field: 'chinaThreat', delta: 35 },
@@ -566,7 +566,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'halt',
         label: '38선에서 정지하고 협상을 모색한다',
-        description: '중국 개입 위험이 낮아지지만 북한군은 재편의 시간을 얻습니다. (가상의 선택)',
+        description: '중국 개입 위험이 낮아지지만 북한군은 재편의 시간을 얻습니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'diplomacy', field: 'chinaThreat', delta: -10 },
@@ -661,8 +661,8 @@ export const EVENTS: HistoricalEvent[] = [
     latestDate: '1953-06-30',
     conditions: [{ kind: 'dateAtLeast', date: '1951-07-10' }],
     choices: [
-      { id: 'accept', label: '정전협상에 응한다', description: '협상이 시작됩니다. 협상 진척도가 서서히 오르며 100%가 되면 정전이 타결됩니다. (역사적 결정)', isCounterfactual: false, effects: [{ kind: 'flag', key: 'talks', value: 'on' }, { kind: 'nation', side: 'south', field: 'popularSupport', delta: 2 }] },
-      { id: 'refuse', label: '협상을 거부하고 공세를 계속한다', description: '국민 지지와 국제 지지가 떨어지고 전쟁 피로가 늘며, 얼마 뒤 협상 제안이 다시 올 것입니다. (가상의 선택)', isCounterfactual: true, effects: [{ kind: 'flag', key: 'talks', value: 'refused' }, { kind: 'diplomacy', field: 'unSupport', delta: -8 }, { kind: 'weariness', delta: 4 }, { kind: 'postpone', eventId: 'armistice_talks' }] },
+      { id: 'accept', label: '정전협상에 응한다', description: '협상이 시작됩니다. 협상 진척도가 서서히 오르며 100%가 되면 정전이 타결됩니다.', isCounterfactual: false, effects: [{ kind: 'flag', key: 'talks', value: 'on' }, { kind: 'nation', side: 'south', field: 'popularSupport', delta: 2 }] },
+      { id: 'refuse', label: '협상을 거부하고 공세를 계속한다', description: '국민 지지와 국제 지지가 떨어지고 전쟁 피로가 늘며, 얼마 뒤 협상 제안이 다시 올 것입니다.', isCounterfactual: true, effects: [{ kind: 'flag', key: 'talks', value: 'refused' }, { kind: 'diplomacy', field: 'unSupport', delta: -8 }, { kind: 'weariness', delta: 4 }, { kind: 'postpone', eventId: 'armistice_talks' }] },
     ],
     effects: [],
     historicalContext: '1951년 7월 정전회담이 시작되어 2년 넘게 이어졌고, 1953년 7월 27일 정전협정이 체결되었다.',
@@ -707,7 +707,7 @@ export const EVENTS: HistoricalEvent[] = [
       {
         id: 'postpone',
         label: '발동을 1턴 보류한다',
-        description: '전황을 더 지켜봅니다. 다음 턴에 다시 결정해야 합니다. (가상의 선택)',
+        description: '전황을 더 지켜봅니다. 다음 턴에 다시 결정해야 합니다.',
         isCounterfactual: true,
         effects: [{ kind: 'postpone', eventId: 'general_mobilization' }],
       },

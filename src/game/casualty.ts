@@ -37,7 +37,8 @@ export interface CasualtyReport {
   woundedTotal: number; // 누적 부상 발생
   woundedInCare: number; // 현재 치료 중
   returned: number; // 치료 후 복귀
-  missing: number; // 누적 실종·포로
+  missing: number; // 누적 실종·포로 (총수)
+  prisoners: number; // 그중 포로
   unitsDestroyed: number;
   available: number;
   authorized: number;
@@ -56,9 +57,30 @@ export function buildCasualtyReport(state: GameState, side: Side = state.playerS
     woundedInCare: f.woundedInCare,
     returned: st.returned,
     missing: st.missing,
+    prisoners: st.prisoners,
     unitsDestroyed: st.unitsDestroyed,
     available: f.available,
     authorized: f.authorized,
     totalLoss: st.killed + st.wounded + st.missing,
+  };
+}
+
+/** 진영별 누적 사상자 합계. 남측 = 국군 + 미군 + UN군, 북측 = 북한군 + 중국군 (국가 통계가 진영 단위로 집계된다) */
+export interface SideTotals {
+  killed: number;
+  wounded: number; // 누적 부상 발생 (복귀 포함)
+  missing: number; // 실종 (포로 제외)
+  prisoners: number; // 포로
+  total: number; // 전사 + 부상 + 실종 + 포로 (중복 없음)
+}
+
+export function sideTotals(state: GameState, side: Side): SideTotals {
+  const st = state.nations[side].stats;
+  return {
+    killed: st.killed,
+    wounded: st.wounded,
+    missing: st.missing - st.prisoners,
+    prisoners: st.prisoners,
+    total: st.killed + st.wounded + st.missing,
   };
 }
