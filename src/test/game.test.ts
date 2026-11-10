@@ -316,6 +316,7 @@ describe('보급', () => {
     expect(g.provinces.busan.supplied).toBe(true);
     const before = { sup: u.supply, org: u.organization, mor: u.morale };
     clearEvents(g);
+    g.firedEvents.push('macarthur_arrives'); // 사기 상승 이벤트가 보급 차단 효과 검증을 가리지 않게 한다
     endTurn(g);
     const after = g.units[u.id];
     expect(after.supply).toBeLessThan(before.sup);

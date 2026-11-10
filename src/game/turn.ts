@@ -179,6 +179,14 @@ function resolveAttacks(state: GameState, summary: string[], rec: TurnRecord) {
     rep.defenderRoster = dRoster;
     rep.stepId = `${state.turn}-battle-${rep.id}`;
     state.reports.push(rep);
+    // 이벤트 연동용 전황 기록: 수도방어전의 첫 결과, 양군 20개 부대 이상이 맞붙은 혈투
+    if (g.target === 'seoul' && g.side === 'north' && state.flags.seoulBattle === undefined) {
+      state.flags.seoulBattle = out.decision === 'attacker_win' ? 'fell' : 'held';
+    }
+    if (aRoster.length + dRoster.length >= 20 && state.flags.bloodyBattle === undefined) {
+      state.flags.bloodyBattle = rep.provinceName;
+      state.flags.bloodyBattleInfo = JSON.stringify({ a: aRoster.length, d: dRoster.length, side: g.side, killed: rep.attackerCasualty.killed + rep.defenderCasualty.killed });
+    }
     const ours = g.side === state.playerSide;
     const verdict = out.decision === 'attacker_win' ? (ours ? '승리' : '패배') : out.decision === 'defender_win' ? (ours ? '격퇴당함' : '방어 성공') : '교착';
     summary.push(`【전투】 ${rep.provinceName} — ${verdict} (손실 아군 ${ours ? rep.attackerLosses : rep.defenderLosses} / 적 ${ours ? rep.defenderLosses : rep.attackerLosses})`);

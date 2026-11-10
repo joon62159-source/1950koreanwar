@@ -4,6 +4,7 @@ import type { SceneKind } from '../components/EventScene';
 import { MAP } from '../game/map';
 import { forceStats, sideTotals } from '../game/casualty';
 import { nationalDraftPool } from '../game/manpower';
+import { STORY_NARRATIVES } from './eventNarrativeStory';
 
 /**
  * 이벤트 창 연출 데이터 (HOI4식): 장면 그림, 한 줄 제목(kicker), 본문 서술, 인용구.
@@ -194,6 +195,8 @@ export const NARRATIVES: Record<string, Narrative> = {
   casualty_report_talks: { scene: 'memorial', kicker: '회담 테이블의 무게', paragraphs: ['협상이 시작되었다. 이 탁자 위의 모든 선은 이 숫자들의 대가 위에 그어진다.'] },
 };
 
+Object.assign(NARRATIVES, STORY_NARRATIVES);
+
 // ───────── 효과 요약 (HOI4의 선택지 효과 목록) ─────────
 export interface EffectLine {
   text: string;
@@ -323,6 +326,19 @@ export function situationLines(state: GameState, eventId: string): string[] {
     case 'china_second_offensive': {
       const pla = Object.values(state.units).filter((u) => u.faction === 'PLA');
       lines.push(`중국군 ${pla.length}개 사단급 부대 (병력 ${pla.reduce((s, u) => s + u.strength, 0).toLocaleString('ko-KR')}명) 전개 중`);
+      break;
+    }
+    case 'bloody_battle': {
+      try {
+        const b = JSON.parse(String(state.flags.bloodyBattleInfo ?? '{}'));
+        lines.unshift(`격전지: ${state.flags.bloodyBattle} — 공격 ${b.a}개 부대 vs 방어 ${b.d}개 부대, 이 전투의 전사자 ${Number(b.killed).toLocaleString('ko-KR')}명`);
+      } catch { /* 기록 없음 */ }
+      break;
+    }
+    case 'seoul_defense_held':
+    case 'seoul_fall_battle': {
+      const last = [...state.reports].reverse().find((r) => r.province === 'seoul');
+      if (last) lines.unshift(`서울 전투: 공격 ${last.attackerUnits.length}개 부대 vs 방어 ${last.defenderUnits.length}개 부대 (손실 ${last.attackerLosses.toLocaleString('ko-KR')} / ${last.defenderLosses.toLocaleString('ko-KR')}명)`);
       break;
     }
     case 'general_mobilization':

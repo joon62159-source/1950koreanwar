@@ -1,5 +1,6 @@
 import type { Diplomacy, EquipKey, Side } from '../game/types';
 import type { UnitTemplate } from './orbat';
+import { STORY_EVENTS } from './eventsStory';
 
 /**
  * 역사 이벤트 데이터.
@@ -781,6 +782,7 @@ export const EVENTS: HistoricalEvent[] = [
     historicalContext: '(게임 내 보고) 이 보고의 숫자는 실제 전투 손실을 합산한 결과이며 역사적 통계가 아닙니다.',
     historicalDate: '(전황 연동)', source: '게임 내 집계', needsVerification: false, isCounterfactual: false,
   },
+  ...STORY_EVENTS,
 ];
 
 export const EVENT_BY_ID: Record<string, HistoricalEvent> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));
