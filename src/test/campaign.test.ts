@@ -58,7 +58,7 @@ describe('중국군 참전', () => {
     g.provinces.sariwon.owner = 'south';
     expect(fire(g)).not.toContain('china_intervention');
   });
-  it('평양 함락 직후(1턴 뒤)에는 참전하지 않고, 함락 2턴 뒤에 참전하며 중국군 18개 여단이 배치된다', () => {
+  it('평양 함락 직후(1턴 뒤)에는 참전하지 않고, 함락 2턴 뒤에 참전하며 중국군 20개 사단이 국경을 넘는다', () => {
     const g = fresh();
     g.date = '1950-10-25';
     g.provinces.pyongyang.owner = 'south';
@@ -66,8 +66,9 @@ describe('중국군 참전', () => {
     expect(fire(g)).not.toContain('china_intervention');
     g.flags.pyongyangFallTurn = g.turn - 2;
     expect(fire(g)).toContain('china_intervention');
-    expect(plaCount(g)).toBe(18);
+    expect(plaCount(g)).toBe(20);
     expect(g.flags.plaIntervened).toBe(true);
+    expect(Object.values(g.units).some((u) => u.faction === 'PLA' && u.location === 'china')).toBe(false); // 모두 국경을 넘었다
     for (const u of Object.values(g.units).filter((x) => x.faction === 'PLA')) {
       expect(u.side).toBe('north');
       expect(g.provinces[u.location].owner).toBe('north');
@@ -114,8 +115,9 @@ describe('중국군 참전', () => {
   it('중국군은 무제한 보급이 아니다: 압록강 보급소가 없으면 보급이 끊긴다', () => {
     const g = fresh();
     g.flags.plaIntervened = true;
+    g.provinces.china.owner = 'north';
     for (const id of ['sinuiju', 'gangye', 'hyesan', 'pyongyang', 'wonsan']) g.provinces[id].owner = 'south';
-    expect(hubLevels(g, 'north')).toEqual({});
+    expect(hubLevels(g, 'north')).toEqual({}); // 중국은 보급 거점이 아니다 (병력이 넘어오는 곳일 뿐)
   });
 });
 
@@ -223,9 +225,10 @@ describe('평양 함락 → 2턴 후 중국군 참전 (실제 턴 진행)', () =
     expect(g.provinces.pyongyang.owner).toBe('south');
     expect(g.flags.pyongyangFallTurn).toBeDefined();
     clear(g);
-    expect(plaCount(g)).toBe(0); // 함락 직후 1턴 시점
+    const inKorea = () => Object.values(g.units).filter((x) => x.faction === 'PLA' && x.location !== 'china').length;
+    expect(inKorea()).toBe(0); // 함락 직후 1턴 시점: 중국군은 중국 영내에서 집결만 한다
     endTurn(g);
     clear(g);
-    expect(plaCount(g)).toBeGreaterThan(0); // 2턴 후
+    expect(inKorea()).toBeGreaterThan(0); // 2턴 후 압록강을 건넌다
   });
 });

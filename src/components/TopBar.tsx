@@ -34,7 +34,7 @@ export default function TopBar() {
         <span className="text-[10px] text-slate-500">종료 {formatDate(SCENARIO.endDate)}</span>
       </div>
       <Metric label="국가" value={<span className="text-south">대한민국</span>}>
-        <span className="text-[10px] text-slate-500">지역 {ownCount}/{Object.keys(game.provinces).length}</span>
+        <span className="text-[10px] text-slate-500">지역 {ownCount}/{Object.values(game.provinces).filter((p) => !p.external).length}</span>
       </Metric>
       <Metric label="총병력" value={fmt(strength)}>
         <span className="text-[10px] text-slate-500">여단 {brigades}개</span>

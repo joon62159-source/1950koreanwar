@@ -1,6 +1,7 @@
 import type { Diplomacy, EquipKey, Side } from '../game/types';
 import type { UnitTemplate } from './orbat';
 import { STORY_EVENTS } from './eventsStory';
+import { PLA } from '../game/balance';
 
 /**
  * 역사 이벤트 데이터.
@@ -25,6 +26,8 @@ export type Condition =
   /** side 의 초기 소유 프로빈스 중 현재 잃은 지역이 min 곳 이상 */
   | { kind: 'provincesLostAtLeast'; side: Side; min: number }
   | { kind: 'eventFired'; id: string }
+  /** 아군(남측)이 38선 훨씬 북쪽의 원래 북한 영토를 점령하고 있음 (북진) */
+  | { kind: 'beyond38' }
   /** side 의 여단이 해당 지역(또는 인접 지역)에 min 개 이상 있음 */
   | { kind: 'unitsNear'; side: Side; provinces: string[]; min: number; adjacent?: boolean }
   | { kind: 'anyOf'; of: Condition[] }
@@ -60,6 +63,14 @@ export type Effect =
   | { kind: 'landing'; opId: string }
   /** 총동원령: 여단→사단 1:1 전환 + 긴급 동원병 충원 (src/game/mobilization.ts, data/mobilization.ts 의 프로필) */
   | { kind: 'mobilize'; profile: string }
+  /** 핵 투하: 중국군 병력·조직력·사기 하락, 이후 중국군 회복·증원 불가 */
+  | { kind: 'nuke' }
+  /** 확률 p 로 then, 아니면 otherwise 효과를 적용 */
+  | { kind: 'chance'; p: number; then: Effect[]; otherwise?: Effect[] }
+  /** 소련군 사단을 압록강·두만강 국경 지역에 투입 */
+  | { kind: 'sovietJoin'; count: number; label: string }
+  /** 중국 영내에 집결한 중국군을 total 개 사단급까지 증강하고 압록강·두만강을 건너 북한 영토로 투입 */
+  | { kind: 'plaCross'; total: number; label: string }
   /** 중국군 여단을 북측 통제 지역(선호 지역 우선)에 배치 */
   | { kind: 'spawnPla'; count: number; label: string; provinces: string[] }
   /** 전선(적 통제 지역과 맞닿은) 프로빈스의 방어시설을 양측 모두 강화 */
@@ -608,7 +619,7 @@ export const EVENTS: HistoricalEvent[] = [
     conditions: [{ kind: 'flagTurnsAgo', key: 'pyongyangFallTurn', min: 2 }],
     choices: [],
     effects: [
-      { kind: 'spawnPla', count: 18, label: '제1진', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'] },
+      { kind: 'plaCross', total: PLA.invasionTotal, label: '제1진' },
       { kind: 'flag', key: 'plaIntervened', value: true },
       { kind: 'flagTurn', key: 'plaIntervenedTurn' },
       { kind: 'diplomacy', field: 'chinaThreat', delta: 25 },

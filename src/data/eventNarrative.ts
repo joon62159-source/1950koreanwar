@@ -263,7 +263,17 @@ export function describeEffect(e: Effect, state: GameState): EffectLine | null {
     case 'mobilize':
       return { text: e.profile === 'kpa' ? '북한군 총동원령 (여단→사단)' : '국군 총동원령 (여단→사단, 긴급 동원병 충원)', tone: e.profile === 'kpa' ? 'bad' : 'good' };
     case 'spawnPla':
-      return { text: `중국군 ${e.count}개 사단급 부대 투입`, tone: 'bad' };
+      return { text: e.provinces[0] === 'china' ? `중국군 ${e.count}개 사단급이 중국 영내(만주)에 집결 시작` : `중국군 ${e.count}개 사단급 부대 투입`, tone: 'bad' };
+    case 'nuke':
+      return { text: '만주 핵 투하: 중국군 병력 -30%·사기 -25·조직력 -35, 이후 중국군 회복·보충 불가', tone: 'good' };
+    case 'sovietJoin':
+      return { text: `소련군 ${e.count}개 사단 참전`, tone: 'bad' };
+    case 'chance': {
+      const inner = e.then.map((x) => describeEffect(x, state)).filter((x): x is EffectLine => !!x).map((x) => x.text);
+      return { text: `${Math.round(e.p * 100)}% 확률로 ${inner.length ? inner.join(', ') : '소련 개입 위기 발생'}`, tone: 'bad' };
+    }
+    case 'plaCross':
+      return { text: `중국군 총 ${e.total}개 사단급이 압록강·두만강을 건너 북한 영토로 진입`, tone: 'bad' };
     case 'fortifyFront':
       return { text: '전선 전 지역 방어시설 +1 (양측)', tone: 'neutral' };
     case 'weariness':

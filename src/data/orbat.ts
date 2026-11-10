@@ -109,6 +109,22 @@ export function plaBrigades(count: number, label: string, loc: string): UnitTemp
     traits: ['야간전'],
   }));
 }
+/** 소련군 사단 템플릿 (가상 편성: 핵 투하 후 소련 참전 시나리오) */
+export function sovietDivisions(count: number, label: string, loc: string): UnitTemplate[] {
+  return Array.from({ length: count }, (_, i) => ({
+    faction: 'SOV' as const,
+    name: `소련군 ${label} ${i + 1}사단`,
+    parent: '소련 극동군관구 (사단급 · 가상 편성)',
+    kind: 'motorized' as const,
+    echelon: 'division' as const,
+    location: loc,
+    training: 72,
+    experience: 40,
+    morale: 88,
+    strengthPct: 0.9,
+    fill: { rifles: 0.95, machineGuns: 0.8, mortars: 0.8, artillery: 0.6, antiTank: 0.5, tanks: 0.12, vehicles: 0.35 },
+  }));
+}
 const PLA_T = { training: 58, experience: 45, morale: 86, fill: { rifles: 0.85, machineGuns: 0.5, mortars: 0.55, artillery: 0.18, antiTank: 0.12, tanks: 0, vehicles: 0.03 } };
 
 const genericUn = (n: number, label: string, kind: UnitTemplate['kind'] = 'motorized'): UnitTemplate[] =>

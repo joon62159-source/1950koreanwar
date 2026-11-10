@@ -46,7 +46,7 @@ describe('지도·프로빈스 데이터', () => {
   });
   it('모든 프로빈스가 필수 데이터와 지도 다각형을 가진다', () => {
     const g = fresh();
-    for (const p of Object.values(g.provinces)) {
+    for (const p of Object.values(g.provinces).filter((x) => !x.external)) {
       expect(p.historicalName.length).toBeGreaterThan(0);
       expect(p.population).toBeGreaterThan(0);
       expect(MAP.geometry[p.id].polygon.length).toBeGreaterThanOrEqual(3);
@@ -59,17 +59,19 @@ describe('지도·프로빈스 데이터', () => {
   it('인접 관계가 대칭이고 전체가 하나로 연결되며 바다를 가로지르지 않는다', () => {
     for (const id of Object.keys(MAP.adjacency)) {
       for (const n of MAP.adjacency[id]) expect(MAP.adjacency[n]).toContain(id);
+      if (id === 'china') continue; // 한반도 밖의 외부 프로빈스
       const s = PROVINCE_SEEDS.find((x) => x.id === id)!;
       expect(isLand(s.lon, s.lat), `${id} 중심점이 육지 안`).toBe(true);
     }
     const seen = new Set(['seoul']);
     const stack = ['seoul'];
     while (stack.length) for (const n of neighbors(stack.pop()!)) if (!seen.has(n)) { seen.add(n); stack.push(n); }
-    expect(seen.size).toBe(PROVINCE_SEEDS.length);
+    expect(seen.size).toBe(PROVINCE_SEEDS.length + 1); // 한반도 프로빈스 + 중국
   });
   it('육로 인접은 모두 육지 위의 선분이다 (해상 이동은 별도 sea 연결)', () => {
     for (const id of Object.keys(MAP.adjacency)) {
       for (const n of MAP.adjacency[id]) {
+        if (id === 'china' || n === 'china') continue;
         const a = PROVINCE_SEEDS.find((x) => x.id === id)!, b = PROVINCE_SEEDS.find((x) => x.id === n)!;
         expect(segmentOnLand([a.lon, a.lat], [b.lon, b.lat], 40), `${id}-${n}`).toBe(true);
       }

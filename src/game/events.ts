@@ -1,13 +1,15 @@
 import { EVENTS, EVENT_BY_ID, type Condition, type Effect, type HistoricalEvent } from '../data/events';
 import { MAP } from './map';
+import { CHINA_BORDER_PROVINCES } from '../data/outline';
 import { applyReinforcement, northSpawnProvince, spawnTemplate } from './scenario';
-import { plaBrigades } from '../data/orbat';
+import { plaBrigades, sovietDivisions } from '../data/orbat';
+import { NUKE } from './balance';
 import { executeLanding } from './amphibious';
 import { mobilize } from './mobilization';
 import { MOBILIZATION_PROFILES } from '../data/mobilization';
 import { applyLosses, unitsAt } from './units';
 import { EQUIP_KEYS, type GameState } from './types';
-import { addDays, addLog, clamp, turnDaysFor } from './util';
+import { addDays, addLog, clamp, nextRandom, turnDaysFor } from './util';
 
 export function conditionHolds(state: GameState, c: Condition): boolean {
   switch (c.kind) {
@@ -35,6 +37,8 @@ export function conditionHolds(state: GameState, c: Condition): boolean {
       return state.flags[c.key] !== undefined;
     case 'eventFired':
       return state.firedEvents.includes(c.id);
+    case 'beyond38':
+      return Object.values(state.provinces).some((p) => p.owner === 'south' && p.initialOwner === 'north' && MAP.geometry[p.id].lat >= 38.3);
     case 'unitsNear': {
       const set = new Set<string>(c.provinces);
       if (c.adjacent) for (const p of c.provinces) for (const n of MAP.adjacency[p]) set.add(n);
@@ -143,9 +147,43 @@ export function applyEffect(state: GameState, e: Effect): void {
       addLog(state, 'warn', `중국군 ${e.count}개 사단급 부대가 투입되었습니다.`);
       break;
     }
+    case 'nuke': {
+      state.flags.nukeUsed = true;
+      for (const u of Object.values(state.units)) {
+        if (u.faction !== 'PLA') continue;
+        applyLosses(u, u.strength * NUKE.plaLossFraction, 'event', state);
+        u.organization = clamp(u.organization - NUKE.plaOrgLoss, 0, 100);
+        u.morale = clamp(u.morale - NUKE.plaMoraleLoss, 0, 100);
+      }
+      addLog(state, 'warn', '만주에 핵이 투하되었습니다. 중국군은 더 이상 병력을 회복하거나 보충받을 수 없습니다.');
+      break;
+    }
+    case 'chance': {
+      const hit = nextRandom(state) < e.p;
+      for (const x of hit ? e.then : e.otherwise ?? []) applyEffect(state, x);
+      break;
+    }
+    case 'sovietJoin': {
+      const gates = CHINA_BORDER_PROVINCES.filter((id) => state.provinces[id].owner === 'north');
+      const tpls = sovietDivisions(e.count, e.label, 'china');
+      tpls.forEach((t, i) => spawnTemplate(state, { ...t, location: gates.length ? gates[i % gates.length] : 'china' }));
+      addLog(state, 'warn', `소련군 ${e.count}개 사단이 국경을 넘어 참전했습니다.`);
+      break;
+    }
+    case 'plaCross': {
+      const inChina = () => Object.values(state.units).filter((u) => u.faction === 'PLA' && u.location === 'china');
+      const need = Math.max(0, e.total - Object.values(state.units).filter((u) => u.faction === 'PLA').length);
+      if (need > 0) {
+        plaBrigades(need, e.label, 'china').forEach((t) => spawnTemplate(state, t));
+      }
+      const gates = CHINA_BORDER_PROVINCES.filter((id) => state.provinces[id].owner === 'north');
+      if (gates.length) inChina().forEach((u, i) => { u.location = gates[i % gates.length]; u.order = null; });
+      addLog(state, 'warn', `중국군 ${e.total}개 사단급이 압록강·두만강을 건너 북한 영토로 진입했습니다.`);
+      break;
+    }
     case 'fortifyFront': {
       for (const p of Object.values(state.provinces)) {
-        if (MAP.adjacency[p.id].some((n) => state.provinces[n].owner !== p.owner)) p.fortification = clamp(p.fortification + e.delta, 0, 5);
+        if (!p.external && MAP.adjacency[p.id].some((n) => state.provinces[n].owner !== p.owner && !state.provinces[n].external)) p.fortification = clamp(p.fortification + e.delta, 0, 5);
       }
       break;
     }

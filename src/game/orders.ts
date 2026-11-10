@@ -29,6 +29,7 @@ export function stepCost(state: GameState, a: string, b: string): number {
 
 function canStep(state: GameState, side: Side, a: string, b: string): boolean {
   const pb = state.provinces[b];
+  if (pb.external) return false; // 중국은 병력이 넘어오는 곳일 뿐, 어느 쪽도 들어갈 수 없다
   if (pb.owner !== side) return false; // 적 지역은 통과할 수 없다 (공격으로만 진입)
   if (MAP.adjacency[a].includes(b)) return true;
   // 해상 이동은 양쪽 항구 필요
@@ -64,7 +65,7 @@ export function findPath(state: GameState, side: Side, from: string, to: string)
 export function attackableTargets(state: GameState, u: Unit): string[] {
   const from = u.location;
   const out: string[] = [];
-  for (const n of MAP.adjacency[from]) if (state.provinces[n].owner !== u.side) out.push(n);
+  for (const n of MAP.adjacency[from]) if (state.provinces[n].owner !== u.side && !state.provinces[n].external) out.push(n);
   for (const n of MAP.sea[from]) {
     if (state.provinces[n].owner !== u.side && state.provinces[from].portCapacity > 0 && state.provinces[n].portCapacity > 0) out.push(n);
   }
@@ -89,6 +90,7 @@ export function validateOrder(state: GameState, u: Unit, type: OrderType, target
     case 'move': {
       if (!target || !state.provinces[target]) return fail('목적지가 올바르지 않습니다.');
       if (target === u.location) return fail('이미 그 지역에 있습니다.');
+      if (state.provinces[target].external) return fail('중국 영내로는 이동할 수 없습니다. 중국은 병력이 넘어오는 곳일 뿐입니다.');
       if (state.provinces[target].owner !== u.side) return fail('적 통제 지역으로는 이동할 수 없습니다. 공격 명령을 사용하세요.');
       if (!findPath(state, u.side, u.location, target)) return fail('아군 통제 지역만 지나서 도달할 수 있는 경로가 없습니다.');
       return { ok: true };

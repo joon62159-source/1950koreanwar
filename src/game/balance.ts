@@ -219,6 +219,20 @@ export const PLA = {
   wave1: 18,
   wave2: 18,
   depots: { gangye: 80, hyesan: 60 } as Record<string, number>,
+  /** 평양 함락 후 압록강을 건너 투입되는 중국군 총 규모(사단급) */
+  invasionTotal: 20,
+  /** 38선 월경 직후 중국 영내에 집결하는 규모(사단급) */
+  massingCount: 8,
+};
+
+/** 핵 투하 (1951년 6월 이벤트) */
+export const NUKE = {
+  /** 만주의 중국군 병력 손실·조직력·사기 하락. 이후 중국군은 회복·보충을 받지 못한다 */
+  plaLossFraction: 0.3,
+  plaOrgLoss: 35,
+  plaMoraleLoss: 25,
+  sovietChance: 0.4,
+  sovietDivisions: 40,
 };
 
 /** 정전협상과 전쟁 피로도 */

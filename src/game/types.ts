@@ -1,7 +1,7 @@
 // 게임 전체에서 쓰는 타입 정의. 로직은 순수 함수로 분리되어 있으며 상태는 직렬화 가능한 객체로만 구성한다.
 
 export type Side = 'south' | 'north';
-export type Faction = 'ROK' | 'UN' | 'KPA' | 'PLA';
+export type Faction = 'ROK' | 'UN' | 'KPA' | 'PLA' | 'SOV';
 export type Terrain = 'plain' | 'paddy' | 'hills' | 'mountain' | 'urban' | 'river' | 'coastal';
 
 export type EquipKey = 'rifles' | 'machineGuns' | 'mortars' | 'artillery' | 'antiTank' | 'tanks' | 'vehicles';
@@ -40,6 +40,8 @@ export interface Province {
   warDamage: number; // 0~100
   controlStability: number; // 0~100
   strategicValue: number; // 1~10
+  /** 한반도 밖의 외부 지역(중국). 아군은 진입·공격할 수 없고 영토 집계에서 제외된다 */
+  external?: boolean;
   supplyLevel: number; // 0~100 (현재 보급 도달 수준)
   supplied: boolean; // 보급 거점과 연결되어 있는가
   dataQuality: { population: DataQuality; industry: DataQuality; military: DataQuality };

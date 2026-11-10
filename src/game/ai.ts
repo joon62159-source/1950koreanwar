@@ -42,7 +42,7 @@ function distanceToHubs(state: GameState, side: Side): Record<string, number> {
     open.sort((a, b) => dist[b] - dist[a]);
     const cur = open.pop()!;
     for (const n of [...MAP.adjacency[cur], ...MAP.sea[cur]]) {
-      if (state.provinces[n].owner !== side) continue;
+      if (state.provinces[n].owner !== side || state.provinces[n].external) continue;
       const nd = dist[cur] + stepCost(state, cur, n);
       if (dist[n] === undefined || nd < dist[n]) {
         dist[n] = nd;
@@ -86,7 +86,8 @@ function withdrawTarget(state: GameState, u: Unit, hubDist: Record<string, numbe
 export function planAIOrders(state: GameState, side: Side, modeOverride?: AIMode): void {
   const phase = side === 'north' ? currentPhase(state) : 'naktong';
   const mode: AIMode = modeOverride ?? (phase === 'counter' ? 'withdraw' : 'offense');
-  const mine = sideUnits(state, side);
+  // 중국군은 참전 전에는 중국 영내에서 집결만 한다 (AI 가 마음대로 내려보내지 않는다)
+  const mine = sideUnits(state, side).filter((u) => !(u.faction === 'PLA' && !state.flags.plaIntervened));
   for (const u of mine) if (u.order?.issuedTurn !== state.turn) u.order = null; // 매 턴 새로 계획
   const free = new Set(mine.filter((u) => !u.order).map((u) => u.id));
   const ratioNeeded = mode === 'defense' ? 1.5 : mode === 'withdraw' ? AI_BALANCE.attackRatio.counter : AI_BALANCE.attackRatio[phase];
@@ -101,7 +102,7 @@ export function planAIOrders(state: GameState, side: Side, modeOverride?: AIMode
     if (!free.has(u.id)) continue;
     const prov = state.provinces[u.location];
     const enemyAdjPower = MAP.adjacency[u.location]
-      .filter((n) => state.provinces[n].owner !== side)
+      .filter((n) => state.provinces[n].owner !== side && !state.provinces[n].external)
       .reduce((s, n) => s + unitsAt(state, n, other(side)).reduce((a, e) => a + infantryPower(e), 0), 0);
     const ownLocal = unitsAt(state, u.location, side).reduce((a, e) => a + infantryPower(e), 0);
     const cutOff = !prov.supplied && u.supply < 20;
@@ -174,8 +175,8 @@ export function planAIOrders(state: GameState, side: Side, modeOverride?: AIMode
   // ── 3. 남은 부대: 전선 부대는 방어, 후방 부대는 필요한 전선으로 이동 ──
   const frontNeed: Record<string, number> = {};
   for (const p of Object.values(state.provinces)) {
-    if (p.owner !== side) continue;
-    const enemyN = MAP.adjacency[p.id].filter((n) => state.provinces[n].owner !== side);
+    if (p.owner !== side || p.external) continue;
+    const enemyN = MAP.adjacency[p.id].filter((n) => state.provinces[n].owner !== side && !state.provinces[n].external);
     if (!enemyN.length) continue;
     frontNeed[p.id] = enemyN.reduce((s, n) => {
       const sc = scored.find((x) => x.tid === n);

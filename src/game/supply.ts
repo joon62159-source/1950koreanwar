@@ -14,7 +14,7 @@ function connectedFrom(state: GameState, side: Side, starts: string[]): Set<stri
       ...MAP.sea[cur].filter((n) => state.provinces[cur].portCapacity > 0 && state.provinces[n].portCapacity > 0),
     ];
     for (const n of edges) {
-      if (!seen.has(n) && state.provinces[n].owner === side) {
+      if (!seen.has(n) && state.provinces[n].owner === side && !state.provinces[n].external) {
         seen.add(n);
         stack.push(n);
       }
@@ -100,7 +100,7 @@ export function computeSupply(state: GameState): void {
       ];
       for (const [n, sea] of edges) {
         const pn = state.provinces[n];
-        if (pn.owner !== side) continue;
+        if (pn.owner !== side || pn.external) continue;
         const nd = dist[cur] + hopCost(state, side, cur, n, sea);
         if (dist[n] === undefined || nd < dist[n]) {
           dist[n] = nd;
@@ -109,7 +109,7 @@ export function computeSupply(state: GameState): void {
       }
     }
     for (const p of Object.values(state.provinces)) {
-      if (p.owner !== side) continue;
+      if (p.owner !== side || p.external) continue; // 중국은 보급·포위 판정에 포함하지 않는다
       const d = dist[p.id];
       if (d === undefined) {
         p.supplied = false;

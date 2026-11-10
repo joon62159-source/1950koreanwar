@@ -43,6 +43,9 @@ export function gradeFor(total: number): string {
 
 export function checkOutcome(state: GameState): GameOutcome | null {
   const base = { turn: state.turn, date: state.date };
+  if (state.flags.worldWar) {
+    return { ...base, result: 'defeat', grade: '-', title: '세계대전으로 확대', reasons: ['핵 투하 이후 소련이 참전했고 확전이 선택되었습니다.', '전쟁은 한반도를 넘어 세계대전으로 번졌습니다.'], score: null };
+  }
   if (state.provinces.busan.owner === 'north') {
     return { ...base, result: 'defeat', grade: '-', title: '부산 함락', reasons: ['북한군이 핵심 보급 거점 부산을 점령했습니다.', '대한민국은 더 이상 조직적으로 저항할 수 없습니다.'], score: null };
   }
@@ -53,7 +56,7 @@ export function checkOutcome(state: GameState): GameOutcome | null {
     return { ...base, result: 'defeat', grade: '-', title: '전 부대 소멸', reasons: ['더 이상 운용할 수 있는 부대가 없습니다.'], score: null };
   }
   // 북한 체제 붕괴: 북측 지역이 거의 없고 중국군도 없음
-  const northOwned = Object.values(state.provinces).filter((p) => p.owner === 'north').length;
+  const northOwned = Object.values(state.provinces).filter((p) => p.owner === 'north' && !p.external).length;
   const plaLeft = Object.values(state.units).some((u) => u.faction === 'PLA');
   if (northOwned <= 4 && !plaLeft && state.provinces.pyongyang.owner === 'south') {
     const score = computeScore(state);

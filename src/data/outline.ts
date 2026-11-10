@@ -80,3 +80,15 @@ export const FORCED_LINKS: [string, string][] = [
   ['gapsan', 'hyesan'], ['gapsan', 'gangye'], ['gapsan', 'gilju'], ['gapsan', 'jangjin'], ['gapsan', 'bukcheong'],
   ['sinpo', 'bukcheong'], ['sinpo', 'hungnam'],
 ];
+
+/** 압록강·두만강 국경 너머 중국 영역 (경도, 위도). 앞부분은 PENINSULA_OUTLINE 의 북쪽 국경선과 같다. */
+export const CHINA_OUTLINE: [number, number][] = [
+  [130.55, 42.65], [130.25, 42.90], [129.95, 42.98], [129.70, 42.60], [129.35, 42.45],
+  [129.00, 42.30], [128.55, 42.05], [128.08, 42.00], [128.30, 41.70], [128.20, 41.40],
+  [127.70, 41.45], [127.20, 41.65], [126.90, 41.75], [126.45, 41.35], [126.15, 41.10],
+  [125.90, 40.80], [125.55, 40.55], [125.00, 40.45], [124.75, 40.32], [124.50, 40.18],
+  [124.30, 40.12], [123.40, 40.05], [122.50, 45.00], [131.00, 45.00], [131.00, 42.70],
+];
+
+/** 중국과 맞닿은 북한 프로빈스: 압록강·두만강 유역 전부 */
+export const CHINA_BORDER_PROVINCES = ['sinuiju', 'gusong', 'unsan', 'huichon', 'gangye', 'hyesan', 'gapsan', 'musan', 'hoeryong', 'najin'];

@@ -273,8 +273,34 @@ export default function MapView() {
         <g style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${k})`, transition: animating ? 'transform .7s ease-in-out' : 'none' }}>
           <rect x={-800} y={-800} width={MAP_WIDTH + 1600} height={MAP_HEIGHT + 1600} fill="#0c1a27" />
           <rect x={-800} y={-800} width={MAP_WIDTH + 1600} height={MAP_HEIGHT + 1600} fill="url(#grid)" />
+          {/* 한반도 밖 외부 지역: 중국 (압록강·두만강 건너편). 육지 윤곽 밖이므로 따로 그린다 */}
+          {game.provinces.china && (
+            <g>
+              <path
+                d={polys.china}
+                fill="#3a2622"
+                fillOpacity=".95"
+                stroke="#c9885a"
+                strokeOpacity=".75"
+                strokeWidth={1.4 / Math.sqrt(k)}
+                style={{ cursor: 'pointer' }}
+                onPointerEnter={() => setHover('china')}
+                onPointerLeave={() => setHover(null)}
+                onClick={() => {
+                  if (!drag.current?.moved) mapClick('china');
+                }}
+              />
+              {selected === 'china' && <path d={polys.china} fill="none" stroke="#ffe08a" strokeWidth={2.6 / Math.sqrt(k)} pointerEvents="none" />}
+              <text x={seatOf('china')[0]} y={seatOf('china')[1] - 34} textAnchor="middle" fontSize={22 / Math.pow(k, 0.4)} fill="#e8b48a" fillOpacity=".55" fontWeight={700} pointerEvents="none" letterSpacing="4">
+                중 국
+              </text>
+              <text x={seatOf('china')[0]} y={seatOf('china')[1] - 16} textAnchor="middle" fontSize={9.5 / Math.pow(k, 0.4)} fill="#e8b48a" fillOpacity=".55" pointerEvents="none">
+                (만주) · 아군 진입 불가
+              </text>
+            </g>
+          )}
           <g clipPath="url(#land)">
-            {Object.values(game.provinces).map((p) => {
+            {Object.values(game.provinces).filter((p) => !p.external).map((p) => {
               const f = fillFor(p, owners[p.id], layer);
               return (
                 <path

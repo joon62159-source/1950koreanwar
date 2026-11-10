@@ -151,3 +151,9 @@ export const PROVINCE_SEEDS: ProvinceSeed[] = [
   S('goseong', '고성', '고성군(강원)', '강원', 128.28, 38.50, 60, 1, 'coastal', 3, 1),
   S('tongcheon', '통천', '통천군', '강원', 127.78, 38.90, 70, 1, 'coastal', 3, 1),
 ];
+
+/** 한반도 밖 외부 프로빈스: 중국(만주). 보로노이 분할에는 넣지 않고 지도에 별도 도형으로 그린다. */
+export const CHINA_SEED: ProvinceSeed = {
+  id: 'china', name: '중국', hist: '중화인민공화국(동북 지방)', region: '중국',
+  lon: 127.1, lat: 43.5, pop: 0, ind: 0, terrain: 'plain', strat: 1,
+};

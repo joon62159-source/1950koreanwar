@@ -27,7 +27,7 @@ function enemyUnitsPresent(state: GameState, id: string, side: Side) {
 /** 후퇴 지점: 이웃한 자국 영토 중 적 부대가 없고 보급이 좋은 곳 */
 function pickRetreat(state: GameState, from: string, side: Side, avoid: Set<string>): string | null {
   const cands = [...MAP.adjacency[from], ...MAP.sea[from].filter(() => state.provinces[from].portCapacity > 0)]
-    .filter((n) => !avoid.has(n) && state.provinces[n].owner === side && !enemyUnitsPresent(state, n, side));
+    .filter((n) => !avoid.has(n) && state.provinces[n].owner === side && !state.provinces[n].external && !enemyUnitsPresent(state, n, side));
   if (!cands.length) return null;
   const score = (n: string) => {
     const enemyNeighbors = MAP.adjacency[n].filter((m) => state.provinces[m].owner !== side).length;
@@ -227,7 +227,7 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
     const prov = state.provinces[u.location];
     const cutOff = prov.owner !== u.side || !prov.supplied;
     // 포위: 자국 영토 안에서 보급 거점과 단절됨. 완료 시점에 조직력 -20%, 이후 턴마다 병력·조직력·장비가 악화된다.
-    const encircled = prov.owner === u.side && !prov.supplied;
+    const encircled = prov.owner === u.side && !prov.supplied && !prov.external;
     if (encircled) {
       const prev = u.encircledTurns ?? 0;
       const n = prev + 1;
@@ -292,12 +292,12 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
     else u.restTurns = (u.restTurns ?? 0) + 1;
     const ownSupplied = prov.owner === u.side && prov.supplied;
     if (ownSupplied) {
-      const enemyAdj = MAP.adjacency[u.location].some((n) => state.provinces[n].owner !== u.side);
+      const enemyAdj = MAP.adjacency[u.location].some((n) => state.provinces[n].owner !== u.side && !state.provinces[n].external);
       const stack = 1 + MEDICAL.restStack * Math.min(u.restTurns, MEDICAL.restStackCap);
       // 완전 휴식(휴식 명령)이 가장 크고, 이동만 한 부대는 낮으며, 전투 참여 부대는 휴식 보너스를 받지 못한다
       const activity = fought ? MEDICAL.fightMult : moved ? MEDICAL.movedMult : order === 'rest' ? MEDICAL.restMult * stack : 1 + (stack - 1) * 0.5;
       const medical = 0.6 + 0.4 * (prov.infrastructure / 100);
-      const rate = clamp(MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1) * (u.faction === 'UN' ? UN_REPLACEMENT.medicalMult : 1), 0, 0.9);
+      const rate = clamp(MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1) * (u.faction === 'UN' ? UN_REPLACEMENT.medicalMult : 1) * (u.faction === 'PLA' && state.flags.nukeUsed ? 0 : 1), 0, 0.9); // 핵 투하 이후 중국군은 회복 불가
       if (u.wounded > 0) {
         const ret = Math.min(u.wounded, u.maxStrength - u.strength, Math.max(rate > 0.03 ? 1 : 0, Math.round(u.wounded * rate)));
         if (ret > 0) {
@@ -326,7 +326,7 @@ function aiReplacements(state: GameState, days: number) {
   n.replacementPool += AI_BALANCE.replacementRefillPerDay * days;
   let budget = Math.min(n.replacementPool, AI_BALANCE.replacementPerDay * days);
   const needy = Object.values(state.units)
-    .filter((u) => u.side === 'north' && u.strength < u.maxStrength * 0.8 && state.provinces[u.location].owner === 'north' && state.provinces[u.location].supplied && u.supply >= 45 && !u.acted)
+    .filter((u) => u.side === 'north' && !(u.faction === 'PLA' && state.flags.nukeUsed) && !state.provinces[u.location].external && u.strength < u.maxStrength * 0.8 && state.provinces[u.location].owner === 'north' && state.provinces[u.location].supplied && u.supply >= 45 && !u.acted)
     .sort((a, b) => a.strength / a.maxStrength - b.strength / b.maxStrength);
   for (const u of needy) {
     if (budget <= 0) break;

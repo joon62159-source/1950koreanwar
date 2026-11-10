@@ -1,14 +1,14 @@
 import { Delaunay } from 'd3-delaunay';
-import { PROVINCE_SEEDS } from '../data/provinceSeeds';
-import { JEJU_OUTLINE, PENINSULA_OUTLINE, FORCED_LINKS, RAIL_LINES, RIDGES, SEA_LINKS } from '../data/outline';
+import { CHINA_SEED, PROVINCE_SEEDS } from '../data/provinceSeeds';
+import { CHINA_BORDER_PROVINCES, CHINA_OUTLINE, JEJU_OUTLINE, PENINSULA_OUTLINE, FORCED_LINKS, RAIL_LINES, RIDGES, SEA_LINKS } from '../data/outline';
 
 /** 지도 좌표계: 경도/위도 → SVG 좌표 (단순 등각 투영) */
 export const MAP_SCALE = 100;
 const LON0 = 124.0;
-const LAT0 = 43.1;
+const LAT0 = 44.3; // 지도 위쪽에 중국 영역을 그릴 여백 포함
 const COS = 0.79;
 export const MAP_WIDTH = Math.round(7.2 * COS * MAP_SCALE);
-export const MAP_HEIGHT = Math.round(10.4 * MAP_SCALE);
+export const MAP_HEIGHT = Math.round(11.6 * MAP_SCALE);
 
 export function project(lon: number, lat: number): [number, number] {
   return [(lon - LON0) * COS * MAP_SCALE, (LAT0 - lat) * MAP_SCALE];
@@ -90,6 +90,14 @@ function build(): MapData {
     };
   });
 
+  geometry[CHINA_SEED.id] = {
+    id: CHINA_SEED.id,
+    seat: project(CHINA_SEED.lon, CHINA_SEED.lat),
+    lon: CHINA_SEED.lon,
+    lat: CHINA_SEED.lat,
+    polygon: CHINA_OUTLINE.map(([lo, la]) => project(lo, la)),
+  };
+
   const idx: Record<string, number> = {};
   seeds.forEach((s, i) => (idx[s.id] = i));
   const adj: Record<string, Set<string>> = {};
@@ -132,6 +140,8 @@ function build(): MapData {
   for (const r of RIDGES) for (const [a, b] of r.passes) if (idx[a] !== undefined && idx[b] !== undefined) link(a, b, adj);
 
   for (const [a, b] of FORCED_LINKS) link(a, b, adj);
+  adj[CHINA_SEED.id] = new Set();
+  for (const b of CHINA_BORDER_PROVINCES) link(CHINA_SEED.id, b, adj); // 압록강·두만강 유역 전부와 맞닿음
 
   const rail: Record<string, Set<string>> = {};
   seeds.forEach((s) => (rail[s.id] = new Set()));
@@ -144,8 +154,10 @@ function build(): MapData {
     }
   }
 
+  rail[CHINA_SEED.id] = new Set();
   const sea: Record<string, Set<string>> = {};
   seeds.forEach((s) => (sea[s.id] = new Set()));
+  sea[CHINA_SEED.id] = new Set();
   for (const [a, b] of SEA_LINKS) {
     if (adj[a].has(b)) continue; // 이미 육로로 연결되어 있으면 해상 연결 불필요
     link(a, b, sea);
@@ -161,7 +173,7 @@ function build(): MapData {
     rail: toArr(rail),
     sea: toArr(sea),
     distKm: (a, b) => {
-      const A = seeds[idx[a]], B = seeds[idx[b]];
+      const A = a === CHINA_SEED.id ? CHINA_SEED : seeds[idx[a]], B = b === CHINA_SEED.id ? CHINA_SEED : seeds[idx[b]];
       return kmBetween(A.lon, A.lat, B.lon, B.lat);
     },
     outlinePath: toPath(PENINSULA_OUTLINE),

@@ -1,4 +1,4 @@
-import { PROVINCE_SEEDS } from '../data/provinceSeeds';
+import { CHINA_SEED, PROVINCE_SEEDS } from '../data/provinceSeeds';
 import { INITIAL_UNITS, REINFORCEMENTS, type UnitTemplate } from '../data/orbat';
 import { ECONOMY, AI_BALANCE, SCENARIO } from './balance';
 import { MAP } from './map';
@@ -9,7 +9,7 @@ import { addLog } from './util';
 import { updateIntel } from './visibility';
 import type { GameState, Province, Side } from './types';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 const SOUTH_POP_TOTAL = 20200; // 천 명, 1949년 전후 남한 총인구 약 2,000만 (추정 총량)
 const NORTH_POP_TOTAL = 9600; // 천 명, 북한 총인구 추정 총량
 
@@ -55,6 +55,35 @@ function buildProvinces(): Record<string, Province> {
       dataQuality: { population: 'estimated', industry: 'game', military: 'game' },
     };
   }
+  out[CHINA_SEED.id] = {
+    id: CHINA_SEED.id,
+    name: CHINA_SEED.name,
+    historicalName: CHINA_SEED.hist,
+    geographicalRegion: CHINA_SEED.region,
+    initialOwner: 'north',
+    owner: 'north',
+    population: 0,
+    draftEligible: 0,
+    drafted: 0,
+    recruitablePopulation: 0,
+    industrialCapacity: 0,
+    industrialBase: 0,
+    equipmentProduction: 0,
+    infrastructure: 60,
+    terrain: 'plain',
+    roadConnections: [...MAP.adjacency[CHINA_SEED.id]],
+    railwayConnections: [],
+    seaConnections: [],
+    portCapacity: 0,
+    fortification: 0,
+    warDamage: 0,
+    controlStability: 100,
+    strategicValue: 1,
+    supplyLevel: 100,
+    supplied: true,
+    external: true,
+    dataQuality: { population: 'estimated', industry: 'game', military: 'game' },
+  };
   return out;
 }
 
@@ -80,6 +109,7 @@ export function applyReinforcement(state: GameState, id: string): string | null 
   const r = REINFORCEMENTS.find((x) => x.id === id);
   if (!r || state.flags[`reinf:${id}`]) return null;
   if (r.requiresFlag && !state.flags[r.requiresFlag]) return null;
+  if (id.startsWith('pla-wave') && state.flags.nukeUsed) return null; // 핵 투하 이후 중국군 증원 불가
   state.flags[`reinf:${id}`] = true;
   r.units.forEach((t, i) => {
     if (t.faction === 'PLA' || t.faction === 'KPA') {

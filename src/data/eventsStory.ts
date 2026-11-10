@@ -1,4 +1,5 @@
-import type { Condition, HistoricalEvent } from './events';
+import type { Condition, EventChoice, HistoricalEvent } from './events';
+import { NUKE, PLA } from '../game/balance';
 
 /**
  * 전황 연동 스토리 이벤트.
@@ -17,6 +18,7 @@ function story(
   conditions: Condition[],
   effects: HistoricalEvent['effects'],
   window: [string, string] = [BEGIN, END],
+  choices: EventChoice[] = [],
 ): HistoricalEvent {
   return {
     id,
@@ -25,7 +27,7 @@ function story(
     earliestDate: window[0],
     latestDate: window[1],
     conditions,
-    choices: [],
+    choices,
     effects,
     historicalContext: '',
     historicalDate: '(전황 연동)',
@@ -152,6 +154,107 @@ export const STORY_EVENTS: HistoricalEvent[] = [
       { kind: 'nation', side: 'south', field: 'popularSupport', delta: 5 },
       { kind: 'diplomacy', field: 'chinaThreat', delta: 15 },
       { kind: 'units', side: 'south', area: 'all', morale: 5 },
+    ],
+  ),
+  story(
+    'pla_massing',
+    '압록강 너머, 중국군 집결',
+    '아군이 38선을 넘어 북진하자 중국 동북 지방에 대규모 병력이 모이기 시작했습니다. 아직 국경을 넘지는 않았지만, 지도 위쪽의 중국 영내에 사단들이 늘어갑니다. 이 병력이 압록강을 건너오는 순간이 이 전쟁의 분기점입니다.',
+    [{ kind: 'beyond38' }, { kind: 'flagUnset', key: 'plaIntervened' }],
+    [
+      { kind: 'spawnPla', count: PLA.massingCount, label: '집결군', provinces: ['china'] },
+      { kind: 'flag', key: 'plaMassing', value: true },
+      { kind: 'diplomacy', field: 'chinaThreat', delta: 12 },
+    ],
+  ),
+  story(
+    'nuclear_debate',
+    '만주에 핵을? — 사령관의 주장',
+    '전선의 교착이 이어지자 UN군 총사령관이 만주의 중국군 기지와 보급 거점에 핵을 투하해야 한다고 공개적으로 주장했습니다. 워싱턴은 결정을 앞두고 있습니다. 핵을 쓰면 중국군은 회복할 수 없는 타격을 입겠지만 소련이 개입할 수 있고, 전쟁이 세계대전으로 번질 위험이 있습니다.',
+    [{ kind: 'flagSet', key: 'plaIntervened' }],
+    [],
+    ['1951-06-01', '1951-06-30'],
+    [
+      {
+        id: 'drop',
+        label: '핵을 투하한다',
+        description: '만주의 중국군이 큰 타격을 입고 회복·보충을 받지 못합니다. 그러나 40% 확률로 소련이 40개 사단을 보내 참전하고, 이후 세계대전으로 확대될 수 있습니다. 국제 여론도 크게 악화됩니다.',
+        isCounterfactual: true,
+        effects: [
+          { kind: 'nuke' },
+          { kind: 'chance', p: NUKE.sovietChance, then: [{ kind: 'flag', key: 'sovietPending', value: true }] },
+        ],
+      },
+      {
+        id: 'refuse',
+        label: '투하를 거부한다',
+        description: '전황은 현상 유지됩니다. 총사령관은 명령 불복종 논란 끝에 해임됩니다.',
+        isCounterfactual: false,
+        effects: [
+          { kind: 'flag', key: 'macarthurFired', value: true },
+          { kind: 'diplomacy', field: 'unSupport', delta: 4 },
+        ],
+      },
+    ],
+  ),
+  story(
+    'macarthur_relieved',
+    '맥아더 해임',
+    '핵 투하를 거부한 대통령은 끝내 총사령관을 해임했습니다. 전선 지휘부와 군 안팎이 크게 동요합니다.',
+    [{ kind: 'flagSet', key: 'macarthurFired' }],
+    [
+      { kind: 'units', side: 'south', area: 'all', morale: -4 },
+      { kind: 'nation', side: 'south', field: 'popularSupport', delta: -2 },
+    ],
+  ),
+  story(
+    'nuclear_aftermath',
+    '만주의 버섯구름',
+    '핵이 투하되었습니다. 만주의 중국군 기지가 순식간에 사라졌고 중국군은 더 이상 병력을 회복하거나 보충받을 수 없습니다. 세계가 충격에 빠졌고 UN의 지지도 흔들립니다.',
+    [{ kind: 'flagSet', key: 'nukeUsed' }],
+    [
+      { kind: 'diplomacy', field: 'unSupport', delta: -18 },
+      { kind: 'weariness', delta: -2 },
+    ],
+  ),
+  story(
+    'soviet_intervention',
+    '소련군 참전',
+    '핵 투하에 대한 보복으로 소련이 극동 군관구의 40개 사단을 투입했습니다. 만주와 북한 국경 지대로 소련군이 쏟아져 내려옵니다. 이 전쟁은 더 이상 한반도의 전쟁이 아닙니다.',
+    [{ kind: 'flagSet', key: 'sovietPending' }],
+    [
+      { kind: 'sovietJoin', count: NUKE.sovietDivisions, label: '극동군' },
+      { kind: 'diplomacy', field: 'sovietSupport', delta: 25 },
+      { kind: 'flag', key: 'sovietIntervened', value: true },
+      { kind: 'flagTurn', key: 'sovietTurn' },
+    ],
+  ),
+  story(
+    'world_war_risk',
+    '세계대전의 문턱',
+    '소련군이 참전하자 양 진영의 지도부는 전면전의 갈림길에 섰습니다. 확전하면 전 세계가 전쟁에 휘말립니다. 한 걸음 물러서면 협상의 문이 열립니다.',
+    [{ kind: 'flagTurnsAgo', key: 'sovietTurn', min: 3 }],
+    [],
+    [BEGIN, END],
+    [
+      {
+        id: 'escalate',
+        label: '확전을 선택한다',
+        description: '전쟁이 세계대전으로 번져 게임이 끝납니다.',
+        isCounterfactual: true,
+        effects: [{ kind: 'flag', key: 'worldWar', value: true }],
+      },
+      {
+        id: 'deescalate',
+        label: '확전을 막고 협상에 나선다',
+        description: '정전협상이 시작되고 국제 지지가 오르지만 국민 지지는 하락합니다.',
+        isCounterfactual: true,
+        effects: [
+          { kind: 'flag', key: 'talks', value: 'on' },
+          { kind: 'diplomacy', field: 'unSupport', delta: 8 },
+          { kind: 'nation', side: 'south', field: 'popularSupport', delta: -4 },
+        ],
+      },
     ],
   ),
   story(
