@@ -85,7 +85,7 @@ export default function BottomPanel() {
         </div>
         <div className="flex gap-1.5">
           <button className="btn" onClick={() => setModal('briefing')} disabled={!game.briefing.length}>브리핑</button>
-          <button className="btn btn-primary flex-1 py-2 text-[14px] tracking-widest" disabled={blocked} onClick={endTurn}>턴 종료 ▶</button>
+          <button data-tour="endturn" className="btn btn-primary flex-1 py-2 text-[14px] tracking-widest" disabled={blocked} onClick={endTurn}>턴 종료 ▶</button>
         </div>
       </div>
     </footer>

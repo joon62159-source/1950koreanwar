@@ -30,6 +30,9 @@ interface Store {
   mode: MapMode;
   layer: MapLayer;
   modal: Modal;
+  /** 첫 플레이 안내(튜토리얼) 표시 여부 */
+  tutorial: boolean;
+  setTutorial: (on: boolean) => void;
   battleFocus: string | null;
   toast: { text: string; kind: 'ok' | 'err' } | null;
   saveInfo: SaveSlotInfo;
@@ -98,6 +101,8 @@ export const useGame = create<Store>((set, get) => ({
   mode: 'select',
   layer: 'control',
   modal: null,
+  tutorial: false,
+  setTutorial: (tutorial) => set({ tutorial }),
   battleFocus: null,
   toast: null,
   saveInfo: peekSave(),

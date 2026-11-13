@@ -52,3 +52,12 @@ body { background: #0b0f14; color: #d7dde5; font-family: var(--font-sans); overf
 .capture-flash { animation: capture-flash 1.4s ease-out 1 both; }
 @keyframes float-up { 0% { opacity: 0; transform: translateY(6px); } 20% { opacity: 1; } 100% { opacity: 1; transform: translateY(-10px); } }
 .float-up { animation: float-up 1.2s ease-out both; }
+
+/* 이벤트 장면 연출: 카메라 천천히 당기기, 불씨·눈·먼지 흩날림 */
+@keyframes scene-zoom { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.08) translate(-8px, -4px); } }
+@keyframes fx-rise { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(14px, -80px); } }
+@keyframes fx-snow { 0% { opacity: 0; transform: translate(0, -10px); } 12% { opacity: 1; } 100% { opacity: 0; transform: translate(-40px, 250px); } }
+@keyframes fx-twinkle { 0%, 100% { opacity: .9; } 50% { opacity: .25; } }
+@keyframes fx-flicker { 0%, 100% { opacity: 1; } 45% { opacity: .78; } 60% { opacity: .95; } }
+.scene-zoom { transform-origin: 55% 60%; animation: scene-zoom 24s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .scene-zoom, .scene-fx * { animation: none !important; } }

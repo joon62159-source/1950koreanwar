@@ -5,6 +5,7 @@ import { MAP } from '../game/map';
 import { forceStats, sideTotals } from '../game/casualty';
 import { nationalDraftPool } from '../game/manpower';
 import { STORY_NARRATIVES } from './eventNarrativeStory';
+import type { PortraitId } from '../components/Portrait';
 
 /**
  * 이벤트 창 연출 데이터 (HOI4식): 장면 그림, 한 줄 제목(kicker), 본문 서술, 인용구.
@@ -196,6 +197,33 @@ export const NARRATIVES: Record<string, Narrative> = {
 };
 
 Object.assign(NARRATIVES, STORY_NARRATIVES);
+
+/** 이벤트 창에 함께 보여 줄 인물 (HOI4식 초상) */
+export const EVENT_PORTRAITS: Record<string, PortraitId> = {
+  kpa_invasion: 'kim',
+  unsc_support: 'truman',
+  seoul_crisis: 'rhee',
+  un_command: 'macarthur',
+  macarthur_arrives: 'macarthur',
+  walker_stand: 'walker',
+  naktong_crisis: 'walker',
+  incheon_preparation: 'macarthur',
+  incheon_landing: 'macarthur',
+  incheon_success: 'macarthur',
+  seoul_recaptured: 'macarthur',
+  seoul_fall_battle: 'rhee',
+  seoul_fall: 'rhee',
+  daejeon_fall: 'walker',
+  pyongyang_fall: 'kim',
+  china_warning: 'mao',
+  pla_massing: 'peng',
+  china_intervention: 'peng',
+  china_second_offensive: 'peng',
+  nuclear_debate: 'macarthur',
+  macarthur_relieved: 'macarthur',
+  soviet_intervention: 'stalin',
+  world_war_risk: 'truman',
+};
 
 // ───────── 효과 요약 (HOI4의 선택지 효과 목록) ─────────
 export interface EffectLine {

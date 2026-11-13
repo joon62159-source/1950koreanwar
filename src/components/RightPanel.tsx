@@ -260,7 +260,7 @@ export default function RightPanel() {
   const p = selected ? game.provinces[selected] : null;
   if (!p) {
     return (
-      <aside className="panel flex w-[300px] shrink-0 flex-col items-center justify-center gap-2 border-y-0 border-r-0 p-4 text-center text-[12px] text-slate-500">
+      <aside data-tour="right" className="panel flex w-[300px] shrink-0 flex-col items-center justify-center gap-2 border-y-0 border-r-0 p-4 text-center text-[12px] text-slate-500">
         <div className="text-3xl">🗺</div>
         지도에서 지역을 클릭하면 정보와<br />부대·내정 명령이 표시됩니다.
         <div className="mt-2 text-[11px] text-slate-600">마우스 휠: 확대·축소 / 드래그: 이동</div>
@@ -271,7 +271,7 @@ export default function RightPanel() {
   const nUnits = Object.values(game.units).filter((u) => u.location === p.id && u.side === game.playerSide).length;
   void MAP;
   return (
-    <aside className="panel flex w-[300px] shrink-0 flex-col border-y-0 border-r-0">
+    <aside data-tour="right" className="panel flex w-[300px] shrink-0 flex-col border-y-0 border-r-0">
       <div className="flex border-b border-ink-700">
         {tabs.map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} className={'flex-1 py-2 text-[12px] font-bold ' + (tab === id ? 'border-b-2 border-brass text-brass' : 'text-slate-500 hover:text-slate-300')}>

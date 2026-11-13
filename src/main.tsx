@@ -10,6 +10,6 @@ if (import.meta.env.DEV) (window as unknown as { __game: typeof useGame }).__gam
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {import.meta.env.DEV && location.hash === '#scenes' ? <DevGallery /> : <App />}
+    {import.meta.env.DEV && (location.hash === '#scenes' || location.hash.startsWith('#portrait') || location.hash.startsWith('#scene:')) ? <DevGallery /> : <App />}
   </StrictMode>,
 );

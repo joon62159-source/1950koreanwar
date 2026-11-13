@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { PortraitFrame, type PortraitId } from './Portrait';
 import type { ReactNode } from 'react';
 
 /**
@@ -361,12 +363,75 @@ function Scene({ kind, id }: { kind: SceneKind; id: string }) {
   }
 }
 
-export default function EventScene({ kind, title, date, kicker }: { kind: SceneKind; title: string; date: string; kicker?: string }) {
+type FxMode = 'embers' | 'snow' | 'dust' | 'stars';
+const FX: Record<SceneKind, FxMode> = {
+  dawn_barrage: 'embers', headquarters: 'stars', bridge: 'embers', burning_city: 'embers', port: 'dust', trench: 'embers',
+  landing: 'embers', advance: 'dust', winter_march: 'snow', talks: 'dust', conscripts: 'dust', memorial: 'stars',
+};
+
+/** 흩날리는 불씨·눈·먼지, 깜빡이는 별 (CSS 애니메이션) */
+function Particles({ mode, seed }: { mode: FxMode; seed: number }) {
+  const r = rng(seed);
+  const n = mode === 'snow' ? 70 : mode === 'stars' ? 26 : 44;
+  return (
+    <g className="scene-fx" pointerEvents="none">
+      {Array.from({ length: n }, (_, i) => {
+        const x = r() * W;
+        const y = mode === 'embers' ? 110 + r() * 130 : mode === 'stars' ? r() * 110 : r() * H;
+        const rad = mode === 'snow' ? r() * 1.6 + 0.5 : mode === 'stars' ? r() * 1.1 + 0.4 : r() * 1.3 + 0.4;
+        const dur = (mode === 'snow' ? 5 + r() * 6 : mode === 'stars' ? 2 + r() * 3 : 4 + r() * 6).toFixed(1);
+        const delay = (-r() * 10).toFixed(1);
+        const anim = mode === 'snow' ? 'fx-snow' : mode === 'stars' ? 'fx-twinkle' : 'fx-rise';
+        const fill = mode === 'embers' ? '#ffb25a' : mode === 'snow' ? '#f4f8ff' : mode === 'stars' ? '#fff' : '#e8d9b8';
+        return <circle key={i} cx={x} cy={y} r={rad} fill={fill} style={{ animation: `${anim} ${dur}s linear ${delay}s infinite` }} opacity={mode === 'dust' ? 0.45 : 0.9} />;
+      })}
+    </g>
+  );
+}
+
+/** 전경 풀숲 실루엣 + 필름 그레인 + 색보정 (모든 장면 공통 후처리) */
+function PostFx({ id, kind }: { id: string; kind: SceneKind }) {
+  const r = rng(404);
+  let blades = `M0 ${H} L0 ${H - 6}`;
+  for (let x = 0; x <= W; x += 7) blades += ` L${x} ${(H - 5 - r() * 9).toFixed(1)} L${x + 3.5} ${(H - 2 - r() * 3).toFixed(1)}`;
+  blades += ` L${W} ${H} Z`;
+  const g = rng(99);
+  const grain = Array.from({ length: 150 }, (_, i) => <rect key={i} x={g() * 80} y={g() * 80} width="1" height="1" fill={g() > 0.5 ? '#fff' : '#000'} opacity={0.05 + g() * 0.12} />);
+  return (
+    <>
+      <defs>
+        <pattern id={`${id}-grain`} width="80" height="80" patternUnits="userSpaceOnUse">{grain}</pattern>
+        <linearGradient id={`${id}-haze`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#000" stopOpacity=".35" />
+          <stop offset="0.35" stopColor="#000" stopOpacity="0" />
+          <stop offset="0.72" stopColor="#ffb878" stopOpacity="0" />
+          <stop offset="1" stopColor="#ffb878" stopOpacity=".16" />
+        </linearGradient>
+        <radialGradient id={`${id}-bloom`} cx="0.5" cy="0.62" r="0.55">
+          <stop offset="0" stopColor="#ffd9a0" stopOpacity=".18" />
+          <stop offset="1" stopColor="#ffd9a0" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <Particles mode={FX[kind]} seed={kind.length * 31 + 7} />
+      <rect width={W} height={H} fill={`url(#${id}-bloom)`} style={{ mixBlendMode: 'screen' }} />
+      <rect width={W} height={H} fill={`url(#${id}-haze)`} />
+      <rect width={W} height={H} fill="#ff9a4a" opacity=".07" style={{ mixBlendMode: 'soft-light' }} />
+      <rect width={W} height={H} fill="#1b3a66" opacity=".1" style={{ mixBlendMode: 'multiply' }} />
+      <path d={blades} fill="#020407" opacity=".92" />
+      <rect width={W} height={H} fill={`url(#${id}-grain)`} />
+    </>
+  );
+}
+
+export default function EventScene({ kind, title, date, kicker, portrait, imageSrc }: { kind: SceneKind; title: string; date: string; kicker?: string; portrait?: PortraitId; imageSrc?: string }) {
   const id = `sc-${kind}`;
+  const [imgFailed, setImgFailed] = useState(false);
+  const useImage = !!imageSrc && !imgFailed;
   return (
     <div>
       <div className="relative overflow-hidden">
-        <svg viewBox={`0 0 ${W} ${H}`} className="block w-full" preserveAspectRatio="xMidYMid slice" role="img" aria-label={title}>
+        {useImage && <img src={imageSrc} alt={title} className="block w-full" style={{ aspectRatio: `${W} / ${H}`, objectFit: 'cover' }} onError={() => setImgFailed(true)} />}
+        {!useImage && <svg viewBox={`0 0 ${W} ${H}`} className="scene-zoom block w-full" preserveAspectRatio="xMidYMid slice" role="img" aria-label={title}>
           <defs>
             <radialGradient id={`${id}-vig`} cx="50%" cy="50%" r="75%">
               <stop offset="0.6" stopColor="#000" stopOpacity="0" />
@@ -375,11 +440,13 @@ export default function EventScene({ kind, title, date, kicker }: { kind: SceneK
             <pattern id={`${id}-scan`} width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#000" opacity="0.12" /></pattern>
           </defs>
           <Scene kind={kind} id={id} />
+          <PostFx id={id} kind={kind} />
           <rect width={W} height={H} fill={`url(#${id}-scan)`} />
           <rect width={W} height={H} fill={`url(#${id}-vig)`} />
-        </svg>
+        </svg>}
+        {portrait && <div className="absolute left-4 top-3"><PortraitFrame id={portrait} /></div>}
         <div className="absolute right-3 top-2 text-[10px] tracking-widest text-[#e1c274]/90 drop-shadow">{date}</div>
-        <div className="absolute left-3 top-2 rounded bg-black/40 px-1.5 text-[9px] text-slate-300/80">일러스트</div>
+        {!useImage && <div className="absolute bottom-2 right-3 rounded bg-black/40 px-1.5 text-[9px] text-slate-300/80">일러스트</div>}
       </div>
       <div className="border-y-2 border-[#3a2f18] bg-gradient-to-b from-[#1f1a0e] to-[#16130c] px-5 py-2.5">
         {kicker && <div className="text-[11px] font-bold tracking-[0.3em] text-[#e1c274]">{kicker}</div>}

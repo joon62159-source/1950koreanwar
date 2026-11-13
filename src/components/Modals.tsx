@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useGame } from '../store/gameStore';
 import { EVENT_BY_ID, type Effect } from '../data/events';
-import { NARRATIVES, describeEffects, situationLines } from '../data/eventNarrative';
+import { EVENT_PORTRAITS, NARRATIVES, describeEffects, situationLines } from '../data/eventNarrative';
 import EventScene from './EventScene';
+import { EVENT_IMAGES } from '../data/eventImages';
 import { formatDate } from '../game/util';
 import { fmt } from './common';
 import { SCORE } from '../game/balance';
@@ -50,7 +51,7 @@ export function EventModal() {
   return (
     <Shell width={760} z={60}>
       <div className="overflow-hidden rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
-        <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date)} />
+        <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date)} portrait={EVENT_PORTRAITS[ev.id]} imageSrc={EVENT_IMAGES[ev.id]} />
         <div className="p-5">
           {ev.isCounterfactual && <div className="mb-2"><span className="tag tag-fake">가상 시나리오</span></div>}
           {nar ? (
@@ -256,6 +257,7 @@ export function MenuModal() {
 
 export function HelpModal() {
   const setModal = useGame((s) => s.setModal);
+  const setTutorial = useGame((s) => s.setTutorial);
   return (
     <Shell width={640}>
       <div className="panel rounded p-5 text-[12.5px] leading-[1.7]">
@@ -271,7 +273,7 @@ export function HelpModal() {
         <div className="mt-3 rounded border border-ink-600 bg-ink-800/70 p-2 text-[11.5px] text-slate-300">
           ⚠ 지역 인구·산업·부대 능력치는 <b>추정치 또는 게임 밸런스용 값</b>이며 공식 통계가 아닙니다. 이벤트의 "가상의 선택"은 실제 역사에서 선택되지 않은 대안입니다.
         </div>
-        <div className="mt-3 text-right"><button className="btn btn-blue px-4" onClick={() => setModal('menu')}>닫기</button></div>
+        <div className="mt-3 flex justify-between"><button className="btn" onClick={() => { setModal(null); setTutorial(true); }}>튜토리얼 다시 보기</button><button className="btn btn-blue px-4" onClick={() => setModal('menu')}>닫기</button></div>
       </div>
     </Shell>
   );

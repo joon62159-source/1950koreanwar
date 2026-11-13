@@ -24,7 +24,7 @@ export default function TopBar() {
   const days = turnDaysFor(game.date);
   const ownCount = Object.values(game.provinces).filter((p) => p.owner === game.playerSide).length;
   return (
-    <header className="panel flex h-[58px] shrink-0 items-stretch divide-x divide-ink-700 border-x-0 border-t-0">
+    <header data-tour="topbar" className="panel flex h-[58px] shrink-0 items-stretch divide-x divide-ink-700 border-x-0 border-t-0">
       <div className="flex items-center gap-3 px-4">
         <div className="font-serif text-[17px] font-black tracking-wider text-brass">1950 — 운명의 한반도</div>
       </div>
@@ -55,7 +55,7 @@ export default function TopBar() {
         ))}
       </div>
       <div className="ml-auto flex items-center gap-2 px-3">
-        <button className="btn btn-blue" onClick={() => setModal('manage')}>국가 관리</button>
+        <button data-tour="manage" className="btn btn-blue" onClick={() => setModal('manage')}>국가 관리</button>
         <button className="btn" onClick={() => setModal('help')}>도움말</button>
         <button className="btn" onClick={() => setModal('menu')}>메뉴</button>
       </div>
