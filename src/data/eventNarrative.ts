@@ -5,7 +5,6 @@ import { MAP } from '../game/map';
 import { forceStats, sideTotals } from '../game/casualty';
 import { nationalDraftPool } from '../game/manpower';
 import { STORY_NARRATIVES } from './eventNarrativeStory';
-import type { PortraitId } from '../components/Portrait';
 
 /**
  * 이벤트 창 연출 데이터 (HOI4식): 장면 그림, 한 줄 제목(kicker), 본문 서술, 인용구.
@@ -198,32 +197,36 @@ export const NARRATIVES: Record<string, Narrative> = {
 
 Object.assign(NARRATIVES, STORY_NARRATIVES);
 
-/** 이벤트 창에 함께 보여 줄 인물 (HOI4식 초상) */
-export const EVENT_PORTRAITS: Record<string, PortraitId> = {
-  kpa_invasion: 'kim',
-  unsc_support: 'truman',
-  seoul_crisis: 'rhee',
-  un_command: 'macarthur',
-  macarthur_arrives: 'macarthur',
-  walker_stand: 'walker',
-  naktong_crisis: 'walker',
-  incheon_preparation: 'macarthur',
-  incheon_landing: 'macarthur',
-  incheon_success: 'macarthur',
-  seoul_recaptured: 'macarthur',
-  seoul_fall_battle: 'rhee',
-  seoul_fall: 'rhee',
-  daejeon_fall: 'walker',
-  pyongyang_fall: 'kim',
-  china_warning: 'mao',
-  pla_massing: 'peng',
-  china_intervention: 'peng',
-  china_second_offensive: 'peng',
-  nuclear_debate: 'macarthur',
-  macarthur_relieved: 'macarthur',
-  soviet_intervention: 'stalin',
-  world_war_risk: 'truman',
+/** 이벤트마다 서로 다른 장면을 쓰도록 지정 (같은 그림을 여러 이벤트가 돌려 쓰지 않는다) */
+const SCENE_BY_EVENT: Record<string, SceneKind> = {
+  macarthur_arrives: 'airstrip',
+  macarthur_relieved: 'tokyo_crowd',
+  nuclear_debate: 'war_room',
+  china_warning: 'telegram',
+  nuclear_aftermath: 'mushroom',
+  seoul_fall: 'empty_capital',
+  seoul_recaptured: 'flag_raise',
+  daejeon_fall: 'railway_retreat',
+  pyongyang_fall: 'river_tank',
+  incheon_preparation: 'ship_conference',
+  incheon_success: 'beachhead',
+  incheon_failure: 'wreck_beach',
+  world_war_risk: 'hotline',
+  us_vanguard: 'convoy',
+  naktong_crisis: 'river_defense',
+  walker_stand: 'command_post',
+  seoul_defense_held: 'victory_street',
+  front_crisis: 'hilltop',
+  china_second_offensive: 'bugle_charge',
+  pla_massing: 'rail_yard',
+  seoul_second_fall: 'refugees_ice',
+  soviet_intervention: 'red_train',
+  yalu_reached: 'river_border',
+  phase1_review: 'campaign_map',
+  trench_warfare: 'barbed_wire',
 };
+for (const [id, scene] of Object.entries(SCENE_BY_EVENT)) if (NARRATIVES[id]) NARRATIVES[id].scene = scene;
+
 
 // ───────── 효과 요약 (HOI4의 선택지 효과 목록) ─────────
 export interface EffectLine {

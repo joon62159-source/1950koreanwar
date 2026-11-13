@@ -148,3 +148,11 @@ describe('중국 프로빈스는 병력이 넘어오는 곳일 뿐이다', () =>
     expect(g.pendingEvents.map((p) => p.eventId)).toContain('soviet_intervention');
   });
 });
+
+describe('이벤트 장면 그림', () => {
+  it('같은 장면 그림을 여러 이벤트가 돌려 쓰지 않는다 (장면당 최대 2개 이벤트)', () => {
+    const count: Record<string, string[]> = {};
+    for (const [id, n] of Object.entries(NARRATIVES).filter(([k]) => !k.startsWith('casualty_report'))) (count[n.scene] ??= []).push(id);
+    for (const [scene, ids] of Object.entries(count)) expect(ids.length, `${scene}: ${ids.join(', ')}`).toBeLessThanOrEqual(2);
+  });
+});

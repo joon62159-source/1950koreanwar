@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../store/gameStore';
 import { EVENT_BY_ID, type Effect } from '../data/events';
-import { EVENT_PORTRAITS, NARRATIVES, describeEffects, situationLines } from '../data/eventNarrative';
+import { NARRATIVES, describeEffects, situationLines } from '../data/eventNarrative';
 import EventScene from './EventScene';
 import { EVENT_IMAGES } from '../data/eventImages';
 import { formatDate } from '../game/util';
@@ -51,7 +51,7 @@ export function EventModal() {
   return (
     <Shell width={760} z={60}>
       <div className="overflow-hidden rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
-        <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date)} portrait={EVENT_PORTRAITS[ev.id]} imageSrc={EVENT_IMAGES[ev.id]} />
+        <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date)} imageSrc={EVENT_IMAGES[ev.id]} />
         <div className="p-5">
           {ev.isCounterfactual && <div className="mb-2"><span className="tag tag-fake">가상 시나리오</span></div>}
           {nar ? (
