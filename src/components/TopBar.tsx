@@ -6,7 +6,7 @@ import { Bar, colorFor, fmt } from './common';
 
 function Metric({ label, value, color, children }: { label: string; value: React.ReactNode; color?: string; children?: React.ReactNode }) {
   return (
-    <div className="flex min-w-[88px] flex-col justify-center px-3">
+    <div className="flex min-w-[64px] shrink-0 flex-col justify-center whitespace-nowrap px-2 xl:min-w-[88px] xl:px-3">
       <span className="text-[10px] tracking-wider text-slate-500">{label}</span>
       <span className="text-[15px] font-bold tabular-nums leading-5" style={{ color }}>{value}</span>
       {children}
@@ -24,18 +24,18 @@ export default function TopBar() {
   const days = turnDaysFor(game.date);
   const ownCount = Object.values(game.provinces).filter((p) => p.owner === game.playerSide).length;
   return (
-    <header data-tour="topbar" className="panel flex h-[58px] shrink-0 items-stretch divide-x divide-ink-700 border-x-0 border-t-0">
-      <div className="flex items-center gap-3 px-4">
-        <div className="font-serif text-[17px] font-black tracking-wider text-brass">1950 — 운명의 한반도</div>
+    <header data-tour="topbar" className="panel flex h-[58px] shrink-0 items-stretch divide-x divide-ink-700 overflow-x-auto overflow-y-hidden whitespace-nowrap border-x-0 border-t-0 [scrollbar-width:none]">
+      <div className="flex shrink-0 items-center gap-3 px-3 xl:px-4">
+        <div className="font-serif text-[17px] font-black tracking-wider text-brass"><span className="xl:hidden">6.25</span><span className="hidden xl:inline">6.25: 운명의 한반도</span></div>
       </div>
-      <div className="flex min-w-[210px] flex-col justify-center px-4">
+      <div className="flex shrink-0 flex-col justify-center whitespace-nowrap px-3 xl:min-w-[210px] xl:px-4">
         <span className="text-[10px] tracking-wider text-slate-500">TURN {game.turn} · 1턴 = {days}일</span>
         <span className="text-[15px] font-bold leading-5">{formatDate(game.date)}</span>
-        <span className="text-[10px] text-slate-500">종료 {formatDate(SCENARIO.endDate)}</span>
+        <span className="hidden text-[10px] text-slate-500 xl:inline">종료 {formatDate(SCENARIO.endDate)}</span>
       </div>
-      <Metric label="국가" value={<span className="text-south">대한민국</span>}>
+      <div className="hidden xl:block"><Metric label="국가" value={<span className="text-south">대한민국</span>}>
         <span className="text-[10px] text-slate-500">지역 {ownCount}/{Object.values(game.provinces).filter((p) => !p.external).length}</span>
-      </Metric>
+      </Metric></div>
       <Metric label="총병력" value={fmt(strength)}>
         <span className="text-[10px] text-slate-500">여단 {brigades}개</span>
       </Metric>
@@ -46,15 +46,15 @@ export default function TopBar() {
       <Metric label="국민 지지" value={Math.round(me.popularSupport)} color={colorFor(me.popularSupport)}>
         <Bar value={me.popularSupport} color={colorFor(me.popularSupport)} />
       </Metric>
-      <div className="flex items-center gap-4 px-3 text-[11px]">
-        {[['미국 개입', d.usCommitment, false], ['UN 지지', d.unSupport, false], ['중국 개입 위험', d.chinaThreat, true], ['소련 지원(적)', d.sovietSupport, true]].map(([l, v, inv]) => (
-          <div key={l as string} className="w-[74px]">
-            <div className="flex justify-between text-slate-400"><span>{l}</span><span className="tabular-nums text-slate-200">{Math.round(v as number)}</span></div>
+      <div className="flex shrink-0 items-center gap-2 px-2 text-[11px] xl:gap-4 xl:px-3">
+        {[['미국 개입', '미국', d.usCommitment, false], ['UN 지지', 'UN', d.unSupport, false], ['중국 개입 위험', '중국', d.chinaThreat, true], ['소련 지원(적)', '소련', d.sovietSupport, true]].map(([l, short, v, inv]) => (
+          <div key={l as string} className="w-[52px] shrink-0 xl:w-[74px]" title={l as string}>
+            <div className="flex justify-between gap-1 text-slate-400"><span><span className="xl:hidden">{short}</span><span className="hidden xl:inline">{l}</span></span><span className="tabular-nums text-slate-200">{Math.round(v as number)}</span></div>
             <Bar value={v as number} color={colorFor(v as number, inv as boolean)} />
           </div>
         ))}
       </div>
-      <div className="ml-auto flex items-center gap-2 px-3">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2 xl:gap-2 xl:px-3">
         <button data-tour="manage" className="btn btn-blue" onClick={() => setModal('manage')}>국가 관리</button>
         <button className="btn" onClick={() => setModal('help')}>도움말</button>
         <button className="btn" onClick={() => setModal('menu')}>메뉴</button>

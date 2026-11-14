@@ -131,7 +131,7 @@ export function ManagementBody() {
         <div className="mt-2 flex items-center justify-between rounded bg-ink-900/70 px-2 py-1">
           <span>훈련병 풀 <b className="text-sky-300">{fmt(me.trainees.count)}</b>명 · 평균 훈련도 <b>{me.trainees.training.toFixed(0)}</b> <span className="text-slate-500">/{ECONOMY.trainingCap.recruits}</span></span>
         </div>
-        <div className="mt-1 grid grid-cols-2 gap-1">
+        <div className="mt-1 grid grid-cols-1 gap-1 min-[400px]:grid-cols-2 [&>.btn]:whitespace-nowrap">
           <button className="btn" disabled={cp < 1 || pool <= 0} onClick={() => nation('draft')} title={`통제 지역에서 최대 ${fmt(ECONOMY.draftBatch)}명을 모집해 훈련병 풀에 넣습니다`}>징집 (CP1, {fmt(ECONOMY.draftBatch)}명)</button>
           <button className="btn" disabled={cp < 1 || me.trainees.count <= 0} onClick={() => nation('train')}>훈련병 훈련 (CP1)</button>
         </div>
@@ -144,7 +144,7 @@ export function ManagementBody() {
           <select className="min-w-0 flex-1 rounded border border-ink-600 bg-ink-900 px-1 text-[11px]" value={target} onChange={(e) => setCreateAt(e.target.value)}>
             {owned.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
-          <button className="btn" disabled={cp < 2 || me.trainees.count < ECONOMY.formationMin[echelon]} onClick={() => nation('create', target)} title={`훈련병 ${fmt(ECONOMY.formationMin[echelon])}명 이상 필요`}>
+          <button className="btn shrink-0 whitespace-nowrap" disabled={cp < 2 || me.trainees.count < ECONOMY.formationMin[echelon]} onClick={() => nation('create', target)} title={`훈련병 ${fmt(ECONOMY.formationMin[echelon])}명 이상 필요`}>
             {echelon === 'division' ? '사단' : '여단'} 창설 (CP2)
           </button>
         </div>
@@ -157,8 +157,8 @@ export function ManagementBody() {
           {needy.length === 0 && <div className="text-slate-500">보충이 필요한 부대가 없습니다.</div>}
           {needy.map((u) => (
             <div key={u.id} className="flex items-center justify-between gap-2 py-0.5">
-              <span className="truncate">{u.name} <span className="text-slate-500">{fmt(u.strength)}/{fmt(u.maxStrength)}</span></span>
-              <button className="btn" disabled={cp < 1 || me.trainees.count <= 0} onClick={() => nation('reinforce', u.id)}>보충 (CP1)</button>
+              <span className="min-w-0 flex-1 leading-tight"><span className="block truncate">{u.name}</span><span className="text-[11px] text-slate-500">{fmt(u.strength)}/{fmt(u.maxStrength)}</span></span>
+              <button className="btn shrink-0 whitespace-nowrap" disabled={cp < 1 || me.trainees.count <= 0} onClick={() => nation('reinforce', u.id)}>보충 (CP1)</button>
             </div>
           ))}
         </div>

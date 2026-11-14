@@ -133,24 +133,24 @@ function UnitsTab({ p }: { p: Province }) {
     <div className="flex flex-col gap-2">
       {mine.length > 0 && (
         <>
-          <div className="flex items-center justify-between">
-            <span className="panel-title">▍아군 부대 ({mine.length}) · 선택 {sel.length}</span>
+          <div className="flex flex-wrap items-center justify-between gap-1">
+            <span className="panel-title whitespace-nowrap">▍아군 부대 ({mine.length}) · 선택 {sel.length}</span>
             <div className="flex gap-1">
-              <button className="btn" onClick={selectAllHere}>전체 선택</button>
-              <button className="btn" onClick={() => setUnits([])}>전체 해제</button>
+              <button className="btn whitespace-nowrap" onClick={selectAllHere}>전체 선택</button>
+              <button className="btn whitespace-nowrap" onClick={() => setUnits([])}>전체 해제</button>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-2 gap-1 [&>.btn]:whitespace-nowrap">
             <button className="btn" disabled={sel.length < 1} onClick={selectHalf} title="선택된 부대 중 목록 순서대로 절반(올림)만 남깁니다">절반만 선택</button>
             <button className="btn" onClick={selectNeedsRest} title="피로·조직력·사기·부상병·손상 장비 기준으로 휴식이 필요한 부대만 선택">휴식 필요 부대 선택</button>
           </div>
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-3 gap-1 [&>.btn]:whitespace-nowrap [&>.btn]:px-1">
             <button className={'btn ' + (mode === 'move' ? 'btn-blue' : '')} disabled={!sel.length} onClick={() => setMode(mode === 'move' ? 'select' : 'move')} title="지도에서 아군 지역을 클릭">이동</button>
             <button className={'btn ' + (mode === 'attack' ? 'btn-primary' : '')} disabled={!sel.length || !canAttack} onClick={() => setMode(mode === 'attack' ? 'select' : 'attack')} title="인접한 적 지역 클릭">공격</button>
             <button className="btn" disabled={!sel.length} onClick={() => orderUnits('defend')} title="참호를 파고 방어선을 강화">방어선 강화</button>
             <button className="btn" disabled={!sel.length} onClick={() => orderUnits('rest')} title="피로·조직·회복 개선">휴식·재정비</button>
             <button className="btn" disabled={!sel.length} onClick={() => orderUnits('train')} title="훈련도 향상(장기 능력)">훈련</button>
-            <button className="btn" disabled={!mine.some((u) => u.order && u.order.issuedTurn === game.turn)} onClick={() => cancelUnits(mine.filter((u) => u.order && u.order.issuedTurn === game.turn).map((u) => u.id))} title="이번 턴 명령을 받은 부대 전체의 명령을 취소">명령 전체 취소</button>
+            <button className="btn" disabled={!mine.some((u) => u.order && u.order.issuedTurn === game.turn)} onClick={() => cancelUnits(mine.filter((u) => u.order && u.order.issuedTurn === game.turn).map((u) => u.id))} title="이번 턴 명령을 받은 부대 전체의 명령을 취소">전체 취소</button>
           </div>
           {mode !== 'select' && <div className="rounded bg-ink-700 px-2 py-1 text-[11px] text-yellow-200">지도에서 {mode === 'move' ? '이동할 아군 지역' : '공격할 인접 적 지역'}을 클릭하세요. (강조 표시된 곳){orderScope ? ` — 대상: 지정한 ${orderScope.length}개 부대만` : ` — 대상: 선택된 ${sel.length}개 부대`}</div>}
           <div className="flex flex-col gap-1.5">

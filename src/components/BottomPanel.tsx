@@ -22,8 +22,8 @@ export default function BottomPanel() {
   const days = turnDaysFor(game.date);
   const blocked = game.pendingEvents.length > 0 || !!game.outcome || playing;
   return (
-    <footer className="panel flex h-[176px] shrink-0 border-x-0 border-b-0">
-      <div className="flex w-[260px] shrink-0 flex-col gap-1 border-r border-ink-700 p-2">
+    <footer className="panel flex h-[132px] shrink-0 border-x-0 border-b-0">
+      <div className="flex w-[210px] shrink-0 flex-col gap-1 border-r border-ink-700 p-2">
         <div className="flex items-center justify-between"><div className="panel-title">▍직전 전투 결과</div><button className="text-[10px] text-sky-300 hover:underline" onClick={() => setModal('allBattles')}>전체 보기</button></div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {playing && <div className="text-[11px] text-slate-500">전투 재생이 끝나면 표시됩니다.</div>}
@@ -40,12 +40,14 @@ export default function BottomPanel() {
             );
           })}
         </div>
-        <div className="mt-0.5 shrink-0 border-t border-ink-700 pt-1">
+        </div>
+      <div className="flex w-[290px] shrink-0 flex-col gap-1 border-r border-ink-700 p-2">
+        <div className="shrink-0">
           <div className="panel-title">▍총 사상자 (누적)</div>
           {playing ? (
             <div className="text-[10.5px] text-slate-500">재생이 끝나면 표시됩니다.</div>
           ) : (
-            <table className="w-full text-[10.5px] leading-[1.35]">
+            <table className="w-full whitespace-nowrap text-[10.5px] leading-[1.45]">
               <thead>
                 <tr className="text-slate-500"><th className="text-left font-normal"> </th><th className="text-right font-normal">전사</th><th className="text-right font-normal">부상</th><th className="text-right font-normal">실종</th><th className="text-right font-normal">포로</th><th className="text-right font-normal">합계</th></tr>
               </thead>

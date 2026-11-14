@@ -16,8 +16,8 @@ function Roster({ list, color }: { list: RosterEntry[]; color: string }) {
       <div className="max-h-[84px] overflow-y-auto text-[11px] leading-[1.45] text-slate-300">
         {list.map((e) => (
           <div key={e.id} className="flex justify-between gap-2">
-            <span className="truncate">{e.name} <span className="text-slate-500">({game.provinces[e.from]?.name})</span></span>
-            <span className="tabular-nums" title={`전사 ${e.killed} · 부상 ${e.wounded} · 실종·포로 ${e.missing}`}>{fmt(e.before)}→{e.destroyed ? <b className="text-red-400">전멸</b> : fmt(e.after)}</span>
+            <span className="min-w-0 flex-1 sm:truncate">{e.name} <span className="text-slate-500">({game.provinces[e.from]?.name})</span></span>
+            <span className="shrink-0 whitespace-nowrap tabular-nums" title={`전사 ${e.killed} · 부상 ${e.wounded} · 실종·포로 ${e.missing}`}>{fmt(e.before)}→{e.destroyed ? <b className="text-red-400">전멸</b> : fmt(e.after)}</span>
           </div>
         ))}
       </div>
@@ -38,7 +38,7 @@ function BattleResult({ r }: { r: BattleReport }) {
         {r.retreatTo && <span className="tag">후퇴: {game.provinces[r.retreatTo].name}로 이동</span>}
         {r.surrounded && <span className="tag border-red-500 text-red-300">포위</span>}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded border border-ink-600 bg-ink-800/60 p-1.5">
           <div className="mb-0.5 text-[11.5px] font-bold" style={{ color: r.attackerSide === 'north' ? '#ff8a8a' : '#8fc4ff' }}>공격측 · {sideName(r.attackerSide)}</div>
           <Roster list={r.attackerRoster} color="#cbd5e1" />
@@ -80,7 +80,7 @@ export default function PlaybackPanel() {
   const isLast = pb.index >= steps.length - 1;
 
   return (
-    <div className={'fade-in pointer-events-auto rounded border border-yellow-700/70 bg-[#0d141c]/95 p-3 shadow-2xl ' + (mobile ? 'absolute inset-x-2 bottom-2 z-30 max-h-[52%] overflow-y-auto' : 'fixed bottom-[184px] left-[262px] right-[312px] z-30')}>
+    <div className={'fade-in pointer-events-auto rounded border border-yellow-700/70 bg-[#0d141c]/95 p-3 shadow-2xl ' + (mobile ? 'absolute inset-x-2 bottom-2 z-30 max-h-[52%] overflow-y-auto' : 'fixed bottom-[140px] left-[262px] right-[312px] z-30')}>
       <div className={'mb-1.5 flex justify-between ' + (mobile ? 'flex-col gap-1.5' : 'items-center')}>
         <div className="panel-title">
           ▍{formatDate(game.lastTurn!.date)} 턴 진행 — {step.kind === 'movement' ? '부대 이동' : `전투 ${nth}/${battleSteps.length}`}
