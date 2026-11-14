@@ -5,6 +5,7 @@ import { attackableTargets, findPath, reachableTargets } from '../game/orders';
 import { viewAt } from '../game/record';
 import { fogOn } from '../game/visibility';
 import type { GameState, Province, Side } from '../game/types';
+import { useIsMobile } from './useIsMobile';
 
 const SOUTH = '#2f6db8';
 const NORTH = '#b23a3a';
@@ -49,6 +50,7 @@ function visibleFromView(g: GameState, units: { loc: string; side: Side }[], own
 }
 
 export default function MapView() {
+  const mobile = useIsMobile();
   const game = useGame((s) => s.game);
   const selected = useGame((s) => s.selectedProvince);
   const selectedUnits = useGame((s) => s.selectedUnits);
@@ -67,9 +69,18 @@ export default function MapView() {
   const [size, setSize] = useState({ w: 800, h: 700 });
   const [animating, setAnimating] = useState(false);
   const drag = useRef<{ x: number; y: number; vx: number; vy: number; moved: boolean } | null>(null);
+  // 두 손가락 확대·축소(핀치)를 위한 포인터 추적
+  const ptrs = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; k: number; vx: number; vy: number; cx: number; cy: number } | null>(null);
 
   const fit = (w = size.w, h = size.h) => {
     if (w < 50 || h < 50) return;
+    if (mobile) {
+      // 세로 화면: 가로 폭에 맞추고 한반도 중앙(38°N 부근)을 화면 가운데에 둔다
+      const km = Math.min((w / MAP_WIDTH) * 1.12, (h * 0.98) / 1010);
+      setView({ k: km, x: (w - MAP_WIDTH * km) / 2, y: h * 0.5 - 640 * km });
+      return;
+    }
     const k = Math.min(w / MAP_WIDTH, h / MAP_HEIGHT) * 0.96;
     setView({ k, x: (w - MAP_WIDTH * k) / 2, y: (h - MAP_HEIGHT * k) / 2 });
   };
@@ -113,6 +124,24 @@ export default function MapView() {
     wasPlaying.current = !!playback;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playback === null]);
+
+  useEffect(() => {
+    if (!mobile || !selected || playback) return;
+    const seat = MAP.geometry[selected].seat;
+    setView((v) => {
+      const sx = seat[0] * v.k + v.x, sy = seat[1] * v.k + v.y;
+      const limit = size.h - 260; // 아래 시트가 가리는 영역을 뺀 가시 높이
+      let { x, y } = v;
+      if (sy > limit) y = v.y + (limit * 0.5 - sy);
+      else if (sy < 50) y = v.y + (limit * 0.4 - sy);
+      if (sx < 30 || sx > size.w - 30) x = v.x + (size.w / 2 - sx);
+      if (x === v.x && y === v.y) return v;
+      setAnimating(true);
+      setTimeout(() => setAnimating(false), 450);
+      return { ...v, x, y };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, mobile]);
 
   const onWheel = (e: React.WheelEvent) => {
     const r = wrap.current!.getBoundingClientRect();
@@ -242,17 +271,51 @@ export default function MapView() {
         onWheel={onWheel}
         onPointerDown={(e) => {
           setAnimating(false);
-          drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false };
+          ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (ptrs.current.size === 2) {
+            const [a, b] = [...ptrs.current.values()];
+            pinch.current = { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: view.k, vx: view.x, vy: view.y, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+            drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: true };
+          } else {
+            drag.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false };
+          }
         }}
         onPointerMove={(e) => {
+          if (ptrs.current.has(e.pointerId)) ptrs.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+          if (ptrs.current.size >= 2 && pinch.current) {
+            const [a, b] = [...ptrs.current.values()];
+            const p = pinch.current;
+            const r = wrap.current!.getBoundingClientRect();
+            const k = Math.max(0.4, Math.min(7, (p.k * (Math.hypot(a.x - b.x, a.y - b.y) || 1)) / p.dist));
+            const wx = (p.cx - r.left - p.vx) / p.k, wy = (p.cy - r.top - p.vy) / p.k; // 처음 두 손가락 중심 아래의 지도 좌표
+            setView({ k, x: (a.x + b.x) / 2 - r.left - wx * k, y: (a.y + b.y) / 2 - r.top - wy * k });
+            if (drag.current) drag.current.moved = true;
+            return;
+          }
           const d = drag.current;
           if (!d) return;
           const dx = e.clientX - d.x, dy = e.clientY - d.y;
-          if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true;
+          if (Math.abs(dx) + Math.abs(dy) > (e.pointerType === 'touch' ? 9 : 4)) d.moved = true;
           if (d.moved) setView((v) => ({ ...v, x: d.vx + dx, y: d.vy + dy }));
         }}
-        onPointerUp={() => setTimeout(() => (drag.current = null), 0)}
-        onPointerLeave={() => (drag.current = null)}
+        onPointerUp={(e) => {
+          ptrs.current.delete(e.pointerId);
+          if (ptrs.current.size < 2) pinch.current = null;
+          if (ptrs.current.size === 1) {
+            const [rest] = [...ptrs.current.values()];
+            drag.current = { x: rest.x, y: rest.y, vx: view.x, vy: view.y, moved: true }; // 남은 한 손가락으로 이어서 이동
+          } else setTimeout(() => (drag.current = null), 0);
+        }}
+        onPointerCancel={(e) => {
+          ptrs.current.delete(e.pointerId);
+          pinch.current = null;
+          drag.current = null;
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType === 'touch') return;
+          ptrs.current.delete(e.pointerId);
+          drag.current = null;
+        }}
       >
         <defs>
           <clipPath id="land">
@@ -482,17 +545,17 @@ export default function MapView() {
         </g>
       </svg>
 
-      <div className="absolute right-3 top-3 flex flex-col gap-1">
-        <button className="btn" onClick={() => zoomBy(1.3)} title="확대">＋</button>
-        <button className="btn" onClick={() => zoomBy(1 / 1.3)} title="축소">－</button>
-        <button className="btn" onClick={() => fit()} title="전체 보기">⌂</button>
+      <div className="absolute right-2 top-2 flex flex-col gap-1.5">
+        <button className={'btn ' + (mobile ? '!h-11 !w-11 !p-0 !text-[20px]' : '')} onClick={() => zoomBy(1.3)} title="확대">＋</button>
+        <button className={'btn ' + (mobile ? '!h-11 !w-11 !p-0 !text-[20px]' : '')} onClick={() => zoomBy(1 / 1.3)} title="축소">－</button>
+        <button className={'btn ' + (mobile ? '!h-11 !w-11 !p-0 !text-[18px]' : '')} onClick={() => fit()} title="전체 보기">⌂</button>
       </div>
-      <div className="absolute left-3 top-3 flex gap-1 rounded border border-ink-600 bg-ink-900/85 p-1 text-[11px]">
-        {([['control', '통제'], ['supply', '보급'], ['stability', '안정도'], ['terrain', '지형']] as const).map(([id, label]) => (
-          <button key={id} className={'btn ' + (layer === id ? 'btn-blue' : '')} onClick={() => setLayer(id)}>{label}</button>
+      <div data-tour="layers" className={'absolute left-2 top-2 flex gap-1 rounded border border-ink-600 bg-ink-900/85 p-1 text-[11px] ' + (mobile ? 'max-w-[calc(100%-70px)]' : '')}>
+        {([['control', '통제'], ['supply', '보급'], ['stability', mobile ? '안정' : '안정도'], ['terrain', '지형']] as const).map(([id, label]) => (
+          <button key={id} className={'btn ' + (mobile ? '!px-2.5 !py-2 !text-[13px] ' : '') + (layer === id ? 'btn-blue' : '')} onClick={() => setLayer(id)}>{label}</button>
         ))}
       </div>
-      <div className="pointer-events-none absolute bottom-2 left-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded bg-ink-900/85 px-2 py-1 text-[10px] text-slate-300">
+      <div className={'pointer-events-none absolute bottom-2 left-3 flex-wrap items-center gap-x-3 gap-y-1 rounded bg-ink-900/85 px-2 py-1 text-[10px] text-slate-300 ' + (mobile ? 'hidden' : 'flex')}>
         <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-[#1f5fae] align-middle" />아군 여단 수</span>
         <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-full bg-[#b22d2d] align-middle" />적 여단 수(정찰됨)</span>
         <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-full border border-dashed border-red-300 bg-[#4a1e1e] align-middle" />? 정찰 안 됨</span>
@@ -501,7 +564,7 @@ export default function MapView() {
         <span><i className="mr-1 inline-block h-0 w-5 border-t-2 border-dotted border-[#6fd0ff] align-middle" />해상</span>
         <span className="text-yellow-200/80">해칭 = 보급 단절</span>
       </div>
-      {hover && !playback && (
+      {hover && !playback && !mobile && (
         <div className="pointer-events-none absolute bottom-10 right-3 rounded border border-ink-600 bg-ink-900/90 px-2 py-1 text-[11px]">
           <b>{game.provinces[hover].name}</b> · {game.provinces[hover].owner === 'south' ? '대한민국' : '북한'} · 보급 {game.provinces[hover].supplied ? game.provinces[hover].supplyLevel : '단절'}
           {preview && <span className="ml-2 text-emerald-300">경로 {preview.path.length - 1}칸</span>}

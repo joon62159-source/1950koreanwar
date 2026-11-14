@@ -27,7 +27,7 @@ function objectives(g: GameState) {
   return list;
 }
 
-export default function LeftPanel() {
+export default function LeftPanel({ embedded = false }: { embedded?: boolean }) {
   const game = useGame((s) => s.game);
   const policy = useGame((s) => s.policy);
   const setFog = useGame((s) => s.setFog);
@@ -37,7 +37,7 @@ export default function LeftPanel() {
   const units = Object.values(game.units).filter((u) => u.side === game.playerSide);
   const avg = (f: (u: (typeof units)[number]) => number) => (units.length ? units.reduce((a, u) => a + f(u) * u.strength, 0) / units.reduce((a, u) => a + u.strength, 0) : 0);
   return (
-    <aside data-tour="left" className="panel flex w-[250px] shrink-0 flex-col gap-3 overflow-y-auto border-y-0 border-l-0 p-3">
+    <aside data-tour="left" className={embedded ? 'flex flex-col gap-3 p-3' : 'panel flex w-[250px] shrink-0 flex-col gap-3 overflow-y-auto border-y-0 border-l-0 p-3'}>
       <section>
         <div className="panel-title mb-1">▍전황 개요</div>
         <div className="rounded border border-ink-600 bg-ink-800/60 p-2">

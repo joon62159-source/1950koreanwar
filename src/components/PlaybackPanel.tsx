@@ -1,3 +1,4 @@
+import { useIsMobile } from './useIsMobile';
 import { useEffect } from 'react';
 import { useGame } from '../store/gameStore';
 import type { BattleReport, RosterEntry } from '../game/types';
@@ -53,6 +54,7 @@ function BattleResult({ r }: { r: BattleReport }) {
 }
 
 export default function PlaybackPanel() {
+  const mobile = useIsMobile();
   const game = useGame((s) => s.game);
   const pb = useGame((s) => s.playback)!;
   const next = useGame((s) => s.playNext);
@@ -78,12 +80,12 @@ export default function PlaybackPanel() {
   const isLast = pb.index >= steps.length - 1;
 
   return (
-    <div className="fade-in pointer-events-auto fixed bottom-[184px] left-[262px] right-[312px] z-30 rounded border border-yellow-700/70 bg-[#0d141c]/95 p-3 shadow-2xl">
-      <div className="mb-1.5 flex items-center justify-between">
+    <div className={'fade-in pointer-events-auto rounded border border-yellow-700/70 bg-[#0d141c]/95 p-3 shadow-2xl ' + (mobile ? 'absolute inset-x-2 bottom-2 z-30 max-h-[52%] overflow-y-auto' : 'fixed bottom-[184px] left-[262px] right-[312px] z-30')}>
+      <div className={'mb-1.5 flex justify-between ' + (mobile ? 'flex-col gap-1.5' : 'items-center')}>
         <div className="panel-title">
           ▍{formatDate(game.lastTurn!.date)} 턴 진행 — {step.kind === 'movement' ? '부대 이동' : `전투 ${nth}/${battleSteps.length}`}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className={'flex items-center gap-1.5 ' + (mobile ? 'flex-wrap [&>.btn]:py-2' : '')}>
           <button className={'btn ' + (pb.auto ? 'btn-blue' : '')} onClick={() => setAuto(!pb.auto)}>{pb.auto ? '⏸ 일시정지' : '▶ 자동 진행'}</button>
           <button className="btn" onClick={() => setModal('allBattles')}>전체 전투 결과</button>
           <button className="btn" onClick={skip} title="남은 연출을 모두 건너뜁니다. 게임 결과는 동일합니다.">연출 건너뛰기 ⏭</button>

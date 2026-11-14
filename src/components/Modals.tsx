@@ -14,8 +14,8 @@ import { useMemo } from 'react';
 
 function Shell({ children, width = 640, z = 40 }: { children: React.ReactNode; width?: number; z?: number }) {
   return (
-    <div className="modal-bg fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: z }}>
-      <div className="fade-in max-h-[92vh] overflow-y-auto" style={{ width, maxWidth: '100%' }}>{children}</div>
+    <div className="modal-bg fixed inset-0 flex items-center justify-center p-2 sm:p-4" style={{ zIndex: z }}>
+      <div className="fade-in max-h-[94dvh] overflow-y-auto" style={{ width, maxWidth: '100%' }}>{children}</div>
     </div>
   );
 }
@@ -133,7 +133,7 @@ function BattleCard({ r, onOpen }: { r: BattleReport; onOpen?: () => void }) {
         <div className="flex items-center justify-start px-1 text-[9px] text-white transition-all duration-700" style={{ width: `${aPct}%`, background: r.attackerSide === 'south' ? '#2f6db8' : '#b23a3a' }}>공 {fmt(r.attackerPower)}</div>
         <div className="flex flex-1 items-center justify-end px-1 text-[9px] text-white" style={{ background: r.attackerSide === 'south' ? '#b23a3a' : '#2f6db8' }}>방 {fmt(r.defenderPower)}</div>
       </div>
-      <div className="mt-1 grid grid-cols-2 gap-x-3 text-[11px] text-slate-300">
+      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-x-3 text-[11px] text-slate-300">
         <span>공격측 전사 {fmt(r.attackerCasualty.killed)} · 부상 {fmt(r.attackerCasualty.wounded)} · 실종·포로 {fmt(r.attackerCasualty.missing)}</span>
         <span>방어측 전사 {fmt(r.defenderCasualty.killed)} · 부상 {fmt(r.defenderCasualty.wounded)} · 실종·포로 {fmt(r.defenderCasualty.missing)}</span>
       </div>
@@ -159,7 +159,7 @@ export function BriefingModal() {
         {game.reports.length > 0 && (
           <>
             <div className="panel-title mt-4">▍전투 결과</div>
-            <div className="mt-1 grid grid-cols-2 gap-2">
+            <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
               {game.reports.map((r) => <BattleCard key={r.id} r={r} onOpen={() => showBattle(r.id)} />)}
             </div>
           </>
@@ -186,7 +186,7 @@ export function BattleModal() {
           <div className="panel-title mb-1">왜 이런 결과가 나왔는가</div>
           <ul className="list-disc pl-5 leading-[1.6] text-slate-200">{r.reasons.map((x, i) => <li key={i}>{x}</li>)}</ul>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 text-[11.5px]">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11.5px]">
           <div><div className="text-slate-400">공격측 ({r.attackerSide === 'south' ? '아군' : '북한군'})</div>{names(r.attackerUnits).map((n) => <div key={n}>{n}</div>)}</div>
           <div><div className="text-slate-400">방어측</div>{names(r.defenderUnits).map((n) => <div key={n}>{n}</div>)}</div>
         </div>
@@ -214,7 +214,7 @@ export function GameOverModal() {
         {o.score && (
           <div className="mt-4 rounded border border-[#8a7a4f]/60 bg-[#cfc19a]/50 p-3 text-[12.5px]">
             <div className="mb-1 font-bold">종합 점수 {o.score.total} / 100</div>
-            <div className="grid grid-cols-2 gap-x-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
               <span>잔존 병력 {o.score.remainingForce.toFixed(1)} / {SCORE.maxForce}</span>
               <span>확보 영토 {o.score.territory.toFixed(1)} / {SCORE.maxTerritory}</span>
               <span>국민 지지 {o.score.popularSupport.toFixed(1)} / {SCORE.maxSupport}</span>
@@ -263,7 +263,7 @@ export function HelpModal() {
       <div className="panel rounded p-5 text-[12.5px] leading-[1.7]">
         <div className="panel-title">▍플레이 방법</div>
         <ol className="mt-2 list-decimal pl-5">
-          <li><b>지도</b>: 휠로 확대·축소, 드래그로 이동. 지역을 클릭하면 오른쪽 패널에 정보가 나옵니다. 지도의 파란 원 숫자는 <b>여단 수</b>입니다(병력 규모가 아님).</li>
+          <li><b>지도</b>: 휠로 확대·축소, 드래그로 이동(휴대폰: 두 손가락으로 벌려 확대, 한 손가락으로 끌어 이동, 지역은 한 번 터치). 지역을 클릭하면 오른쪽 패널에 정보가 나옵니다. 지도의 파란 원 숫자는 <b>여단 수</b>입니다(병력 규모가 아님).</li>
           <li><b>부대 명령</b>: 오른쪽 [부대] 탭에서 체크 → [이동]/[공격] 버튼 → 지도에서 강조된 지역 클릭. 방어선 강화·휴식·훈련은 버튼만 누르면 됩니다. 한 부대는 한 턴에 한 가지 명령만 받습니다.</li>
           <li><b>국가 관리</b>: 상단 [국가 관리]에서 징집 → 훈련병 훈련 → 부대 창설/보충을 합니다(징집은 국가 단위). 장비는 자동 생산·자동 배분됩니다. 총동원령 전에는 여단, 후에는 사단이 기본 편성 단위입니다. [내정] 탭은 기반시설·방어시설과 지역 인구 정보를 다룹니다.</li>
           <li><b>보급</b>: 부산에서 아군 영토를 따라 이어져야 합니다. 해칭 표시된 지역은 보급 단절입니다. 보급 레이어로 확인하세요.</li>
@@ -311,7 +311,7 @@ function LandingPlanPanel({ opId }: { opId: string }) {
           </tbody>
         </table>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-3">
+      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <b>차출로 방어력이 감소하는 전선</b>
           {plan.fronts.length === 0 ? <div className="text-[#4a6b3a]">없음 (전선 부대를 차출하지 않음)</div> : plan.fronts.map((f) => (
@@ -324,7 +324,7 @@ function LandingPlanPanel({ opId }: { opId: string }) {
           <div>예상 전투력비 {plan.ratio.toFixed(1)}</div>
         </div>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-3">
+      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div><b>예상되는 군사적 이익</b><ul className="list-disc pl-4">{plan.benefits.map((x, i) => <li key={i}>{x}</li>)}</ul></div>
         <div><b>위험</b><ul className="list-disc pl-4">{plan.risks.map((x, i) => <li key={i}>{x}</li>)}</ul></div>
       </div>
@@ -346,7 +346,7 @@ export function LandingReportModal() {
         <div className="text-[11px] tracking-widest text-[#6b5a2a]">{formatDate(game.date)} · 작전 결과 보고</div>
         <h2 className={'font-serif text-[26px] font-black ' + (r.success ? 'text-[#1f4a82]' : 'text-[#7b2a2a]')}>{r.name} {r.success ? '성공' : '실패'}</h2>
         <ul className="mt-2 list-disc pl-5 text-[13px] leading-[1.7]">{r.lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
-        <div className="mt-3 grid grid-cols-3 gap-3 text-[12px]">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-[12px]">
           <div><b>예비대 출신 {r.fromReserve.length}개</b>{r.fromReserve.map((x, i) => <div key={i}>{x.name} ({x.origin})</div>)}</div>
           <div><b>전선 차출 {r.fromFront.length}개</b>{r.fromFront.map((x, i) => <div key={i}>{x.name} ({x.origin})</div>)}</div>
           <div><b>외부 증원(신규) {r.external.length}개</b>{r.external.slice(0, 8).map((x, i) => <div key={i} className="truncate">{x}</div>)}{r.external.length > 8 && <div>… 외 {r.external.length - 8}개</div>}</div>
@@ -368,7 +368,7 @@ export function AllBattlesModal() {
     <Shell width={760} z={55}>
       <div className="panel rounded p-5">
         <div className="panel-title">▍이번 턴 전체 전투 결과 ({game.reports.length}건)</div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
           {game.reports.length === 0 && <div className="text-[12px] text-slate-500">전투가 없었습니다.</div>}
           {game.reports.map((r) => <BattleCard key={r.id} r={r} />)}
         </div>
@@ -384,8 +384,8 @@ export function ManagementModal() {
   const me = game.nations[game.playerSide];
   return (
     <Shell width={980} z={45}>
-      <div className="panel rounded p-5">
-        <div className="flex items-center justify-between">
+      <div className="panel rounded p-3 sm:p-5">
+        <div className="flex items-center justify-between gap-2">
           <div className="panel-title">▍국가 관리 — 징집 · 편성 · 군수 · 사상자</div>
           <div className="text-[12px]">행정 점수 <b className="text-brass">{me.commandPoints}</b></div>
         </div>

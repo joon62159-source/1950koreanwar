@@ -253,12 +253,13 @@ function DomesticTab({ p }: { p: Province }) {
   );
 }
 
-export default function RightPanel() {
+export default function RightPanel({ embedded = false }: { embedded?: boolean }) {
   const game = useGame((s) => s.game);
   const selected = useGame((s) => s.selectedProvince);
   const [tab, setTab] = useState<'info' | 'units' | 'domestic'>('units');
   const p = selected ? game.provinces[selected] : null;
   if (!p) {
+    if (embedded) return null;
     return (
       <aside data-tour="right" className="panel flex w-[300px] shrink-0 flex-col items-center justify-center gap-2 border-y-0 border-r-0 p-4 text-center text-[12px] text-slate-500">
         <div className="text-3xl">🗺</div>
@@ -271,15 +272,15 @@ export default function RightPanel() {
   const nUnits = Object.values(game.units).filter((u) => u.location === p.id && u.side === game.playerSide).length;
   void MAP;
   return (
-    <aside data-tour="right" className="panel flex w-[300px] shrink-0 flex-col border-y-0 border-r-0">
+    <aside data-tour="right" className={embedded ? 'flex min-h-0 flex-1 flex-col' : 'panel flex w-[300px] shrink-0 flex-col border-y-0 border-r-0'}>
       <div className="flex border-b border-ink-700">
         {tabs.map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)} className={'flex-1 py-2 text-[12px] font-bold ' + (tab === id ? 'border-b-2 border-brass text-brass' : 'text-slate-500 hover:text-slate-300')}>
+          <button key={id} onClick={() => setTab(id)} className={(embedded ? 'flex-1 py-3 text-[14px] font-bold ' : 'flex-1 py-2 text-[12px] font-bold ') + (tab === id ? 'border-b-2 border-brass text-brass' : 'text-slate-500 hover:text-slate-300')}>
             {label}{id === 'units' && nUnits ? ` (${nUnits})` : ''}
           </button>
         ))}
       </div>
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className={'flex-1 p-3 ' + (embedded ? '' : 'overflow-y-auto')}>
         {tab === 'info' && <Overview p={p} />}
         {tab === 'units' && <UnitsTab p={p} />}
         {tab === 'domestic' && <DomesticTab p={p} />}

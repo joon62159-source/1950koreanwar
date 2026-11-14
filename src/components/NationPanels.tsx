@@ -27,7 +27,7 @@ export function CasualtyPanel({ report }: { report?: CasualtyReport }) {
   return (
     <div className="rounded border border-[#8a7a4f]/60 bg-[#cfc19a]/60 p-3 text-[12.5px] text-[#2a2418]">
       <div className="mb-1 font-bold">국가 전체 사상자 보고</div>
-      <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-0.5 sm:grid-cols-2">
         {rows.map(([l, v, note]) => (
           <div key={l} className="flex items-baseline justify-between gap-2">
             <span>{l}{note && <span className="ml-1 text-[10px] text-[#6b5a2a]">({note})</span>}</span>
@@ -121,7 +121,7 @@ export function ManagementBody() {
   const cp = me.commandPoints;
   const box = 'rounded border border-ink-600 bg-ink-800/60 p-3';
   return (
-    <div className="grid grid-cols-2 gap-3 text-[12px]">
+    <div className="grid grid-cols-1 gap-3 text-[12px] sm:grid-cols-2">
       <div className={box}>
         <div className="panel-title mb-1">▍국가 징집 (CP 소모)</div>
         <div className="flex justify-between"><span className="text-slate-400">남은 징병 가능 인구 (통제 지역 합계)</span><b>{fmt(remainingAll)}</b></div>
@@ -205,9 +205,9 @@ export function ManagementBody() {
         </div>
       </div>
 
-      <div className="col-span-2"><CasualtyPanel /></div>
+      <div className="sm:col-span-2"><CasualtyPanel /></div>
 
-      <div className={box + ' col-span-2 flex items-center justify-between'}>
+      <div className={box + ' sm:col-span-2 flex items-center justify-between'}>
         <div>
           <div className="panel-title">▍전장의 안개</div>
           <div className="text-[11px] text-slate-400">정보 표시만 바꿉니다. 적의 실제 전투력·병력은 변하지 않습니다. (기본: 끔)</div>

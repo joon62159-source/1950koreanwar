@@ -61,3 +61,9 @@ body { background: #0b0f14; color: #d7dde5; font-family: var(--font-sans); overf
 @keyframes fx-flicker { 0%, 100% { opacity: 1; } 45% { opacity: .78; } 60% { opacity: .95; } }
 .scene-zoom { transform-origin: 55% 60%; animation: scene-zoom 24s ease-in-out infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .scene-zoom, .scene-fx * { animation: none !important; } }
+
+/* 모바일(세로) 화면: 터치하기 쉬운 크기, 당겨서 새로고침·확대 방지 */
+.mobile-root { -webkit-tap-highlight-color: transparent; overscroll-behavior: none; touch-action: manipulation; }
+.mobile-root .btn { min-height: 38px; font-size: 13px; padding: 6px 12px; }
+.mobile-root input[type="checkbox"] { width: 20px; height: 20px; }
+.mobile-root select { min-height: 38px; }

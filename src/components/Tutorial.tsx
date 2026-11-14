@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useGame } from '../store/gameStore';
+import { useIsMobile } from './useIsMobile';
 
 const KEY = 'korea1950.tutorial.done';
 
@@ -123,6 +124,79 @@ const STEPS: Step[] = [
   },
 ];
 
+/** 모바일(세로) 화면용 안내: 터치 조작과 하단 시트 중심 */
+const MOBILE_STEPS: Step[] = [
+  STEPS[0],
+  {
+    title: '1. 맨 위 — 나라의 상태',
+    target: 'topbar',
+    placement: 'below',
+    body: (
+      <>
+        <p><b>병력·보급·전쟁능력·지지</b>가 한눈에 보입니다. 전쟁능력이 너무 낮아지면 패배합니다.</p>
+        <p className="mt-2">이 줄을 <b>터치</b>하면 미국·UN·중국·소련 같은 외교 정세까지 자세히 볼 수 있습니다.</p>
+      </>
+    ),
+  },
+  {
+    title: '2. 지도 — 손가락으로 움직이기',
+    target: 'map',
+    placement: 'inside',
+    body: (
+      <>
+        <p><b>한 손가락</b>으로 끌면 이동, <b>두 손가락</b>을 벌리면 확대합니다. 지역을 <b>한 번 터치</b>하면 선택됩니다.</p>
+        <p className="mt-2"><span className="text-south">파란색</span>은 아군, <span className="text-red-400">붉은색</span>은 적입니다. 원 안 숫자는 부대 수이고, 빗금 친 곳은 <b>보급이 끊긴</b> 곳입니다.</p>
+      </>
+    ),
+  },
+  {
+    title: '3. 지도 보기 바꾸기',
+    target: 'layers',
+    placement: 'below',
+    body: <p>여기서 <b>통제 / 보급 / 안정 / 지형</b> 보기를 바꿉니다. <b>보급</b>을 눌러 보급이 끊긴 곳을 자주 확인하세요. 우측의 ＋ − 는 확대·축소, ⌂ 는 전체 보기입니다.</p>,
+  },
+  {
+    title: '4. 부대에 명령하기',
+    placement: 'center',
+    body: (
+      <>
+        <p>아군 지역을 터치하면 아래에서 <b>시트</b>가 올라오고, 그 지역의 부대가 자동으로 선택됩니다.</p>
+        <p className="mt-2">큰 버튼 <b>[이동][공격][방어][휴식]</b>을 누르세요. 이동·공격은 버튼을 누른 뒤 <b>지도에서 강조된 지역</b>을 터치하면 됩니다. <b>[상세 ▲]</b>를 누르면 부대별 상태와 내정을 볼 수 있습니다.</p>
+        <p className="mt-2 text-slate-400">부대는 한 턴에 한 가지 명령만 받습니다. 지친 부대는 쉬게 하세요.</p>
+      </>
+    ),
+  },
+  {
+    title: '5. 국가 관리 — 병력을 만드는 곳',
+    target: 'manage',
+    placement: 'inside',
+    body: (
+      <>
+        <p>여기서 <b>징집 → 훈련 → 부대 창설·보충</b>을 합니다. 장비는 자동으로 생산·배분됩니다.</p>
+        <p className="mt-2">특정 시점에는 <b>총동원령</b>이 발동해 여단이 사단으로 커집니다.</p>
+      </>
+    ),
+  },
+  {
+    title: '6. 상황 — 정세와 정책',
+    target: 'status',
+    placement: 'inside',
+    body: <p>외교 정세, 정책·외교 명령, 당면 과제를 볼 수 있습니다. <b>보급과 포위</b>도 중요합니다. 아군 영토를 따라 부산까지 이어진 길이 끊겨 둘러싸이면 병력과 장비가 계속 줄어듭니다.</p>,
+  },
+  {
+    title: '7. 턴 종료',
+    target: 'endturn',
+    placement: 'inside',
+    body: (
+      <>
+        <p>명령을 다 내렸으면 <b>[턴 종료]</b>를 누르세요. 북한군이 움직이고, 전투가 하나씩 재생됩니다. 초반에는 병력을 아끼며 시간을 버는 지연전이 좋습니다.</p>
+        <p className="mt-2 text-slate-400">전황이 바뀌면 <b>이벤트</b>가 떠서 선택을 요구합니다.</p>
+      </>
+    ),
+  },
+  STEPS[STEPS.length - 1],
+];
+
 interface Box { left: number; top: number; width: number; height: number }
 
 export default function Tutorial() {
@@ -131,7 +205,9 @@ export default function Tutorial() {
   const [i, setI] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
   const [vp, setVp] = useState({ w: window.innerWidth, h: window.innerHeight });
-  const step = STEPS[i];
+  const mobile = useIsMobile();
+  const STEP_LIST = mobile ? MOBILE_STEPS : STEPS;
+  const step = STEP_LIST[Math.min(i, STEP_LIST.length - 1)];
 
   const close = () => {
     markSeen();
@@ -158,7 +234,7 @@ export default function Tutorial() {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
-      else if (e.key === 'ArrowRight' || e.key === 'Enter') setI((x) => Math.min(STEPS.length - 1, x + 1));
+      else if (e.key === 'ArrowRight' || e.key === 'Enter') setI((x) => Math.min(STEP_LIST.length - 1, x + 1));
       else if (e.key === 'ArrowLeft') setI((x) => Math.max(0, x - 1));
     };
     window.addEventListener('keydown', onKey);
@@ -168,7 +244,7 @@ export default function Tutorial() {
 
   if (!open) return null;
 
-  const CW = Math.min(380, vp.w - 24);
+  const CW = mobile ? vp.w - 24 : Math.min(380, vp.w - 24);
   const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   let cardLeft = (vp.w - CW) / 2;
   let cardTop = vp.h * 0.22;
@@ -188,7 +264,13 @@ export default function Tutorial() {
       cardTop = clamp(box.top + (box.height > 200 ? 40 : -300), 12, vp.h - 330);
     }
   }
-  const last = i === STEPS.length - 1;
+  const last = i === STEP_LIST.length - 1;
+  // 모바일: 강조 대상이 위쪽이면 카드를 아래에, 아래쪽이면 위에 둔다 (대상을 가리지 않는다)
+  if (mobile) {
+    const center = box ? box.top + box.height / 2 : vp.h / 2;
+    cardLeft = 12;
+    cardTop = !box ? vp.h * 0.16 : center < vp.h * 0.5 ? Math.min(box.top + box.height + 14, vp.h - 330) : Math.max(70, box.top - 300);
+  }
 
   return (
     <div className="fixed inset-0 z-[95]" role="dialog" aria-label="튜토리얼">
@@ -205,19 +287,19 @@ export default function Tutorial() {
       <div className="fade-in absolute rounded border border-[#8a7a4f] bg-[#10171f] p-4 text-[13px] leading-[1.65] text-slate-200 shadow-2xl" style={{ left: cardLeft, top: cardTop, width: CW }}>
         <div className="flex items-start justify-between gap-3">
           <div className="font-serif text-[16px] font-black text-brass">{step.title}</div>
-          <span className="shrink-0 text-[11px] text-slate-500">{i + 1} / {STEPS.length}</span>
+          <span className="shrink-0 text-[11px] text-slate-500">{i + 1} / {STEP_LIST.length}</span>
         </div>
         <div className="mt-2">{step.body}</div>
         <div className="mt-3 flex items-center gap-1.5">
-          {STEPS.map((_, k) => (
+          {STEP_LIST.map((_, k) => (
             <span key={k} className={'h-1.5 rounded-full transition-all ' + (k === i ? 'w-5 bg-[#ffe08a]' : 'w-1.5 bg-slate-600')} />
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between">
-          <button className="btn" onClick={close}>건너뛰기</button>
+          <button className={'btn ' + (mobile ? '!px-4 !py-2.5 !text-[14px]' : '')} onClick={close}>건너뛰기</button>
           <div className="flex gap-2">
-            {i > 0 && <button className="btn" onClick={() => setI(i - 1)}>이전</button>}
-            <button className="btn btn-blue px-4" onClick={() => (last ? close() : setI(i + 1))}>{last ? '시작하기' : '다음'}</button>
+            {i > 0 && <button className={'btn ' + (mobile ? '!px-4 !py-2.5 !text-[14px]' : '')} onClick={() => setI(i - 1)}>이전</button>}
+            <button className={'btn btn-blue px-4 ' + (mobile ? '!py-2.5 !text-[14px]' : '')} onClick={() => (last ? close() : setI(i + 1))}>{last ? '시작하기' : '다음'}</button>
           </div>
         </div>
       </div>
