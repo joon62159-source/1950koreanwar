@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { isNativeApp } from '../native';
 
 const QUERY = '(max-width: 820px)';
 
 /** 모바일 화면 여부. 주소에 ?m=1 을 붙이면 데스크톱에서도 모바일 화면을, ?m=0 이면 항상 데스크톱 화면을 쓴다. */
 export function computeIsMobile(): boolean {
   if (typeof window === 'undefined') return false;
+  if (isNativeApp()) return true; // 안드로이드 앱에서는 항상 모바일(세로) 화면
   const m = new URLSearchParams(window.location.search).get('m');
   if (m === '1') return true;
   if (m === '0') return false;

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">6.25: 운명의 한반도</string>
+    <string name="title_activity_main">6.25: 운명의 한반도</string>
+    <string name="package_name">com.joon62159.korean625</string>
+    <string name="custom_url_scheme">com.joon62159.korean625</string>
+</resources>

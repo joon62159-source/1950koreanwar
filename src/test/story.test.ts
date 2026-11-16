@@ -156,3 +156,27 @@ describe('이벤트 장면 그림', () => {
     for (const [scene, ids] of Object.entries(count)) expect(ids.length, `${scene}: ${ids.join(', ')}`).toBeLessThanOrEqual(2);
   });
 });
+
+describe('보급 자원 수지', () => {
+  it('인천상륙 준비 시기(9월 중순)까지 남측 보급 자원이 바닥나지 않는다', async () => {
+    const { endTurn } = await import('../game/turn');
+    const { planAIOrders } = await import('../game/ai');
+    const { resolveEvent } = await import('../game/events');
+    const { EVENT_BY_ID } = await import('../data/events');
+    for (const seed of [1, 2, 3]) {
+      const g = createGame(seed);
+      let minStock = Infinity;
+      while (!g.outcome && g.date < '1950-09-16') {
+        while (g.pendingEvents.length) {
+          const ev = EVENT_BY_ID[g.pendingEvents[0].eventId];
+          resolveEvent(g, ev.id, (ev.choices.find((c) => !c.isCounterfactual) ?? ev.choices[0])?.id);
+        }
+        planAIOrders(g, 'south', g.date < '1950-09-15' ? 'defense' : 'offense');
+        endTurn(g);
+        minStock = Math.min(minStock, g.nations.south.supplyStock);
+      }
+      expect(minStock, `seed ${seed}`).toBeGreaterThan(150);
+      expect(g.nations.south.supplyStock, `seed ${seed}`).toBeGreaterThan(400);
+    }
+  });
+});

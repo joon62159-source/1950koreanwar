@@ -143,7 +143,14 @@ export const ECONOMY = {
   /** 하루당 생산량 (산업 능력 100 기준) */
   productionPerDay: { rifles: 70, machineGuns: 3, mortars: 2, artillery: 0.35, antiTank: 1.2, tanks: 0, vehicles: 1.5 } as Record<EquipKey, number>,
   stockPerIndustryDay: 0.02,
-  consumptionPerThousandDay: 0.33,
+  /** 병력 1,000명당 하루 보급 자원 소모 (기존 0.33 은 UN군 도착 후 생산·원조를 훨씬 넘어 가을부터 줄곧 0 이었다) */
+  consumptionPerThousandDay: 0.2,
+  /** 외국군(UN군·미군, 중국군, 소련군)은 본국 보급선이 따로 있어 국가 보급 자원 소모가 적다 */
+  foreignConsumptionMult: 0.6,
+  /** 미국 개입도·소련 지원 1포인트당 하루 보급 원조량 (남: 미국 개입도 100 이면 하루 22) */
+  aidPerPoint: { south: 0.22, north: 0.45 } as Record<'south' | 'north', number>,
+  /** 보급 자원 보유 상한 (쌓아 두기만 하는 것을 막는다) */
+  supplyStockCap: 1000,
   fortifyCost: 1,
   repairInfraGain: 12,
   repairDamageGain: 14,

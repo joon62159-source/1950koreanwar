@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { APP_BACK_EVENT } from '../native';
 import { useGame } from '../store/gameStore';
 import { totalStrength, unitsAt } from '../game/units';
 import { attackableTargets } from '../game/orders';
@@ -260,6 +261,18 @@ export default function MobileApp() {
   const [sheet, setSheet] = useState<SheetId>(null);
   const playing = useGame((s) => s.playback !== null);
   const game = useGame((s) => s.game);
+  // 안드로이드 뒤로가기: 시트 닫기 → 이동·공격 취소 → 지역 선택 해제 순서로 처리
+  useEffect(() => {
+    const onBack = (e: Event) => {
+      const d = (e as CustomEvent<{ handled: boolean }>).detail;
+      const st = useGame.getState();
+      if (sheet) { setSheet(null); d.handled = true; }
+      else if (st.mode !== 'select') { st.setMode('select'); d.handled = true; }
+      else if (st.selectedProvince) { st.selectProvince(null); d.handled = true; }
+    };
+    window.addEventListener(APP_BACK_EVENT, onBack);
+    return () => window.removeEventListener(APP_BACK_EVENT, onBack);
+  }, [sheet]);
   return (
     <div className="mobile-root flex flex-col overflow-hidden bg-[#0a1118] text-slate-200" style={{ height: '100dvh' }}>
       <Hud onOpen={() => setSheet('status')} />

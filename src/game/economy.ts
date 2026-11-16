@@ -74,9 +74,9 @@ export function advanceNations(state: GameState, days: number): void {
     const n = state.nations[side];
     let production = 0;
     for (const p of Object.values(state.provinces)) if (p.owner === side) production += effectiveIndustry(p) * ECONOMY.stockPerIndustryDay;
-    const aid = side === 'south' ? 7 * state.diplomacy.usCommitment / 100 * 3 : 5 * state.diplomacy.sovietSupport / 100 * 3;
-    const consumption = (unitsOfSide(state, side).reduce((s, u) => s + u.strength, 0) / 1000) * ECONOMY.consumptionPerThousandDay;
-    n.supplyStock = Math.max(0, n.supplyStock + (production + aid - consumption) * days);
+    const aid = (side === 'south' ? state.diplomacy.usCommitment : state.diplomacy.sovietSupport) * ECONOMY.aidPerPoint[side];
+    const consumption = (unitsOfSide(state, side).reduce((s, u) => s + u.strength * (u.faction === 'UN' || u.faction === 'PLA' || u.faction === 'SOV' ? ECONOMY.foreignConsumptionMult : 1), 0) / 1000) * ECONOMY.consumptionPerThousandDay;
+    n.supplyStock = clamp(n.supplyStock + (production + aid - consumption) * days, 0, ECONOMY.supplyStockCap);
   }
 }
 
