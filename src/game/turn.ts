@@ -1,6 +1,6 @@
 import type { BattleReport, GameState, PlaybackStep, RosterEntry, Side, TurnRecord, Unit } from './types';
 import { diffSnap, takeSnap } from './record';
-import { AI_BALANCE, ARMISTICE, ATTRITION, ENCIRCLE, COMBAT, ECONOMY, MEDICAL, RECOVERY, SUPPLY, UN_REPLACEMENT } from './balance';
+import { AI_BALANCE, DIFFICULTY, ARMISTICE, ATTRITION, ENCIRCLE, COMBAT, ECONOMY, MEDICAL, RECOVERY, SUPPLY, UN_REPLACEMENT } from './balance';
 import { MAP } from './map';
 import { resolveBattle } from './combat';
 import { advanceAlongPath, attackableTargets } from './orders';
@@ -16,6 +16,7 @@ import { planAIOrders } from './ai';
 import { checkOutcome } from './victory';
 import { updateIntel } from './visibility';
 import { addDays, addLog, clamp, formatDate, other, turnDaysFor } from './util';
+import { weatherAt } from './weather';
 
 const SEOUL_HOLD = ['seoul', 'uijeongbu', 'gimpo'];
 const PERIMETER_RETREAT_PENALTY = ['daegu', 'waegwan', 'masan', 'changnyeong', 'yeongcheon', 'pohang'];
@@ -261,6 +262,13 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
       const starved = u.strength * ATTRITION.lowSupplyLossPerDay * days * (1 - u.supply / ATTRITION.lowSupplyBelow + 0.3);
       applyLosses(u, starved, 'attrition', state);
     }
+    // 날씨: 혹한에는 보급이 70 미만인 부대가 동상·질병으로 병력과 조직력을 잃는다 (보급이 나쁠수록 크다)
+    const wx = weatherAt(state.date);
+    if (wx.lossPerDay > 0 && u.supply < 70) {
+      const bad = (70 - u.supply) / 70;
+      applyLosses(u, u.strength * wx.lossPerDay * days * bad, 'attrition', state);
+      u.organization = clamp(u.organization - 0.35 * days * bad, 0, 100);
+    }
     const order = u.order?.type;
     // 피로·조직·사기·회복
     if (!fought) {
@@ -297,7 +305,7 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
       // 완전 휴식(휴식 명령)이 가장 크고, 이동만 한 부대는 낮으며, 전투 참여 부대는 휴식 보너스를 받지 못한다
       const activity = fought ? MEDICAL.fightMult : moved ? MEDICAL.movedMult : order === 'rest' ? MEDICAL.restMult * stack : 1 + (stack - 1) * 0.5;
       const medical = 0.6 + 0.4 * (prov.infrastructure / 100);
-      const rate = clamp(MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1) * (u.faction === 'UN' ? UN_REPLACEMENT.medicalMult : 1) * (u.faction === 'PLA' && state.flags.nukeUsed ? 0 : 1), 0, 0.9); // 핵 투하 이후 중국군은 회복 불가
+      const rate = clamp(MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1) * (u.faction === 'UN' ? UN_REPLACEMENT.medicalMult : 1) * (u.faction === 'PLA' && state.flags.nukeUsed ? 0 : 1) * weatherAt(state.date).recoveryMult, 0, 0.9); // 핵 투하 이후 중국군은 회복 불가
       if (u.wounded > 0) {
         const ret = Math.min(u.wounded, u.maxStrength - u.strength, Math.max(rate > 0.03 ? 1 : 0, Math.round(u.wounded * rate)));
         if (ret > 0) {
@@ -323,8 +331,9 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
 /** 북한 AI 측 보충(인력 풀 소비, 훈련도 낮음) */
 function aiReplacements(state: GameState, days: number) {
   const n = state.nations.north;
-  n.replacementPool += AI_BALANCE.replacementRefillPerDay * days;
-  let budget = Math.min(n.replacementPool, AI_BALANCE.replacementPerDay * days);
+  const rep = DIFFICULTY[state.difficulty ?? 'normal'].northReplace;
+  n.replacementPool += AI_BALANCE.replacementRefillPerDay * rep * days;
+  let budget = Math.min(n.replacementPool, AI_BALANCE.replacementPerDay * rep * days);
   const needy = Object.values(state.units)
     .filter((u) => u.side === 'north' && !(u.faction === 'PLA' && state.flags.nukeUsed) && !state.provinces[u.location].external && u.strength < u.maxStrength * 0.8 && state.provinces[u.location].owner === 'north' && state.provinces[u.location].supplied && u.supply >= 45 && !u.acted)
     .sort((a, b) => a.strength / a.maxStrength - b.strength / b.maxStrength);
@@ -405,7 +414,7 @@ export function endTurn(state: GameState): { ok: boolean; reason?: string } {
   state.date = addDays(state.date, days);
   state.turn += 1;
   const cpBase = days < 7 ? 4 : days > 7 ? 9 : 6;
-  state.nations.south.commandPoints = cpBase + (state.nations.south.popularSupport > 60 ? 1 : 0);
+  state.nations.south.commandPoints = cpBase + (state.nations.south.popularSupport > 60 ? 1 : 0) + DIFFICULTY[state.difficulty ?? 'normal'].cpBonus;
   state.nations.north.commandPoints = cpBase;
   state.nations.south.popularSupport = clamp(state.nations.south.popularSupport + 0.3 * (days / 7), 0, 100);
   // 중국 개입 위험: 38선 이북에 아군이 있으면 서서히 증가
@@ -426,7 +435,9 @@ export function endTurn(state: GameState): { ok: boolean; reason?: string } {
 
   // 7. 증원·역사 이벤트
   for (const r of REINFORCEMENTS) {
-    if (r.date <= state.date && !state.flags[`reinf:${r.id}`]) {
+    // 난이도에 따라 UN군 증원·원조 도착일이 앞당겨지거나 늦춰진다
+    const due = r.side === 'south' && r.id.startsWith('un-') ? addDays(r.date, DIFFICULTY[state.difficulty ?? 'normal'].unDelayDays) : r.date;
+    if (due <= state.date && !state.flags[`reinf:${r.id}`]) {
       const msg = applyReinforcement(state, r.id);
       if (msg) {
         addLog(state, r.side === 'south' ? 'good' : 'warn', msg);

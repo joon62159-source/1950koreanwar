@@ -1,5 +1,5 @@
 import type { GamePhase, GameState, Province, Side, Unit } from './types';
-import { AI_BALANCE } from './balance';
+import { AI_BALANCE, DIFFICULTY } from './balance';
 import { MAP } from './map';
 import { battleContextFor, calcSide, estimatePower, infantryPower } from './combat';
 import { attackableTargets, findPath, issueOrder, movePoints, stepCost } from './orders';
@@ -90,7 +90,8 @@ export function planAIOrders(state: GameState, side: Side, modeOverride?: AIMode
   const mine = sideUnits(state, side).filter((u) => !(u.faction === 'PLA' && !state.flags.plaIntervened));
   for (const u of mine) if (u.order?.issuedTurn !== state.turn) u.order = null; // 매 턴 새로 계획
   const free = new Set(mine.filter((u) => !u.order).map((u) => u.id));
-  const ratioNeeded = mode === 'defense' ? 1.5 : mode === 'withdraw' ? AI_BALANCE.attackRatio.counter : AI_BALANCE.attackRatio[phase];
+  const aiMult = side === 'north' ? DIFFICULTY[state.difficulty ?? 'normal'].aiAttackRatio : 1; // 난이도: 북한 AI 의 공세 정도
+  const ratioNeeded = (mode === 'defense' ? 1.5 : mode === 'withdraw' ? AI_BALANCE.attackRatio.counter : AI_BALANCE.attackRatio[phase]) * aiMult;
   // 돌파 국면에서는 확실한 우세를 만들 때까지 병력을 집중한다 (성공 확률↑, 대신 동시 공격 지점 수↓)
   const massRatio = phase === 'blitz' ? 1.45 : phase === 'naktong' ? 1.3 : phase === 'stalemate' ? 1.4 : 1.2;
   const maxTargets = phase === 'naktong' ? 4 : phase === 'blitz' || phase === 'chinese' ? 10 : phase === 'stalemate' ? 2 : 4;

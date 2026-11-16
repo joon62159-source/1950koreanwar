@@ -3,6 +3,7 @@ import { totalStrength } from '../game/units';
 import { formatDate, turnDaysFor } from '../game/util';
 import { SCENARIO } from '../game/balance';
 import { Bar, colorFor, fmt } from './common';
+import WeatherBadge from './WeatherBadge';
 
 function Metric({ label, value, color, children }: { label: string; value: React.ReactNode; color?: string; children?: React.ReactNode }) {
   return (
@@ -33,6 +34,7 @@ export default function TopBar() {
         <span className="text-[15px] font-bold leading-5">{formatDate(game.date)}</span>
         <span className="hidden text-[10px] text-slate-500 xl:inline">종료 {formatDate(SCENARIO.endDate)}</span>
       </div>
+      <WeatherBadge />
       <div className="hidden xl:block"><Metric label="국가" value={<span className="text-south">대한민국</span>}>
         <span className="text-[10px] text-slate-500">지역 {ownCount}/{Object.values(game.provinces).filter((p) => !p.external).length}</span>
       </Metric></div>

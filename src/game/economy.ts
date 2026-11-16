@@ -1,6 +1,7 @@
 import type { GameState, Province, Side } from './types';
-import { ECONOMY } from './balance';
+import { DIFFICULTY, ECONOMY } from './balance';
 import { clamp } from './util';
+import { weatherAt } from './weather';
 import { unitsOfSide } from './units';
 import type { Result } from './orders';
 
@@ -72,8 +73,8 @@ export function advanceEconomy(state: GameState, days: number): void {
 export function supplyBalance(state: GameState, side: Side): { production: number; aid: number; consumption: number; net: number } {
   let production = 0;
   for (const p of Object.values(state.provinces)) if (p.owner === side) production += effectiveIndustry(p) * ECONOMY.stockPerIndustryDay;
-  const aid = (side === 'south' ? state.diplomacy.usCommitment : state.diplomacy.sovietSupport) * ECONOMY.aidPerPoint[side];
-  const consumption = (unitsOfSide(state, side).reduce((s, u) => s + u.strength * (u.faction === 'UN' || u.faction === 'PLA' || u.faction === 'SOV' ? ECONOMY.foreignConsumptionMult : 1), 0) / 1000) * ECONOMY.consumptionPerThousandDay;
+  const aid = (side === 'south' ? state.diplomacy.usCommitment : state.diplomacy.sovietSupport) * ECONOMY.aidPerPoint[side] * (side === 'south' ? DIFFICULTY[state.difficulty ?? 'normal'].aidMult : 1);
+  const consumption = (unitsOfSide(state, side).reduce((s, u) => s + u.strength * (u.faction === 'UN' || u.faction === 'PLA' || u.faction === 'SOV' ? ECONOMY.foreignConsumptionMult : 1), 0) / 1000) * ECONOMY.consumptionPerThousandDay * weatherAt(state.date).consumptionMult;
   return { production, aid, consumption, net: production + aid - consumption };
 }
 

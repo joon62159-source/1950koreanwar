@@ -5,6 +5,8 @@ import { totalStrength } from '../game/units';
 import { Bar, colorFor, fmt, Stat } from './common';
 import type { GameState } from '../game/types';
 import SupplyPanel from './SupplyPanel';
+import { weatherAt, weatherEffectLines } from '../game/weather';
+import { DIFFICULTY } from '../game/balance';
 
 const PHASE_TEXT: Record<string, { title: string; body: string }> = {
   blitz: { title: '1950년 6월~7월 · 압도적 열세', body: '북한군의 기습·기갑·화력 우위가 압도적입니다. 정면 사수보다 병력을 보존하며 지연전을 펼치세요. 서울을 끝까지 사수하면 주력이 포위될 수 있습니다.' },
@@ -40,7 +42,7 @@ export default function LeftPanel({ embedded = false }: { embedded?: boolean }) 
   return (
     <aside data-tour="left" className={embedded ? 'flex flex-col gap-3 p-3' : 'panel flex w-[250px] shrink-0 flex-col gap-3 overflow-y-auto border-y-0 border-l-0 p-3'}>
       <section>
-        <div className="panel-title mb-1">▍전황 개요</div>
+        <div className="panel-title mb-1">▍전황 개요 <span className="ml-1 text-[10px] font-normal text-slate-500">난이도 {DIFFICULTY[game.difficulty ?? 'normal'].label}</span></div>
         <div className="rounded border border-ink-600 bg-ink-800/60 p-2">
           <div className="text-[12px] font-bold text-brass">{txt.title}</div>
           <p className="mt-1 text-[11.5px] leading-[1.45] text-slate-300">{txt.body}</p>
@@ -58,6 +60,21 @@ export default function LeftPanel({ embedded = false }: { embedded?: boolean }) 
         <div className="mt-1"><Bar value={avg((u) => u.supply)} color={colorFor(avg((u) => u.supply))} /></div>
       </section>
 
+      {(() => {
+        const wx = weatherAt(game.date);
+        if (wx.id === 'clear') return null;
+        return (
+          <section>
+            <div className="panel-title mb-1">▍날씨 · 계절</div>
+            <div className="rounded border border-ink-600 bg-ink-800/60 p-2 text-[11.5px] leading-[1.55]">
+              <div className="font-bold text-brass">{wx.icon} {wx.label}</div>
+              <div className="text-slate-300">{wx.blurb}</div>
+              <ul className="mt-1 list-disc pl-4 text-slate-400">{weatherEffectLines(wx.id).map((l) => <li key={l}>{l}</li>)}</ul>
+              <div className="mt-1 text-[10.5px] text-slate-500">양쪽 모두에 똑같이 적용됩니다. 보급이 좋은 부대일수록 피해가 적습니다.</div>
+            </div>
+          </section>
+        );
+      })()}
       <SupplyPanel />
 
       {(game.flags.talks === 'on' || game.warWeariness > 5) && (

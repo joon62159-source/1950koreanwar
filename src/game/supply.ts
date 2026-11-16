@@ -2,6 +2,7 @@ import type { GameState, Side } from './types';
 import { PLA, SUPPLY } from './balance';
 import { MAP } from './map';
 import { clamp } from './util';
+import { weatherAt } from './weather';
 import { spendCP } from './economy';
 import type { Result } from './orders';
 
@@ -117,6 +118,7 @@ function hopCost(state: GameState, side: Side, a: string, b: string, sea: boolea
   let cost = sea ? 10 : rail ? SUPPLY.hopCostRail : SUPPLY.hopCostRoad;
   cost *= 1 + SUPPLY.infraAdjust * (1 - pb.infrastructure / 100);
   cost *= 1 + 0.3 * (pb.warDamage / 100);
+  if (!sea && !rail) cost *= weatherAt(state.date).roadSupplyMult; // 장마·해빙기·혹한에는 도로 보급이 느려진다
   if (side === 'north') cost *= rail ? 1 + 2.4 * state.interdiction : 1 + 0.9 * state.interdiction;
   return cost;
 }

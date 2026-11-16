@@ -269,6 +269,7 @@ const FX: Partial<Record<SceneKind, FxMode>> = {
   mushroom: 'embers', flag_raise: 'embers', railway_retreat: 'embers', beachhead: 'embers', wreck_beach: 'embers',
   river_defense: 'embers', victory_street: 'embers', hilltop: 'embers', barbed_wire: 'embers',
   bugle_charge: 'snow', refugees_ice: 'snow', red_train: 'snow', rail_yard: 'snow',
+  cold_forecast: 'snow', frozen_front: 'snow',
 };
 
 /** 흩날리는 불씨·눈·먼지, 깜빡이는 별 (CSS 애니메이션) */
@@ -325,7 +326,7 @@ function PostFx({ id, kind }: { id: string; kind: SceneKind }) {
   );
 }
 
-export default function EventScene({ kind, title, date, kicker, imageSrc }: { kind: SceneKind; title: string; date: string; kicker?: string; imageSrc?: string }) {
+export default function EventScene({ kind, title, date, kicker, imageSrc, hideTitle = false }: { kind: SceneKind; title: string; date: string; kicker?: string; imageSrc?: string; hideTitle?: boolean }) {
   const id = `sc-${kind}`;
   const [imgFailed, setImgFailed] = useState(false);
   const useImage = !!imageSrc && !imgFailed;
@@ -349,7 +350,7 @@ export default function EventScene({ kind, title, date, kicker, imageSrc }: { ki
         <div className="absolute right-3 top-2 text-[10px] tracking-widest text-[#e1c274]/90 drop-shadow">{date}</div>
         {!useImage && <div className="absolute bottom-2 right-3 rounded bg-black/40 px-1.5 text-[9px] text-slate-300/80">일러스트</div>}
       </div>
-      <div className="border-y-2 border-[#3a2f18] bg-gradient-to-b from-[#1f1a0e] to-[#16130c] px-5 py-2.5">
+      <div className={'border-y-2 border-[#3a2f18] bg-gradient-to-b from-[#1f1a0e] to-[#16130c] px-5 py-2.5 ' + (hideTitle ? 'hidden' : '')}>
         {kicker && <div className="text-[11px] font-bold tracking-[0.3em] text-[#e1c274]">{kicker}</div>}
         <div className="font-serif text-[28px] font-black leading-tight text-[#f4ead0]">{title}</div>
       </div>

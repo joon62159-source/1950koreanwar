@@ -2,6 +2,8 @@
 
 export type Side = 'south' | 'north';
 export type Faction = 'ROK' | 'UN' | 'KPA' | 'PLA' | 'SOV';
+/** 난이도: 새 게임을 시작할 때 고른다 */
+export type Difficulty = 'easy' | 'normal' | 'hard';
 export type Terrain = 'plain' | 'paddy' | 'hills' | 'mountain' | 'urban' | 'river' | 'coastal';
 
 export type EquipKey = 'rifles' | 'machineGuns' | 'mortars' | 'artillery' | 'antiTank' | 'tanks' | 'vehicles';
@@ -250,6 +252,7 @@ export interface GameState {
   date: string; // ISO yyyy-mm-dd, 현재 턴 시작일
   rng: number;
   playerSide: Side;
+  difficulty: Difficulty;
   provinces: Record<string, Province>;
   units: Record<string, Unit>;
   nations: Record<Side, Nation>;

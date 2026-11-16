@@ -194,3 +194,52 @@ export const STORY_NARRATIVES: Record<string, Narrative> = {
     quote: { text: '선을 넘는 것은 쉽다. 넘고 난 뒤에 무엇이 기다리는지를 아는 것이 어렵다.', by: '외교 참모' },
   },
 };
+
+/** 날씨·계절 이벤트 서술 (해마다 같은 글을 쓴다) */
+const WEATHER_TEXT: Record<string, Narrative> = {
+  monsoon: {
+    scene: 'monsoon_rain',
+    kicker: '장마 전선',
+    paragraphs: [
+      '하늘이 낮게 내려앉았다. 사흘째 쉬지 않고 쏟아지는 비에 도로는 붉은 진창이 되었고, 트럭 바퀴는 반쯤 파묻힌 채 헛돈다. 병사들은 젖은 군복 그대로 진지에서 몸을 웅크린다.',
+      '논은 호수가 되었고 개울은 길을 삼켰다. 보급 차량은 철도가 닿는 곳까지는 빠르지만, 그 너머는 사람의 어깨와 지게로 날라야 한다. 비는 양쪽 모두에게 내린다. 이 진창을 먼저 이기는 쪽이 길을 얻는다.',
+      '장마는 8월 중순까지 이어질 것이다.',
+    ],
+    quote: { text: '비가 오면 길이 사라진다. 철도를 놓치지 마라.', by: '수송 장교' },
+  },
+  cold_warning: {
+    scene: 'cold_forecast',
+    kicker: '기상 예보',
+    paragraphs: [
+      '시베리아에서 내려오는 기단이 곧 한반도를 덮는다는 전문이 도착했다. 일주일 안에 기온이 영하 20도 아래로 떨어질 것이다. 아직 가을 군복을 입은 병사가 많고, 전선으로 가는 트럭에는 방한복이 충분히 실려 있지 않다.',
+      '지금이 마지막 준비 기회다. 보급선을 점검하고, 보급이 약한 부대는 후방으로 돌려 겨울을 나게 하라. 전방에 전진 보급소를 세워 두는 것도 방법이다.',
+      '추위는 적에게도 똑같이 온다. 그러나 준비한 쪽이 겨울을 이긴다.',
+    ],
+    quote: { text: '총은 얼어도 녹일 수 있다. 굶고 언 병사는 되돌릴 수 없다.', by: '군의관' },
+  },
+  cold: {
+    scene: 'frozen_front',
+    kicker: '혹한',
+    paragraphs: [
+      '새벽 기온은 영하 25도. 병사들의 입김이 서리가 되어 수염에 맺히고, 소총의 노리쇠가 얼어붙어 손으로 녹여야 한다. 참호 속에서 누구도 말을 하지 않는다. 숨을 아끼기 위해서다.',
+      '보급이 닿은 부대는 모닥불과 따뜻한 국으로 겨울을 난다. 보급이 끊긴 부대에서는 동상 환자가 하루가 다르게 늘어난다. 이 추위 속에서는 공격도, 행군도 평소보다 훨씬 힘겹다.',
+      '혹한은 2월 말까지 이어진다. 버티는 쪽이 이긴다.',
+    ],
+    quote: { text: '이 겨울을 나는 것이 이번 전투다.', by: '대대장' },
+  },
+  thaw: {
+    scene: 'spring_thaw',
+    kicker: '해빙기',
+    paragraphs: [
+      '겨우내 단단하던 땅이 녹으며 길마다 깊은 진창이 생겼다. 얼음 위로 지나던 트럭은 이제 바퀴가 푹푹 빠지고, 병사들은 통나무를 깔아 길을 만든다. 눈 녹은 물이 참호를 채우고 군화 속까지 스며든다.',
+      '추위는 물러갔지만 이동과 보급은 오히려 더 느려졌다. 이 계절에는 철도와 포장도로가 전부다. 양측 모두 길목을 두고 신경을 곤두세운다.',
+    ],
+    quote: { text: '봄이 왔다고 길이 열리는 건 아니다.', by: '공병 장교' },
+  },
+};
+for (const y of [1950, 1951, 1952]) {
+  STORY_NARRATIVES[`weather_monsoon_${y}`] = WEATHER_TEXT.monsoon;
+  STORY_NARRATIVES[`weather_cold_warning_${y}`] = WEATHER_TEXT.cold_warning;
+  STORY_NARRATIVES[`weather_cold_${y}`] = WEATHER_TEXT.cold;
+}
+for (const y of [1951, 1952, 1953]) STORY_NARRATIVES[`weather_thaw_${y}`] = WEATHER_TEXT.thaw;

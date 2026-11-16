@@ -5,6 +5,7 @@ import { MAP } from '../game/map';
 import { forceStats, sideTotals } from '../game/casualty';
 import { nationalDraftPool } from '../game/manpower';
 import { STORY_NARRATIVES } from './eventNarrativeStory';
+import { weatherEffectLines } from '../game/weather';
 
 /**
  * 이벤트 창 연출 데이터 (HOI4식): 장면 그림, 한 줄 제목(kicker), 본문 서술, 인용구.
@@ -349,6 +350,14 @@ export function situationLines(state: GameState, eventId: string): string[] {
   const cut = Object.values(state.units).filter((u) => u.side === side && !state.provinces[u.location].supplied).length;
   if (cut) lines.push(`보급이 끊긴 아군 부대 ${cut}개`);
 
+  if (eventId.startsWith('weather_')) {
+    const wid = eventId.includes('monsoon') ? 'monsoon' : eventId.includes('thaw') ? 'thaw' : 'cold';
+    lines.unshift(`날씨의 영향: ${weatherEffectLines(wid).join(' · ')}`);
+    if (wid === 'cold') {
+      const weak = Object.values(state.units).filter((u) => u.side === side && u.supply < 50).length;
+      lines.unshift(`보급이 약한 아군 부대(보급 50 미만) ${weak}개 — 혹한에 병력을 잃을 위험이 큽니다`);
+    }
+  }
   switch (eventId) {
     case 'seoul_crisis': {
       const trapped = Object.values(state.units).filter((u) => u.side === side && NORTH_BANK.includes(u.location));

@@ -198,7 +198,7 @@ export function BattleModal() {
 
 export function GameOverModal() {
   const game = useGame((s) => s.game);
-  const newGame = useGame((s) => s.newGame);
+  const setScreen = useGame((s) => s.setScreen);
   const setModal = useGame((s) => s.setModal);
   const o = game.outcome;
   if (!o) return null;
@@ -226,7 +226,7 @@ export function GameOverModal() {
         )}
         <div className="mt-5 flex justify-end gap-2">
           <button className="btn px-4" onClick={() => setModal(null)}>지도 보기</button>
-          <button className="btn btn-primary px-6 py-2" onClick={newGame}>새 게임</button>
+          <button className="btn btn-primary px-6 py-2" onClick={() => { setModal(null); setScreen('title'); }}>새 게임 (난이도 선택)</button>
         </div>
       </div>
     </Shell>
@@ -234,14 +234,14 @@ export function GameOverModal() {
 }
 
 export function MenuModal() {
-  const { save, load, newGame, restart, setModal, saveInfo, game } = useGame();
+  const { save, load, restart, setModal, saveInfo, game, setScreen } = useGame();
   return (
     <Shell width={420}>
       <div className="panel rounded p-5">
         <div className="panel-title">▍메뉴</div>
         <div className="mt-3 flex flex-col gap-2">
-          <button className="btn py-2" onClick={() => { newGame(); setModal(null); }}>새 게임</button>
-          <button className="btn py-2" onClick={() => { restart(); setModal(null); }}>게임 재시작 (처음부터)</button>
+          <button className="btn py-2" onClick={() => { setModal(null); setScreen('title'); }}>새 게임 (난이도 선택)</button>
+          <button className="btn py-2" onClick={() => { restart(); setModal(null); }}>같은 난이도로 처음부터 다시</button>
           <button className="btn py-2" onClick={() => { save(); }}>저장 (현재 {game.turn}턴)</button>
           <button className="btn py-2" disabled={!saveInfo.exists} onClick={() => { load(); }}>
             불러오기 {saveInfo.exists ? `(저장: ${saveInfo.turn}턴, ${saveInfo.date})` : '(저장 데이터 없음)'}

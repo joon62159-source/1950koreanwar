@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GameState, OrderType } from '../game/types';
+import type { Difficulty, GameState, OrderType } from '../game/types';
 import { createGame } from '../game/engine';
 import { endTurn as runEndTurn } from '../game/turn';
 import { cancelOrder, issueOrder, type Result } from '../game/orders';
@@ -78,7 +78,11 @@ interface Store {
   setAuto: (a: boolean) => void;
   skipPlayback: () => void;
 
-  newGame: () => void;
+  /** 난이도를 정해 새 게임을 시작한다 (생략하면 지금 게임의 난이도) */
+  newGame: (difficulty?: Difficulty) => void;
+  /** 시작 화면 ↔ 게임 화면 */
+  screen: 'title' | 'game';
+  setScreen: (s: 'title' | 'game') => void;
   save: () => void;
   load: () => void;
   restart: () => void;
@@ -92,7 +96,7 @@ function mutate(get: () => Store, set: (p: Partial<Store>) => void, fn: (g: Game
   return r;
 }
 
-const fresh = () => createGame(Math.floor(Math.random() * 1e9));
+const fresh = (difficulty: Difficulty = 'normal') => createGame(Math.floor(Math.random() * 1e9), difficulty);
 
 /** 재생 종료 후 보여줄 모달을 결정 */
 const afterPlaybackModal = (g: GameState): Modal => (g.outcome ? 'gameover' : 'briefing');
@@ -321,7 +325,9 @@ export const useGame = create<Store>((set, get) => ({
   },
   skipPlayback: () => set({ playback: null, focus: null, modal: afterPlaybackModal(get().game) }),
 
-  newGame: () => set({ game: fresh(), selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, flashTurn: 0, playback: null, focus: null, landingToggled: [] }),
+  screen: 'title',
+  setScreen: (screen) => set({ screen }),
+  newGame: (difficulty) => set({ game: fresh(difficulty ?? get().game.difficulty), screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, flashTurn: 0, playback: null, focus: null, landingToggled: [] }),
   save: () => {
     const ok = saveToStorage(get().game);
     set({ saveInfo: peekSave() });
@@ -330,7 +336,7 @@ export const useGame = create<Store>((set, get) => ({
   load: () => {
     const g = loadFromStorage();
     if (!g) return get().notify('불러올 저장 데이터가 없거나 형식이 맞지 않습니다.', 'err');
-    set({ game: g, selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, playback: null, focus: null });
+    set({ game: g, screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, playback: null, focus: null });
     get().notify('불러왔습니다.');
   },
   restart: () => {

@@ -10,10 +10,11 @@ type Bot = 'skilled' | 'passive' | 'idle';
 const bot = (process.argv[2] ?? 'skilled') as Bot;
 const N = Number(process.argv[3] ?? 40);
 const start = Number(process.argv[4] ?? 100);
+const dif = (process.argv[5] ?? 'normal') as 'easy' | 'normal' | 'hard';
 const cnt = { A: 0, B: 0, C: 0, D: 0 };
 let provSum = 0, seoulKept = 0, mob = 0;
 for (let seed = start; seed < start + N; seed++) {
-  const s = createGame(seed);
+  const s = createGame(seed, dif);
   while (!s.outcome) {
     while (s.pendingEvents.length) { const ev = EVENT_BY_ID[s.pendingEvents[0].eventId]; const h = ev.choices.find((c) => !c.isCounterfactual) ?? ev.choices[0]; resolveEvent(s, ev.id, h?.id); }
     if (bot !== 'idle') {
@@ -46,4 +47,4 @@ for (let seed = start; seed < start + N; seed++) {
   cnt[k]++; provSum += owned; if (seoul) seoulKept++; if (s.flags.mobilized) mob++;
 }
 const pct = (n: number) => `${n} (${((n / N) * 100).toFixed(0)}%)`;
-console.log(`BOT=${bot} N=${N}`, JSON.stringify({ '국군 완전점령': pct(cnt.A), '국군 우세 정전': pct(cnt.B), '북한 우세 정전': pct(cnt.C), '북한 완전점령': pct(cnt.D), 평균_국군지역: (provSum / N).toFixed(1), 서울보유: pct(seoulKept), 총동원령: pct(mob) }));
+console.log(`DIF=${dif} BOT=${bot} N=${N}`, JSON.stringify({ '국군 완전점령': pct(cnt.A), '국군 우세 정전': pct(cnt.B), '북한 우세 정전': pct(cnt.C), '북한 완전점령': pct(cnt.D), 평균_국군지역: (provSum / N).toFixed(1), 서울보유: pct(seoulKept), 총동원령: pct(mob) }));

@@ -109,7 +109,7 @@ describe('시간 시스템', () => {
     const g = fresh();
     const u = southUnit(g, 'seoul');
     const short = movePoints(g, u);
-    g.date = '1950-07-08';
+    g.date = '1950-09-08';
     expect(movePoints(g, u)).toBeCloseTo((short / 3) * 7, 5);
   });
 });

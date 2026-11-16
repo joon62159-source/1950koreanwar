@@ -11,6 +11,7 @@ import ModalLayer from '../components/ModalLayer';
 import LeftPanel from '../components/LeftPanel';
 import RightPanel from '../components/RightPanel';
 import { Bar, colorFor, fmt } from '../components/common';
+import WeatherBadge from '../components/WeatherBadge';
 
 type SheetId = 'status' | 'log' | null;
 
@@ -34,6 +35,7 @@ function Hud({ onOpen }: { onOpen: () => void }) {
         <span className="font-serif text-[15px] font-black text-brass">{formatDate(game.date).replace(/^\d{4}년 /, '')}</span>
         <span className="text-[9.5px] text-slate-500">{game.date.slice(0, 4)} · T{game.turn} · {turnDaysFor(game.date)}일</span>
       </button>
+      <WeatherBadge compact />
       <button className="flex min-w-0 flex-1 items-center gap-1 rounded bg-ink-800/60 px-1.5 active:bg-ink-700" onClick={onOpen} aria-label="상세 상황">
         {chip('병력', fmt(strength))}
         {chip('보급', fmt(me.supplyStock), colorFor(Math.min(100, me.supplyStock / 3)))}

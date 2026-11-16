@@ -9,7 +9,8 @@ export type NewSceneKind =
   | 'airstrip' | 'war_room' | 'tokyo_crowd' | 'telegram' | 'mushroom' | 'empty_capital' | 'flag_raise'
   | 'railway_retreat' | 'river_tank' | 'ship_conference' | 'beachhead' | 'wreck_beach' | 'hotline'
   | 'convoy' | 'river_defense' | 'command_post' | 'victory_street' | 'hilltop' | 'bugle_charge'
-  | 'rail_yard' | 'refugees_ice' | 'red_train' | 'river_border' | 'campaign_map' | 'barbed_wire';
+  | 'rail_yard' | 'refugees_ice' | 'red_train' | 'river_border' | 'campaign_map' | 'barbed_wire'
+  | 'monsoon_rain' | 'cold_forecast' | 'frozen_front' | 'spring_thaw';
 
 type Stop = [number, string];
 const Sky = ({ id, stops }: { id: string; stops: Stop[] }) => (
@@ -746,6 +747,117 @@ function Scene2Inner({ kind, id }: { kind: NewSceneKind; id: string }) {
           <rect x="0" y="222" width={W} height="18" fill="#08060a" />
         </>
       );
+    case 'monsoon_rain':
+      return (
+        <>
+          <Sky id={g('sky')} stops={[[0, '#26343a'], [0.5, '#56666a'], [1, '#8a9a94']]} />
+          <Cloud x={120} y={36} w={150} color="#1c272b" o={0.8} />
+          <Cloud x={380} y={50} w={170} color="#2a373b" o={0.75} />
+          <Cloud x={560} y={30} w={120} color="#1c272b" o={0.8} />
+          <path d={ridge(141, 126, 26, 30)} fill="#3a4a48" opacity=".75" />
+          <path d={ridge(142, 142, 16, 24)} fill="#2a3836" />
+          {/* 물에 잠긴 논 */}
+          {Array.from({ length: 5 }, (_, i) => <rect key={i} x="0" y={146 + i * 7} width={W} height="4.5" fill="#9fb4b0" opacity={0.25 + i * 0.05} />)}
+          {/* 진창길 */}
+          <path d="M-20 240 L240 168 L400 168 L660 240Z" fill="#4a3a2a" />
+          <path d="M-20 240 L240 168 L260 168 L40 240Z" fill="#2e241a" opacity=".6" />
+          {[[200, 206, 40], [330, 196, 30], [470, 214, 48], [90, 228, 36]].map(([x, y, w], i) => <g key={i}><ellipse cx={x} cy={y} rx={w} ry={w / 6} fill="#7e8c88" opacity=".55" /><ellipse cx={x} cy={y} rx={w * 0.55} ry={w / 11} fill="none" stroke="#d6e0dc" strokeOpacity=".5" /></g>)}
+          {/* 진창에 빠진 트럭과 미는 병사들 */}
+          <g transform="rotate(-6 300 200)"><Truck x={300} y={202} s={2.3} /></g>
+          {[255, 270, 345, 360].map((x, i) => <Soldier key={x} x={x} y={206 + (i % 2) * 3} s={1.6} flip={i > 1} rifle={false} />)}
+          <Jeep x={470} y={196} s={1.6} flip />
+          {/* 쏟아지는 비 */}
+          {Array.from({ length: 130 }, (_, i) => {
+            const r = rng(i + 11);
+            const x = r() * (W + 40), y = r() * H;
+            return <line key={i} x1={x} y1={y} x2={x - 9} y2={y + 24} stroke="#e3efee" strokeOpacity={0.18 + r() * 0.22} strokeWidth="1" />;
+          })}
+        </>
+      );
+    case 'cold_forecast':
+      return (
+        <>
+          <Sky id={g('sky')} stops={[[0, '#050a18'], [0.6, '#12243e'], [1, '#2a4666']]} />
+          <Stars n={60} seed={61} maxY={110} />
+          <circle cx="520" cy="54" r="22" fill="#e8f0ff" opacity=".85" />
+          <circle cx="520" cy="54" r="46" fill="#cfe0ff" opacity=".12" />
+          <path d={ridge(151, 140, 34, 36)} fill="#d8e4f4" opacity=".9" />
+          <path d={ridge(152, 160, 26, 28)} fill="#9fb4cc" />
+          <rect x="0" y="176" width={W} height="64" fill="#cfdceb" />
+          <path d="M0 176 C160 170 320 182 480 174 C560 170 610 176 640 174 L640 240 L0 240Z" fill="#eef4fb" />
+          {/* 천막과 등불 */}
+          <path d="M70 182 L150 120 L230 182Z" fill="#2c3a2a" />
+          <path d="M150 120 L150 182" stroke="#141c12" strokeWidth="2" />
+          <circle cx="150" cy="176" r="40" fill="#ffd28a" opacity=".22" />
+          <circle cx="150" cy="176" r="12" fill="#ffd28a" opacity=".5" />
+          {/* 드럼통 불과 병사들 */}
+          <rect x="330" y="186" width="26" height="30" fill="#1a1612" />
+          <Flash x={343} y={182} s={1.4} color="#ff9a3a" />
+          <Smoke x={343} y={170} n={5} seed={5} color="#d8dfe8" spread={0.6} />
+          {[300, 320, 366, 386].map((x, i) => <Soldier key={x} x={x} y={218 + (i % 2) * 4} s={2} flip={i > 1} rifle={false} />)}
+          {/* 큰 온도계 */}
+          <g transform="translate(560 120)">
+            <rect x="-9" y="-70" width="18" height="140" rx="9" fill="#e8eef6" stroke="#0d1620" strokeWidth="3" />
+            <rect x="-4" y="-18" width="8" height="82" rx="4" fill="#d83a3a" />
+            <circle cx="0" cy="72" r="15" fill="#e8eef6" stroke="#0d1620" strokeWidth="3" />
+            <circle cx="0" cy="72" r="10" fill="#d83a3a" />
+            {[-50, -30, -10].map((y) => <line key={y} x1="9" y1={y} x2="20" y2={y} stroke="#0d1620" strokeWidth="2" />)}
+          </g>
+          <Poles y={196} n={4} h={46} />
+        </>
+      );
+    case 'frozen_front':
+      return (
+        <>
+          <Sky id={g('sky')} stops={[[0, '#7e94b0'], [0.55, '#d0dae6'], [1, '#f0e2d0']]} />
+          <circle cx="470" cy="130" r="26" fill="#fff6e0" opacity=".95" />
+          <circle cx="470" cy="130" r="64" fill="#fff0d0" opacity=".25" />
+          <path d={ridge(161, 134, 30, 34)} fill="#b8c8dc" opacity=".9" />
+          <path d={ridge(162, 154, 20, 26)} fill="#8ea4be" />
+          <rect x="0" y="160" width={W} height="80" fill="#e8f0f8" />
+          <path d="M0 176 C140 168 300 182 460 172 C540 168 600 176 640 172 L640 240 L0 240Z" fill="#f6fafd" />
+          {/* 앙상한 나무 */}
+          {[60, 180, 560].map((x, i) => (
+            <g key={x} stroke="#2a2a30" fill="none" strokeLinecap="round">
+              <path d={`M${x} 176 L${x} ${112 - i * 6}`} strokeWidth="3" />
+              <path d={`M${x} ${140 - i * 4} L${x - 18} ${120 - i * 4} M${x} ${130 - i * 5} L${x + 16} ${112 - i * 5} M${x} ${150} L${x + 14} ${136}`} strokeWidth="2" />
+            </g>
+          ))}
+          {/* 참호와 모래주머니 */}
+          <path d="M0 240 L0 204 L640 198 L640 240Z" fill="#3a4658" />
+          {Array.from({ length: 20 }, (_, i) => <ellipse key={i} cx={14 + i * 32} cy={200 + (i % 2) * 4} rx="16" ry="7" fill="#b9b4a0" stroke="#6a6a60" strokeWidth="1" />)}
+          {/* 두꺼운 외투의 병사와 입김 */}
+          {[60, 150, 250, 350, 450, 540].map((x, i) => (
+            <g key={x}>
+              <Soldier x={x} y={226 + (i % 2) * 3} s={2.1} flip={i > 2} rifle />
+              <circle cx={x + (i > 2 ? -9 : 9)} cy={203 + (i % 2) * 3} r="4" fill="#fff" opacity=".6" />
+              <circle cx={x + (i > 2 ? -15 : 15)} cy={198 + (i % 2) * 3} r="6" fill="#fff" opacity=".35" />
+            </g>
+          ))}
+          <path d="M600 190 C596 170 606 160 600 140 C596 126 606 118 602 100" fill="none" stroke="#d8dee6" strokeOpacity=".7" strokeWidth="6" strokeLinecap="round" />
+        </>
+      );
+    case 'spring_thaw':
+      return (
+        <>
+          <Sky id={g('sky')} stops={[[0, '#6f8aa8'], [0.55, '#d6c9a8'], [1, '#f2dcae']]} />
+          <circle cx="150" cy="140" r="30" fill="#fff0c0" opacity=".9" />
+          <circle cx="150" cy="140" r="80" fill="#ffe8a8" opacity=".25" />
+          <path d={ridge(171, 138, 24, 32)} fill="#8a9a88" opacity=".85" />
+          <path d={ridge(172, 156, 16, 24)} fill="#6a6a52" />
+          {/* 녹는 눈과 진창 들판 */}
+          <rect x="0" y="162" width={W} height="78" fill="#5a4630" />
+          {[[60, 176, 70], [190, 192, 56], [330, 180, 80], [470, 196, 60], [570, 178, 64], [250, 214, 70]].map(([x, y, w], i) => <ellipse key={i} cx={x} cy={y} rx={w} ry={w / 5} fill="#e8eef0" opacity=".85" />)}
+          <path d="M0 220 C120 206 240 224 360 212 C480 200 560 218 640 208 L640 240 L0 240Z" fill="#3a2e20" />
+          <path d="M-10 200 C100 190 180 214 300 204 C420 196 520 214 650 198" fill="none" stroke="#9fb4c0" strokeWidth="5" opacity=".7" />
+          {/* 진창에 빠진 지프와 통나무를 깔아 만든 길 */}
+          <g transform="rotate(8 330 206)"><Jeep x={330} y={208} s={2.4} /></g>
+          {Array.from({ length: 6 }, (_, i) => <rect key={i} x={420 + i * 22} y={214 - i * 2} width="26" height="5" rx="2.5" fill="#6a4a2a" stroke="#2a1c10" strokeWidth="1" />)}
+          {[250, 275, 370, 395, 440, 470].map((x, i) => <Soldier key={x} x={x} y={222 + (i % 2) * 3} s={1.9} flip={i > 1} rifle={false} />)}
+          {/* 아지랑이 */}
+          {[120, 300, 500].map((x, i) => <ellipse key={x} cx={x} cy={166 + i * 4} rx="90" ry="6" fill="#fff6dc" opacity=".25" />)}
+        </>
+      );
     case 'barbed_wire':
       return (
         <>
@@ -793,4 +905,5 @@ export const NEW_SCENE_KINDS: NewSceneKind[] = [
   'airstrip', 'war_room', 'tokyo_crowd', 'telegram', 'mushroom', 'empty_capital', 'flag_raise', 'railway_retreat', 'river_tank',
   'ship_conference', 'beachhead', 'wreck_beach', 'hotline', 'convoy', 'river_defense', 'command_post', 'victory_street',
   'hilltop', 'bugle_charge', 'rail_yard', 'refugees_ice', 'red_train', 'river_border', 'campaign_map', 'barbed_wire',
+  'monsoon_rain', 'cold_forecast', 'frozen_front', 'spring_thaw',
 ];

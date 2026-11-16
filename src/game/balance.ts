@@ -1,4 +1,4 @@
-import type { EquipKey, Terrain, UnitKind } from './types';
+import type { Difficulty, EquipKey, Terrain, UnitKind } from './types';
 
 /**
  * 게임 밸런스 상수 모음. 모든 수치는 역사적 사실이 아니라 "게임 밸런스용 임시값"입니다.
@@ -187,6 +187,23 @@ export const ATTRITION = {
   lowSupplyLossPerDay: 0.008,
 };
 
+/**
+ * 날씨와 계절 (양측 모두에 똑같이 적용). 날짜로 결정되며 이벤트로 미리 알려 준다.
+ *  - moveMult: 부대 이동력 배율 / roadSupplyMult: 도로 보급 비용 배율(철도·해상 제외)
+ *  - attackMult: 공격측 전투력 배율 / lossPerDay: 보급이 70 미만인 부대의 하루 손실 계수(보급이 나쁠수록 커진다)
+ *  - consumptionMult: 국가 보급 자원 소모 배율 / recoveryMult: 부상병 회복 배율
+ */
+export type WeatherId = 'clear' | 'monsoon' | 'cold' | 'thaw';
+export const WEATHER: Record<WeatherId, {
+  label: string; icon: string; from: string; to: string; blurb: string;
+  moveMult: number; roadSupplyMult: number; attackMult: number; lossPerDay: number; consumptionMult: number; recoveryMult: number;
+}> = {
+  clear: { label: '평년', icon: '☀', from: '', to: '', blurb: '평년 날씨입니다.', moveMult: 1, roadSupplyMult: 1, attackMult: 1, lossPerDay: 0, consumptionMult: 1, recoveryMult: 1 },
+  monsoon: { label: '장마', icon: '🌧', from: '07-01', to: '08-15', blurb: '비로 도로가 진창이 되어 이동과 보급이 느려집니다.', moveMult: 0.85, roadSupplyMult: 1.2, attackMult: 0.97, lossPerDay: 0, consumptionMult: 1, recoveryMult: 0.9 },
+  cold: { label: '혹한', icon: '❄', from: '12-01', to: '02-28', blurb: '영하의 추위로 이동이 둔해지고, 보급이 약한 부대는 동상과 질병으로 병력을 잃습니다.', moveMult: 0.85, roadSupplyMult: 1.1, attackMult: 0.95, lossPerDay: 0.0025, consumptionMult: 1.15, recoveryMult: 0.8 },
+  thaw: { label: '해빙기', icon: '🌫', from: '03-10', to: '04-10', blurb: '얼었던 땅이 녹아 길이 질척해져 이동과 보급이 크게 느려집니다.', moveMult: 0.8, roadSupplyMult: 1.25, attackMult: 1, lossPerDay: 0, consumptionMult: 1, recoveryMult: 1 },
+};
+
 /** 포위(보급 거점과 단절된 자국 영토 안의 부대): 완료 시점에 조직력 -20%, 이후 포위 턴 수에 비례해 악화 */
 export const ENCIRCLE = {
   organizationFactor: 0.8, // 포위 완료 시점 조직력 ×0.8 (-20%)
@@ -206,6 +223,58 @@ export const RECOVERY = {
   fatigueHoldPerDay: 2.5,
   fatigueMovePerDay: 1.2,
   recoveryPerDay: 7,
+};
+
+/**
+ * 난이도. "보통"이 기존 밸런스이고, 쉬움·어려움은 아래 값만 바뀐다.
+ *  - northForce: 북한군 초기·재편 부대 병력 배율 (정원 100% 상한)
+ *  - southForce: 국군 초기 부대 병력 배율 (정원 100% 상한)
+ *  - northQuality: 북한군 훈련도·경험·사기에 더하는 값
+ *  - northCombat: 북한군·중국군의 전투력 배율 (전투 판정에 곱한다)
+ *  - northReplace: 북한 AI 보충 속도 배율
+ *  - aiAttackRatio: 북한 AI 공격 개시에 필요한 우세비 배율 (작을수록 공세적)
+ *  - unDelayDays: UN군 증원·원조 도착일 가감 (+면 늦게 도착)
+ *  - startCP / cpBonus: 시작 행정 점수 / 매 턴 추가 행정 점수
+ *  - startStock / aidMult / usStart: 시작 보급 자원 / 미국 원조 배율 / 시작 미국 개입도
+ *  - plaExtra: 중국군 참전 규모(사단) 가감
+ *  - northWaves: 북한·중국 후속 증원(재편 부대, 중국군 후속 병력)의 규모 배율
+ */
+export const DIFFICULTY: Record<Difficulty, {
+  label: string;
+  blurb: string;
+  northForce: number;
+  southForce: number;
+  northQuality: number;
+  northCombat: number;
+  northReplace: number;
+  aiAttackRatio: number;
+  unDelayDays: number;
+  startCP: number;
+  cpBonus: number;
+  startStock: number;
+  aidMult: number;
+  usStart: number;
+  plaExtra: number;
+  northWaves: number;
+}> = {
+  easy: {
+    label: '쉬움',
+    blurb: '북한군이 약하고 신중하며, 미군과 원조가 빨리 옵니다. 전쟁을 처음 접하는 분께 권합니다.',
+    northForce: 0.8, southForce: 1.08, northQuality: -8, northCombat: 0.92, northReplace: 0.6, aiAttackRatio: 1.3, unDelayDays: -7,
+    startCP: 8, cpBonus: 1, startStock: 500, aidMult: 1.5, usStart: 30, plaExtra: -6, northWaves: 0.6,
+  },
+  normal: {
+    label: '보통',
+    blurb: '기본 밸런스입니다. 지연전으로 시간을 벌고 낙동강에서 버티는 흐름을 경험합니다.',
+    northForce: 1, southForce: 1, northQuality: 0, northCombat: 1, northReplace: 1, aiAttackRatio: 1, unDelayDays: 0,
+    startCP: 6, cpBonus: 0, startStock: 320, aidMult: 1, usStart: 10, plaExtra: 0, northWaves: 1,
+  },
+  hard: {
+    label: '어려움',
+    blurb: '북한군이 정예이고 공세적이며 증원이 빠릅니다. 미군은 늦게 오고 원조도 적어, 모든 판단이 정확해야 합니다.',
+    northForce: 1, southForce: 0.88, northQuality: 8, northCombat: 1.12, northReplace: 1.8, aiAttackRatio: 0.8, unDelayDays: 14,
+    startCP: 5, cpBonus: 0, startStock: 220, aidMult: 0.7, usStart: 0, plaExtra: 8, northWaves: 1.3,
+  },
 };
 
 export const AI_BALANCE = {

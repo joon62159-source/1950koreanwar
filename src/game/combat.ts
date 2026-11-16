@@ -1,5 +1,6 @@
 import type { BattleReport, GameState, Province, Side, Unit } from './types';
-import { COMBAT, PLA } from './balance';
+import { COMBAT, DIFFICULTY, PLA } from './balance';
+import { weatherAt } from './weather';
 import { applyLosses, fillRatio } from './units';
 import { clamp, formatDate, rand, turnDaysFor } from './util';
 
@@ -204,8 +205,10 @@ export function resolveBattle(
 ): BattleOutcome {
   const days = turnDaysFor(state.date);
   const ctx = battleContextFor(state, province, defenders);
-  const aLuck = 1 + rand(state, -COMBAT.luckSpread, COMBAT.luckSpread);
-  const dLuck = 1 + rand(state, -COMBAT.luckSpread, COMBAT.luckSpread);
+  // 난이도: 북한군·중국군 쪽 전투력 배율 (행운 보정에 함께 곱한다)
+  const northCombat = DIFFICULTY[state.difficulty ?? 'normal'].northCombat;
+  const aLuck = (1 + rand(state, -COMBAT.luckSpread, COMBAT.luckSpread)) * (attackers[0]?.side === 'north' ? northCombat : 1) * weatherAt(state.date).attackMult; // 날씨: 공격측 전투력
+  const dLuck = (1 + rand(state, -COMBAT.luckSpread, COMBAT.luckSpread)) * (defenders[0]?.side === 'north' ? northCombat : 1);
   const a = calcSide(attackers, defenders, 'attack', ctx, aLuck);
   const d = calcSide(defenders, attackers, 'defend', ctx, dLuck);
   const R = a.power / Math.max(1, d.power);

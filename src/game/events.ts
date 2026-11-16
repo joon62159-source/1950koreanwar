@@ -3,7 +3,7 @@ import { MAP } from './map';
 import { CHINA_BORDER_PROVINCES } from '../data/outline';
 import { applyReinforcement, northSpawnProvince, spawnTemplate } from './scenario';
 import { plaBrigades, sovietDivisions } from '../data/orbat';
-import { NUKE } from './balance';
+import { DIFFICULTY, NUKE } from './balance';
 import { executeLanding } from './amphibious';
 import { mobilize } from './mobilization';
 import { MOBILIZATION_PROFILES } from '../data/mobilization';
@@ -139,12 +139,13 @@ export function applyEffect(state: GameState, e: Effect): void {
       break;
     }
     case 'spawnPla': {
-      const tpls = plaBrigades(e.count, e.label, e.provinces[0]);
+      const cnt = Math.max(1, Math.round(e.count * DIFFICULTY[state.difficulty ?? 'normal'].northWaves)); // 난이도: 중국군 증원 규모
+      const tpls = plaBrigades(cnt, e.label, e.provinces[0]);
       tpls.forEach((t, i) => {
         const loc = northSpawnProvince(state, e.provinces, i);
         if (loc) spawnTemplate(state, { ...t, location: loc });
       });
-      addLog(state, 'warn', `중국군 ${e.count}개 사단급 부대가 투입되었습니다.`);
+      addLog(state, 'warn', `중국군 ${cnt}개 사단급 부대가 투입되었습니다.`);
       break;
     }
     case 'nuke': {
@@ -172,13 +173,14 @@ export function applyEffect(state: GameState, e: Effect): void {
     }
     case 'plaCross': {
       const inChina = () => Object.values(state.units).filter((u) => u.faction === 'PLA' && u.location === 'china');
-      const need = Math.max(0, e.total - Object.values(state.units).filter((u) => u.faction === 'PLA').length);
+      const total = e.total + DIFFICULTY[state.difficulty ?? 'normal'].plaExtra; // 난이도에 따라 참전 규모가 달라진다
+      const need = Math.max(0, total - Object.values(state.units).filter((u) => u.faction === 'PLA').length);
       if (need > 0) {
         plaBrigades(need, e.label, 'china').forEach((t) => spawnTemplate(state, t));
       }
       const gates = CHINA_BORDER_PROVINCES.filter((id) => state.provinces[id].owner === 'north');
       if (gates.length) inChina().forEach((u, i) => { u.location = gates[i % gates.length]; u.order = null; });
-      addLog(state, 'warn', `중국군 ${e.total}개 사단급이 압록강·두만강을 건너 북한 영토로 진입했습니다.`);
+      addLog(state, 'warn', `중국군 ${total}개 사단급이 압록강·두만강을 건너 북한 영토로 진입했습니다.`);
       break;
     }
     case 'fortifyFront': {

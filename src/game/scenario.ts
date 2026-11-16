@@ -1,15 +1,15 @@
 import { CHINA_SEED, PROVINCE_SEEDS } from '../data/provinceSeeds';
 import { INITIAL_UNITS, REINFORCEMENTS, type UnitTemplate } from '../data/orbat';
-import { ECONOMY, AI_BALANCE, SCENARIO } from './balance';
+import { ECONOMY, AI_BALANCE, DIFFICULTY, SCENARIO } from './balance';
 import { MAP } from './map';
 import { computeSupply } from './supply';
 import { computeWarCapacity, effectiveIndustry } from './economy';
 import { createUnit, emptyEquip, totalStrength } from './units';
 import { addLog } from './util';
 import { updateIntel } from './visibility';
-import type { GameState, Province, Side } from './types';
+import type { Difficulty, GameState, Province, Side } from './types';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 const SOUTH_POP_TOTAL = 20200; // 천 명, 1949년 전후 남한 총인구 약 2,000만 (추정 총량)
 const NORTH_POP_TOTAL = 9600; // 천 명, 북한 총인구 추정 총량
 
@@ -87,7 +87,25 @@ function buildProvinces(): Record<string, Province> {
   return out;
 }
 
-export function spawnTemplate(state: GameState, t: UnitTemplate) {
+/** 난이도에 따라 북한군(병력·훈련도·경험·사기)과 국군(병력) 부대를 조정한다 */
+export function tuneTemplate(state: GameState, t: UnitTemplate): UnitTemplate {
+  if (t.faction !== 'KPA' && t.faction !== 'ROK') return t;
+  const d = DIFFICULTY[state.difficulty ?? 'normal'];
+  if (t.faction === 'ROK') {
+    return d.southForce === 1 ? t : { ...t, strengthPct: Math.min(1, (t.strengthPct ?? 0.9) * d.southForce) };
+  }
+  if (d.northForce === 1 && d.northQuality === 0) return t;
+  return {
+    ...t,
+    strengthPct: Math.min(1, (t.strengthPct ?? 0.9) * d.northForce),
+    training: t.training + d.northQuality,
+    experience: t.experience + d.northQuality / 2,
+    morale: (t.morale ?? 70) + d.northQuality,
+  };
+}
+
+export function spawnTemplate(state: GameState, t0: UnitTemplate) {
+  const t = tuneTemplate(state, t0);
   const u = createUnit(state, {
     faction: t.faction, name: t.name, parent: t.parent, kind: t.kind, echelon: t.echelon, location: t.location,
     training: t.training, experience: t.experience, morale: t.morale, strengthPct: t.strengthPct,
@@ -111,7 +129,12 @@ export function applyReinforcement(state: GameState, id: string): string | null 
   if (r.requiresFlag && !state.flags[r.requiresFlag]) return null;
   if (id.startsWith('pla-wave') && state.flags.nukeUsed) return null; // 핵 투하 이후 중국군 증원 불가
   state.flags[`reinf:${id}`] = true;
-  r.units.forEach((t, i) => {
+  // 난이도: 북한·중국 후속 증원 규모 (줄이면 앞에서부터 남기고, 늘리면 같은 부대를 더 편성한다)
+  const waves = r.side === 'north' ? DIFFICULTY[state.difficulty ?? 'normal'].northWaves : 1;
+  const base = r.units;
+  const want = Math.max(base.length ? 1 : 0, Math.round(base.length * waves));
+  const units = Array.from({ length: want }, (_, i) => (i < base.length ? base[i] : { ...base[i % base.length], name: `${base[i % base.length].name} (증편 ${i - base.length + 1})` }));
+  units.forEach((t, i) => {
     if (t.faction === 'PLA' || t.faction === 'KPA') {
       const loc = northSpawnProvince(state, [t.location], i);
       if (!loc) return;
@@ -126,9 +149,11 @@ export function applyReinforcement(state: GameState, id: string): string | null 
   return r.message;
 }
 
-export function newGame(seed = 1950): GameState {
+export function newGame(seed = 1950, difficulty: Difficulty = 'normal'): GameState {
+  const dif = DIFFICULTY[difficulty];
   const state: GameState = {
     version: SAVE_VERSION,
+    difficulty,
     scenarioId: SCENARIO.id,
     turn: 1,
     date: SCENARIO.startDate,
@@ -138,7 +163,7 @@ export function newGame(seed = 1950): GameState {
     units: {},
     nations: {
       south: {
-        side: 'south', supplyStock: 320, popularSupport: 68, warCapacity: 0, commandPoints: 6, replacementPool: 0, policyCooldowns: {}, casualties: 0,
+        side: 'south', supplyStock: dif.startStock, popularSupport: 68, warCapacity: 0, commandPoints: dif.startCP, replacementPool: 0, policyCooldowns: {}, casualties: 0,
         // 초기 군수 재고 (게임 밸런스 값)
         equipStock: { rifles: 4500, machineGuns: 60, mortars: 30, artillery: 6, antiTank: 50, tanks: 0, vehicles: 55 },
         trainees: { count: 2400, training: 20 },
@@ -153,7 +178,7 @@ export function newGame(seed = 1950): GameState {
         stats: { killed: 0, wounded: 0, returned: 0, missing: 0, prisoners: 0, unitsDestroyed: 0 },
       },
     },
-    diplomacy: { usCommitment: 10, unSupport: 15, chinaThreat: 5, sovietSupport: 45 },
+    diplomacy: { usCommitment: dif.usStart, unSupport: 15, chinaThreat: 5, sovietSupport: 45 },
     flags: {},
     firedEvents: [],
     pendingEvents: [],

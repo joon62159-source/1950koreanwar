@@ -152,7 +152,7 @@ describe('중국 프로빈스는 병력이 넘어오는 곳일 뿐이다', () =>
 describe('이벤트 장면 그림', () => {
   it('같은 장면 그림을 여러 이벤트가 돌려 쓰지 않는다 (장면당 최대 2개 이벤트)', () => {
     const count: Record<string, string[]> = {};
-    for (const [id, n] of Object.entries(NARRATIVES).filter(([k]) => !k.startsWith('casualty_report'))) (count[n.scene] ??= []).push(id);
+    for (const [id, n] of Object.entries(NARRATIVES).filter(([k]) => !k.startsWith('casualty_report') && !k.startsWith('weather_'))) (count[n.scene] ??= []).push(id);
     for (const [scene, ids] of Object.entries(count)) expect(ids.length, `${scene}: ${ids.join(', ')}`).toBeLessThanOrEqual(2);
   });
 });
@@ -223,5 +223,120 @@ describe('보급 거점·보급선·전진 보급소 관리', () => {
     computeSupply(g);
     expect(hubDetails(g, 'south', false).some((h) => h.id === 'daejeon')).toBe(false);
     expect(g.flags['depotBuilt:south:daejeon']).toBeUndefined();
+  });
+});
+
+describe('난이도', () => {
+  it('난이도에 따라 시작 자원과 북한군 전력이 달라지고, 보통은 기본값이다', async () => {
+    const { createGame: make } = await import('../game/engine');
+    const { DIFFICULTY } = await import('../game/balance');
+    const strength = (g: ReturnType<typeof make>, faction: string) => Object.values(g.units).filter((u) => u.faction === faction).reduce((s, u) => s + u.strength, 0);
+    const easy = make(7, 'easy'), normal = make(7, 'normal'), hard = make(7, 'hard');
+    expect(easy.difficulty).toBe('easy');
+    expect(normal.difficulty).toBe('normal');
+    expect(normal.nations.south.supplyStock).toBe(320); // 보통 = 기존 값
+    expect(easy.nations.south.supplyStock).toBe(DIFFICULTY.easy.startStock);
+    expect(hard.nations.south.supplyStock).toBe(DIFFICULTY.hard.startStock);
+    expect(easy.nations.south.commandPoints).toBeGreaterThan(normal.nations.south.commandPoints);
+    expect(hard.nations.south.commandPoints).toBeLessThan(normal.nations.south.commandPoints);
+    expect(strength(easy, 'KPA')).toBeLessThan(strength(normal, 'KPA'));
+    expect(strength(hard, 'KPA')).toBeGreaterThanOrEqual(strength(normal, 'KPA'));
+    expect(strength(easy, 'ROK')).toBeGreaterThan(strength(normal, 'ROK'));
+    expect(strength(hard, 'ROK')).toBeLessThan(strength(normal, 'ROK'));
+  });
+  it('UN군 증원 도착일과 중국군 참전 규모가 난이도에 따라 달라진다', async () => {
+    const { createGame: make } = await import('../game/engine');
+    const { endTurn } = await import('../game/turn');
+    const { applyEffect } = await import('../game/events');
+    const first = (d: 'easy' | 'normal' | 'hard') => {
+      const g = make(11, d);
+      let guard = 0;
+      while (!g.flags['reinf:un-24div'] && guard++ < 20) {
+        g.pendingEvents = [];
+        endTurn(g);
+      }
+      return g.date;
+    };
+    expect(first('easy') <= first('normal')).toBe(true);
+    expect(first('hard') >= first('normal')).toBe(true);
+    const pla = (d: 'easy' | 'normal' | 'hard') => {
+      const g = make(11, d);
+      applyEffect(g, { kind: 'plaCross', total: 20, label: '시험' });
+      return Object.values(g.units).filter((u) => u.faction === 'PLA').length;
+    };
+    expect(pla('easy')).toBeLessThan(pla('normal'));
+    expect(pla('hard')).toBeGreaterThan(pla('normal'));
+    expect(pla('normal')).toBe(20);
+  });
+  it('새 게임을 시작하면 시작 화면에서 고른 난이도로 게임이 만들어진다', async () => {
+    const { useGame: store } = await import('../store/gameStore');
+    store.getState().newGame('hard');
+    expect(store.getState().game.difficulty).toBe('hard');
+    expect(store.getState().screen).toBe('game');
+    store.getState().restart();
+    expect(store.getState().game.difficulty).toBe('hard'); // 같은 난이도로 다시
+    store.getState().newGame('normal');
+  });
+});
+
+describe('날씨와 계절', () => {
+  it('날짜로 장마·혹한·해빙기가 정해진다', async () => {
+    const { weatherIdAt } = await import('../game/weather');
+    expect(weatherIdAt('1950-07-10')).toBe('monsoon');
+    expect(weatherIdAt('1950-09-10')).toBe('clear');
+    expect(weatherIdAt('1950-12-25')).toBe('cold');
+    expect(weatherIdAt('1951-02-20')).toBe('cold');
+    expect(weatherIdAt('1951-03-15')).toBe('thaw');
+    expect(weatherIdAt('1951-05-01')).toBe('clear');
+  });
+  it('혹한·장마·해빙기에는 이동력이 줄고 혹한에는 공격력·보급 소모가 달라진다', async () => {
+    const { movePoints } = await import('../game/orders');
+    const { supplyBalance } = await import('../game/economy');
+    const g = createGame(3);
+    const u = Object.values(g.units).find((x) => x.side === 'south')!;
+    g.date = '1950-09-08';
+    const clear = movePoints(g, u);
+    const cons = supplyBalance(g, 'south').consumption;
+    g.date = '1950-12-08';
+    expect(movePoints(g, u)).toBeLessThan(clear);
+    expect(supplyBalance(g, 'south').consumption).toBeGreaterThan(cons);
+    g.date = '1951-03-15';
+    expect(movePoints(g, u)).toBeLessThan(clear);
+  });
+  it('혹한에는 보급이 약한 부대가 같은 조건의 평년보다 더 많은 병력을 잃는다', async () => {
+    const { endTurn } = await import('../game/turn');
+    const { createUnit } = await import('../game/units');
+    const lossAt = (date: string) => {
+      const g = createGame(5);
+      g.pendingEvents = [];
+      for (const id of Object.keys(g.units)) delete g.units[id];
+      g.date = date;
+      const u = createUnit(g, { faction: 'KPA', name: '시험', parent: '시험', kind: 'infantry', location: 'hoeryong', training: 50, experience: 10, defaultFill: 0.9 });
+      g.units[u.id] = u;
+      u.supply = 20;
+      const before = u.strength;
+      endTurn(g);
+      return before - (g.units[u.id]?.strength ?? 0);
+    };
+    expect(lossAt('1950-12-12')).toBeGreaterThan(lossAt('1950-09-12'));
+  });
+  it('계절 이벤트가 해마다 때맞춰 뜬다', async () => {
+    const g = createGame(3);
+    g.pendingEvents = [];
+    g.date = '1950-07-02';
+    checkEvents(g);
+    expect(g.pendingEvents.map((p) => p.eventId)).toContain('weather_monsoon_1950');
+    g.pendingEvents = [];
+    g.date = '1950-11-23';
+    checkEvents(g);
+    expect(g.pendingEvents.map((p) => p.eventId)).toContain('weather_cold_warning_1950');
+    g.pendingEvents = [];
+    g.date = '1950-12-03';
+    checkEvents(g);
+    expect(g.pendingEvents.map((p) => p.eventId)).toContain('weather_cold_1950');
+    g.pendingEvents = [];
+    g.date = '1951-03-12';
+    checkEvents(g);
+    expect(g.pendingEvents.map((p) => p.eventId)).toContain('weather_thaw_1951');
   });
 });

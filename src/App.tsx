@@ -8,6 +8,7 @@ import MapView from './components/MapView';
 import PlaybackPanel from './components/PlaybackPanel';
 import ModalLayer from './components/ModalLayer';
 import MobileApp from './mobile/MobileApp';
+import TitleScreen from './components/TitleScreen';
 
 function DesktopApp() {
   const playing = useGame((s) => s.playback !== null);
@@ -30,5 +31,12 @@ function DesktopApp() {
 
 /** 화면 폭에 따라 모바일(세로) 화면 또는 데스크톱 화면을 보여 준다 */
 export default function App() {
-  return useIsMobile() ? <MobileApp /> : <DesktopApp />;
+  const mobile = useIsMobile();
+  const screen = useGame((s) => s.screen);
+  return (
+    <>
+      {mobile ? <MobileApp /> : <DesktopApp />}
+      {screen === 'title' && <TitleScreen />}
+    </>
+  );
 }

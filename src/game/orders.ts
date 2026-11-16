@@ -2,6 +2,7 @@ import type { GameState, Order, OrderType, Side, Unit } from './types';
 import { MAP } from './map';
 import { MOVEMENT } from './balance';
 import { clamp, turnDaysFor } from './util';
+import { weatherAt } from './weather';
 
 export interface Result {
   ok: boolean;
@@ -12,7 +13,7 @@ const fail = (reason: string): Result => ({ ok: false, reason });
 /** 이번 턴 이동력(km). 피로와 조직력이 낮으면 줄어든다. */
 export function movePoints(state: GameState, u: Unit): number {
   const days = turnDaysFor(state.date);
-  return u.speed * days * (1 - 0.3 * (u.fatigue / 100)) * (0.7 + 0.3 * (u.organization / 100));
+  return u.speed * days * (1 - 0.3 * (u.fatigue / 100)) * (0.7 + 0.3 * (u.organization / 100)) * weatherAt(state.date).moveMult;
 }
 
 /** 인접한 두 프로빈스 사이의 이동 비용(km 환산) */
