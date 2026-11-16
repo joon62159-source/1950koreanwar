@@ -5,6 +5,7 @@ import { MAP } from '../game/map';
 import { forceStats, sideTotals } from '../game/casualty';
 import { nationalDraftPool } from '../game/manpower';
 import { STORY_NARRATIVES } from './eventNarrativeStory';
+import { LETTER_NARRATIVES } from './eventsLetters';
 import { weatherEffectLines } from '../game/weather';
 
 /**
@@ -196,7 +197,7 @@ export const NARRATIVES: Record<string, Narrative> = {
   casualty_report_talks: { scene: 'memorial', kicker: '회담 테이블의 무게', paragraphs: ['협상이 시작되었다. 이 탁자 위의 모든 선은 이 숫자들의 대가 위에 그어진다.'] },
 };
 
-Object.assign(NARRATIVES, STORY_NARRATIVES);
+Object.assign(NARRATIVES, STORY_NARRATIVES, LETTER_NARRATIVES);
 
 /** 이벤트마다 서로 다른 장면을 쓰도록 지정 (같은 그림을 여러 이벤트가 돌려 쓰지 않는다) */
 const SCENE_BY_EVENT: Record<string, SceneKind> = {

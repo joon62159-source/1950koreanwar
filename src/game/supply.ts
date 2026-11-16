@@ -218,6 +218,7 @@ export function buildDepot(state: GameState, side: Side, id: string): Result {
   if (!cp.ok) return cp;
   n.supplyStock -= SUPPLY.builtDepotStock;
   state.flags[`depotBuilt:${side}:${id}`] = state.turn;
+  state.flags['stat:depotsBuilt'] = Number(state.flags['stat:depotsBuilt'] ?? 0) + 1; // 업적용 누적 설치 횟수
   return { ok: true, reason: `${p.name}에 전진 보급소를 설치했습니다. 보급 수준 ${SUPPLY.builtDepotLevel}의 보급이 주변으로 퍼집니다.` };
 }
 

@@ -3,6 +3,8 @@ import { useGame } from '../store/gameStore';
 import { EVENT_BY_ID, type Effect } from '../data/events';
 import { NARRATIVES, describeEffects, situationLines } from '../data/eventNarrative';
 import EventScene from './EventScene';
+import NewspaperModal from './Newspaper';
+import { ACHIEVEMENT_BY_ID } from '../game/achievements';
 import { EVENT_IMAGES } from '../data/eventImages';
 import { formatDate } from '../game/util';
 import { fmt } from './common';
@@ -12,7 +14,7 @@ import { buildLandingPlan, type LandingReport } from '../game/amphibious';
 import { CasualtyPanel, ManagementBody, MobilizationPreview, MobilizedReportModalBody } from './NationPanels';
 import { useMemo } from 'react';
 
-function Shell({ children, width = 640, z = 40 }: { children: React.ReactNode; width?: number; z?: number }) {
+export function Shell({ children, width = 640, z = 40 }: { children: React.ReactNode; width?: number; z?: number }) {
   return (
     <div className="modal-bg fixed inset-0 flex items-center justify-center p-2 sm:p-4" style={{ zIndex: z }}>
       <div className="fade-in max-h-[94dvh] overflow-y-auto" style={{ width, maxWidth: '100%' }}>{children}</div>
@@ -116,7 +118,7 @@ export function EventModal() {
   );
 }
 
-function BattleCard({ r, onOpen }: { r: BattleReport; onOpen?: () => void }) {
+export function BattleCard({ r, onOpen }: { r: BattleReport; onOpen?: () => void }) {
   const game = useGame((s) => s.game);
   const ours = r.attackerSide === game.playerSide;
   const total = Math.max(1, r.attackerPower + r.defenderPower);
@@ -143,31 +145,31 @@ function BattleCard({ r, onOpen }: { r: BattleReport; onOpen?: () => void }) {
   );
 }
 
-export function BriefingModal() {
+/** 브리핑 원문(턴 요약 줄과 전투 카드). 신문의 "상세 보고서"로 펼쳐 본다. */
+export function BriefingDetails() {
   const game = useGame((s) => s.game);
-  const setModal = useGame((s) => s.setModal);
   const showBattle = useGame((s) => s.showBattle);
   return (
-    <Shell width={720}>
-      <div className="panel rounded p-5">
-        <div className="panel-title">▍상황 브리핑 — {formatDate(game.date)}</div>
-        <ul className="mt-2 flex flex-col gap-1 text-[13px] leading-[1.55]">
-          {game.briefing.map((l, i) => (
-            <li key={i} className={l.startsWith('【함락】') ? 'text-red-300' : l.startsWith('【점령】') || l.startsWith('【증원】') ? 'text-emerald-300' : l.startsWith('【보급】') ? 'text-amber-300' : 'text-slate-200'}>{l}</li>
-          ))}
-        </ul>
-        {game.reports.length > 0 && (
-          <>
-            <div className="panel-title mt-4">▍전투 결과</div>
-            <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {game.reports.map((r) => <BattleCard key={r.id} r={r} onOpen={() => showBattle(r.id)} />)}
-            </div>
-          </>
-        )}
-        <div className="mt-4 flex justify-end"><button className="btn btn-blue px-5 py-1.5" onClick={() => setModal(null)}>다음 턴 시작</button></div>
-      </div>
-    </Shell>
+    <div>
+      <ul className="flex flex-col gap-1 text-[13px] leading-[1.55]">
+        {game.briefing.map((l, i) => (
+          <li key={i} className={l.startsWith('【함락】') ? 'text-red-300' : l.startsWith('【점령】') || l.startsWith('【증원】') ? 'text-emerald-300' : l.startsWith('【보급】') ? 'text-amber-300' : 'text-slate-200'}>{l}</li>
+        ))}
+      </ul>
+      {game.reports.length > 0 && (
+        <>
+          <div className="panel-title mt-4">▍전투 결과</div>
+          <div className="mt-1 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {game.reports.map((r) => <BattleCard key={r.id} r={r} onOpen={() => showBattle(r.id)} />)}
+          </div>
+        </>
+      )}
+    </div>
   );
+}
+
+export function BriefingModal() {
+  return <NewspaperModal />;
 }
 
 export function BattleModal() {
@@ -199,6 +201,7 @@ export function BattleModal() {
 export function GameOverModal() {
   const game = useGame((s) => s.game);
   const setScreen = useGame((s) => s.setScreen);
+  const gameAch = useGame((s) => s.gameAch);
   const setModal = useGame((s) => s.setModal);
   const o = game.outcome;
   if (!o) return null;
@@ -224,8 +227,15 @@ export function GameOverModal() {
             </div>
           </div>
         )}
-        <div className="mt-5 flex justify-end gap-2">
+        {gameAch.length > 0 && (
+          <div className="mt-4 rounded border border-[#8a7a4f] bg-[#1c1a10] p-2.5 text-[12.5px]">
+            <div className="mb-1 font-bold text-[#f1e3b7]">🏆 이번 게임에서 달성한 업적 {gameAch.length}개</div>
+            <ul className="flex flex-wrap gap-1.5">{gameAch.map((id) => <li key={id} className="tag tag-fake">{ACHIEVEMENT_BY_ID[id]?.title ?? id}</li>)}</ul>
+          </div>
+        )}
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button className="btn px-4" onClick={() => setModal(null)}>지도 보기</button>
+          <button className="btn btn-blue px-4" onClick={() => setModal('replay')}>진행 다시 보기</button>
           <button className="btn btn-primary px-6 py-2" onClick={() => { setModal(null); setScreen('title'); }}>새 게임 (난이도 선택)</button>
         </div>
       </div>
@@ -242,6 +252,8 @@ export function MenuModal() {
         <div className="mt-3 flex flex-col gap-2">
           <button className="btn py-2" onClick={() => { setModal(null); setScreen('title'); }}>새 게임 (난이도 선택)</button>
           <button className="btn py-2" onClick={() => { restart(); setModal(null); }}>같은 난이도로 처음부터 다시</button>
+          <button className="btn py-2" disabled={game.history.length < 2} onClick={() => setModal('replay')}>지금까지의 전쟁 기록 보기</button>
+          <button className="btn py-2" onClick={() => setModal('achievements')}>업적 보기</button>
           <button className="btn py-2" onClick={() => { save(); }}>저장 (현재 {game.turn}턴)</button>
           <button className="btn py-2" disabled={!saveInfo.exists} onClick={() => { load(); }}>
             불러오기 {saveInfo.exists ? `(저장: ${saveInfo.turn}턴, ${saveInfo.date})` : '(저장 데이터 없음)'}

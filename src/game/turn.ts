@@ -17,6 +17,7 @@ import { checkOutcome } from './victory';
 import { updateIntel } from './visibility';
 import { addDays, addLog, clamp, formatDate, other, turnDaysFor } from './util';
 import { weatherAt } from './weather';
+import { recordHistory } from './history';
 
 const SEOUL_HOLD = ['seoul', 'uijeongbu', 'gimpo'];
 const PERIMETER_RETREAT_PENALTY = ['daegu', 'waegwan', 'masan', 'changnyeong', 'yeongcheon', 'pohang'];
@@ -459,5 +460,6 @@ export function endTurn(state: GameState): { ok: boolean; reason?: string } {
   summary.unshift(`${formatDate(state.date)} — 지난 ${days}일간 영토 변화: 상실 ${lost}, 획득 ${gained}.`);
   state.briefing = summary;
   for (const line of summary.slice(0, 1)) addLog(state, 'info', line);
+  recordHistory(state); // 진행 기록: 이 턴이 끝난 시점의 영토·사상자·병력
   return { ok: true };
 }

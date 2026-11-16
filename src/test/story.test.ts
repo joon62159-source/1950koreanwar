@@ -152,7 +152,7 @@ describe('중국 프로빈스는 병력이 넘어오는 곳일 뿐이다', () =>
 describe('이벤트 장면 그림', () => {
   it('같은 장면 그림을 여러 이벤트가 돌려 쓰지 않는다 (장면당 최대 2개 이벤트)', () => {
     const count: Record<string, string[]> = {};
-    for (const [id, n] of Object.entries(NARRATIVES).filter(([k]) => !k.startsWith('casualty_report') && !k.startsWith('weather_'))) (count[n.scene] ??= []).push(id);
+    for (const [id, n] of Object.entries(NARRATIVES).filter(([k]) => !k.startsWith('casualty_report') && !k.startsWith('weather_') && !k.startsWith('letter_'))) (count[n.scene] ??= []).push(id);
     for (const [scene, ids] of Object.entries(count)) expect(ids.length, `${scene}: ${ids.join(', ')}`).toBeLessThanOrEqual(2);
   });
 });
@@ -338,5 +338,70 @@ describe('날씨와 계절', () => {
     g.date = '1951-03-12';
     checkEvents(g);
     expect(g.pendingEvents.map((p) => p.eventId)).toContain('weather_thaw_1951');
+  });
+});
+
+describe('진행 기록·업적·신문·전선 편지', () => {
+  it('턴마다 진행 기록이 쌓이고 영토 변화가 복원된다', async () => {
+    const { endTurn } = await import('../game/turn');
+    const { ownerChanges } = await import('../game/history');
+    const g = createGame(3);
+    expect(g.history.length).toBe(1);
+    expect(g.history[0].owners.length).toBe(Object.values(g.provinces).filter((p) => !p.external).length);
+    for (let i = 0; i < 3; i++) {
+      g.pendingEvents = [];
+      endTurn(g);
+    }
+    expect(g.history.length).toBe(4);
+    expect(g.history[3].turn).toBe(g.turn);
+    expect(g.history[3].south + g.history[3].north).toBe(g.history[0].south + g.history[0].north);
+    expect(Array.isArray(ownerChanges(g, 3))).toBe(true);
+  });
+  it('업적: 조건을 채우면 달성으로 판정되고 이미 달성한 것은 다시 나오지 않는다', async () => {
+    const { newlyUnlocked, ACHIEVEMENTS } = await import('../game/achievements');
+    const g = createGame(3);
+    expect(newlyUnlocked(g, {}).map((a) => a.id)).not.toContain('incheon');
+    g.flags.incheonHub = true;
+    g.flags.mobilized = true;
+    const ids = newlyUnlocked(g, {}).map((a) => a.id);
+    expect(ids).toContain('incheon');
+    expect(ids).toContain('mobilize');
+    expect(newlyUnlocked(g, { incheon: { date: 'x', turn: 1, difficulty: 'normal' } }).map((a) => a.id)).not.toContain('incheon');
+    g.outcome = { turn: 5, date: '1953-07-27', result: 'victory', grade: 'A', title: '정전', reasons: [], score: null } as never;
+    g.difficulty = 'hard';
+    const end = newlyUnlocked(g, {}).map((a) => a.id);
+    expect(end).toEqual(expect.arrayContaining(['win', 'win_hard', 'seoul_kept', 'grade_a']));
+    expect(new Set(ACHIEVEMENTS.map((a) => a.id)).size).toBe(ACHIEVEMENTS.length);
+  });
+  it('신문: 턴 결과로 머리기사와 본문이 만들어진다', async () => {
+    const { buildNewspaper } = await import('../game/newspaper');
+    const { endTurn } = await import('../game/turn');
+    const g = createGame(3);
+    g.pendingEvents = [];
+    endTurn(g);
+    const paper = buildNewspaper(g);
+    expect(paper.headline.length).toBeGreaterThan(3);
+    expect(paper.lead.length).toBeGreaterThan(0);
+    expect(paper.stats.length).toBe(4);
+    expect(paper.dateLine).toContain('1950');
+    // 서울 함락 보도
+    g.provinces.seoul.owner = 'north';
+    g.lastTurn = { turn: g.turn, date: g.date, initialOwners: {}, initialUnits: {}, steps: [{ id: 'x', kind: 'occupy', province: 'seoul', title: '서울 점령', ownerChanges: [{ province: 'seoul', from: 'south', to: 'north' }], unitMoves: [], unitsRemoved: [] }] };
+    expect(buildNewspaper(g).headline).toContain('서울');
+  });
+  it('전선 편지: 4턴 동안 이벤트가 없을 때만, 한 턴에 한 통만 뜬다', () => {
+    const g = createGame(3);
+    g.pendingEvents = [];
+    g.date = '1950-08-10';
+    g.turn = 10;
+    g.flags.lastEventTurn = 8;
+    checkEvents(g);
+    expect(g.pendingEvents.some((p) => p.eventId.startsWith('letter_'))).toBe(false); // 2턴밖에 안 지남
+    g.flags.lastEventTurn = 5;
+    g.pendingEvents = [];
+    checkEvents(g);
+    const letters = g.pendingEvents.filter((p) => p.eventId.startsWith('letter_'));
+    expect(letters.length).toBe(1);
+    expect(g.flags.lastEventTurn).toBe(10); // 편지도 이벤트로 취급되어 다음 편지는 또 4턴 뒤
   });
 });

@@ -1,6 +1,8 @@
 import type { Diplomacy, EquipKey, Side } from '../game/types';
+import type { WeatherId } from '../game/balance';
 import type { UnitTemplate } from './orbat';
 import { STORY_EVENTS } from './eventsStory';
+import { LETTER_EVENTS } from './eventsLetters';
 import { PLA } from '../game/balance';
 
 /**
@@ -28,6 +30,14 @@ export type Condition =
   | { kind: 'eventFired'; id: string }
   /** 아군(남측)이 38선 훨씬 북쪽의 원래 북한 영토를 점령하고 있음 (북진) */
   | { kind: 'beyond38' }
+  /** 마지막으로 이벤트가 발동한 뒤 min 턴 이상 조용했음 (전선 편지용: 한 턴에 편지는 한 통만) */
+  | { kind: 'quietTurns'; min: number }
+  /** 지금 날씨 */
+  | { kind: 'weatherIs'; id: WeatherId }
+  /** side 의 누적 전사자가 min 명 이상 */
+  | { kind: 'casualtiesAtLeast'; side: Side; min: number }
+  /** side 의 부대 중 보급이 끊긴 부대가 min 개 이상 */
+  | { kind: 'unitsCutAtLeast'; side: Side; min: number }
   /** side 의 여단이 해당 지역(또는 인접 지역)에 min 개 이상 있음 */
   | { kind: 'unitsNear'; side: Side; provinces: string[]; min: number; adjacent?: boolean }
   | { kind: 'anyOf'; of: Condition[] }
@@ -794,6 +804,7 @@ export const EVENTS: HistoricalEvent[] = [
     historicalDate: '(전황 연동)', source: '게임 내 집계', needsVerification: false, isCounterfactual: false,
   },
   ...STORY_EVENTS,
+  ...LETTER_EVENTS, // 전선 편지는 항상 맨 뒤: 다른 이벤트가 먼저 발동한 턴에는 편지가 뜨지 않는다
 ];
 
 export const EVENT_BY_ID: Record<string, HistoricalEvent> = Object.fromEntries(EVENTS.map((e) => [e.id, e]));

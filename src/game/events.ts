@@ -1,6 +1,7 @@
 import { EVENTS, EVENT_BY_ID, type Condition, type Effect, type HistoricalEvent } from '../data/events';
 import { MAP } from './map';
 import { CHINA_BORDER_PROVINCES } from '../data/outline';
+import { weatherIdAt } from './weather';
 import { applyReinforcement, northSpawnProvince, spawnTemplate } from './scenario';
 import { plaBrigades, sovietDivisions } from '../data/orbat';
 import { DIFFICULTY, NUKE } from './balance';
@@ -37,6 +38,14 @@ export function conditionHolds(state: GameState, c: Condition): boolean {
       return state.flags[c.key] !== undefined;
     case 'eventFired':
       return state.firedEvents.includes(c.id);
+    case 'quietTurns':
+      return state.turn - Number(state.flags.lastEventTurn ?? 0) >= c.min && state.flags.letterTurn !== state.turn;
+    case 'weatherIs':
+      return weatherIdAt(state.date) === c.id;
+    case 'casualtiesAtLeast':
+      return state.nations[c.side].stats.killed >= c.min;
+    case 'unitsCutAtLeast':
+      return Object.values(state.units).filter((u) => u.side === c.side && state.provinces[u.location].owner === c.side && !state.provinces[u.location].supplied).length >= c.min;
     case 'beyond38':
       return Object.values(state.provinces).some((p) => p.owner === 'south' && p.initialOwner === 'north' && MAP.geometry[p.id].lat >= 38.3);
     case 'unitsNear': {
@@ -220,6 +229,8 @@ export function checkEvents(state: GameState): string[] {
     if (ev.earliestDate > turnEnd || ev.latestDate < turnStart) continue;
     if (!ev.conditions.every((c) => conditionHolds(state, c))) continue;
     state.firedEvents.push(ev.id);
+    state.flags.lastEventTurn = state.turn;
+    if (ev.id.startsWith('letter_')) state.flags.letterTurn = state.turn; // 한 턴에 편지는 한 통만
     for (const e of ev.effects) applyEffect(state, e);
     state.pendingEvents.push({ eventId: ev.id });
     addLog(state, 'event', `【${ev.title}】${ev.isCounterfactual ? ' (가상 사건)' : ''}`);

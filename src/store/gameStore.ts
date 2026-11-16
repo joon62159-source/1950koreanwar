@@ -7,6 +7,8 @@ import { resolveEvent } from '../game/events';
 import * as eco from '../game/economy';
 import * as man from '../game/manpower';
 import { buildDepot, removeDepot } from '../game/supply';
+import { loadAchievements, newlyUnlocked, saveAchievements, type Unlocked } from '../game/achievements';
+import { formatDate } from '../game/util';
 import { needsRest, unitsAt } from '../game/units';
 import { usePolicy } from '../game/policies';
 import { loadFromStorage, peekSave, saveToStorage, type SaveSlotInfo } from '../game/save';
@@ -16,7 +18,7 @@ import { EVENT_BY_ID } from '../data/events';
 
 export type MapMode = 'select' | 'move' | 'attack';
 export type MapLayer = 'control' | 'supply' | 'stability' | 'terrain';
-export type Modal = 'menu' | 'help' | 'briefing' | 'gameover' | 'battle' | 'allBattles' | 'landing' | 'manage' | 'mobilized' | null;
+export type Modal = 'menu' | 'help' | 'briefing' | 'gameover' | 'battle' | 'allBattles' | 'landing' | 'manage' | 'mobilized' | 'replay' | 'achievements' | null;
 
 export interface Playback {
   index: number; // 현재 단계(steps 인덱스)
@@ -70,6 +72,10 @@ interface Store {
   depot: (id: string, remove?: boolean) => void;
   policy: (id: string) => void;
   chooseEvent: (eventId: string, choiceId?: string) => void;
+  /** 기기에 저장된 업적 달성 기록 */
+  achievements: Unlocked;
+  /** 이번 게임에서 새로 달성한 업적 id */
+  gameAch: string[];
   toggleLanding: (key: string) => void;
   endTurn: () => void;
 
@@ -96,6 +102,18 @@ function mutate(get: () => Store, set: (p: Partial<Store>) => void, fn: (g: Game
   return r;
 }
 
+/** 달성한 업적이 있는지 보고, 새로 달성했으면 저장하고 알린다 */
+function grantAchievements(get: () => Store, set: (p: Partial<Store>) => void, g: GameState) {
+  const have = get().achievements;
+  const gained = newlyUnlocked(g, have);
+  if (!gained.length) return;
+  const next: Unlocked = { ...have };
+  for (const a of gained) next[a.id] = { date: formatDate(g.date), turn: g.turn, difficulty: g.difficulty };
+  saveAchievements(next);
+  set({ achievements: next, gameAch: [...get().gameAch, ...gained.map((a) => a.id)] });
+  get().notify(gained.length === 1 ? `🏆 업적 달성: ${gained[0].title}` : `🏆 업적 ${gained.length}개 달성: ${gained.map((a) => a.title).join(', ')}`);
+}
+
 const fresh = (difficulty: Difficulty = 'normal') => createGame(Math.floor(Math.random() * 1e9), difficulty);
 
 /** 재생 종료 후 보여줄 모달을 결정 */
@@ -103,6 +121,8 @@ const afterPlaybackModal = (g: GameState): Modal => (g.outcome ? 'gameover' : 'b
 
 export const useGame = create<Store>((set, get) => ({
   game: fresh(),
+  achievements: loadAchievements(),
+  gameAch: [],
   selectedProvince: null,
   selectedUnits: [],
   mode: 'select',
@@ -272,6 +292,7 @@ export const useGame = create<Store>((set, get) => ({
       return resolveEvent(g, eventId, choiceId);
     });
     if (r && !r.ok) return get().notify(r.reason ?? '', 'err');
+    grantAchievements(get, set, get().game);
     const after = get().game.flags.landingReport;
     if (get().game.flags.mobilizationReport && get().game.flags.mobilizationReport !== mobBefore) set({ modal: 'mobilized' });
     else if (after && after !== before) set({ modal: 'landing', landingToggled: [] });
@@ -296,6 +317,7 @@ export const useGame = create<Store>((set, get) => ({
       playback: steps.length ? { index: 0, phase: steps[0].kind === 'movement' ? 'result' : 'intro', auto: false } : null,
       focus: steps.length && steps[0].province ? { province: steps[0].province, nonce: Date.now() } : null,
     });
+    grantAchievements(get, set, g);
   },
 
   // ── 전투 순차 재생 (게임 로직은 변경하지 않음) ──
@@ -327,7 +349,7 @@ export const useGame = create<Store>((set, get) => ({
 
   screen: 'title',
   setScreen: (screen) => set({ screen }),
-  newGame: (difficulty) => set({ game: fresh(difficulty ?? get().game.difficulty), screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, flashTurn: 0, playback: null, focus: null, landingToggled: [] }),
+  newGame: (difficulty) => set({ game: fresh(difficulty ?? get().game.difficulty), gameAch: [], screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, flashTurn: 0, playback: null, focus: null, landingToggled: [] }),
   save: () => {
     const ok = saveToStorage(get().game);
     set({ saveInfo: peekSave() });
@@ -336,7 +358,7 @@ export const useGame = create<Store>((set, get) => ({
   load: () => {
     const g = loadFromStorage();
     if (!g) return get().notify('불러올 저장 데이터가 없거나 형식이 맞지 않습니다.', 'err');
-    set({ game: g, screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, playback: null, focus: null });
+    set({ game: g, gameAch: [], screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, playback: null, focus: null });
     get().notify('불러왔습니다.');
   },
   restart: () => {

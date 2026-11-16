@@ -3,13 +3,14 @@ import { INITIAL_UNITS, REINFORCEMENTS, type UnitTemplate } from '../data/orbat'
 import { ECONOMY, AI_BALANCE, DIFFICULTY, SCENARIO } from './balance';
 import { MAP } from './map';
 import { computeSupply } from './supply';
+import { recordHistory } from './history';
 import { computeWarCapacity, effectiveIndustry } from './economy';
 import { createUnit, emptyEquip, totalStrength } from './units';
 import { addLog } from './util';
 import { updateIntel } from './visibility';
 import type { Difficulty, GameState, Province, Side } from './types';
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 const SOUTH_POP_TOTAL = 20200; // 천 명, 1949년 전후 남한 총인구 약 2,000만 (추정 총량)
 const NORTH_POP_TOTAL = 9600; // 천 명, 북한 총인구 추정 총량
 
@@ -191,6 +192,7 @@ export function newGame(seed = 1950, difficulty: Difficulty = 'normal'): GameSta
     outcome: null,
     briefing: [],
     lastTurn: null,
+    history: [],
     settings: { fog: false },
     warWeariness: 0,
     armisticeProgress: 0,
@@ -210,6 +212,7 @@ export function newGame(seed = 1950, difficulty: Difficulty = 'normal'): GameSta
   state.nations.south.warCapacity = computeWarCapacity(state, 'south');
   state.nations.north.warCapacity = computeWarCapacity(state, 'north');
   updateIntel(state, 'south');
+  recordHistory(state); // 진행 기록의 첫 칸 (개전 시점)
   addLog(state, 'event', '1950년 6월 25일 — 북한군이 38선 전역에서 공격을 개시했습니다.');
   return state;
 }

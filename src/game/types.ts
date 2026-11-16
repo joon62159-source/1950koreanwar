@@ -204,6 +204,24 @@ export interface PlaybackStep {
   unitsRemoved: string[];
 }
 
+/** 진행 기록 한 칸: 그 턴이 끝난 시점의 영토·사상자·병력. 게임이 끝난 뒤 진행을 다시 보는 데 쓴다. */
+export interface HistoryEntry {
+  turn: number;
+  date: string;
+  /** 지역 통제 상태 (s=남, n=북), state.provinces 순서(중국 제외) */
+  owners: string;
+  south: number;
+  north: number;
+  killedS: number;
+  killedN: number;
+  strengthS: number;
+  strengthN: number;
+  /** 이 칸까지 발동한 이벤트 수 (다음 칸의 새 이벤트를 가리는 용도) */
+  fired: number;
+  /** 이 턴에 새로 발동한 이벤트 id */
+  events: string[];
+}
+
 export interface TurnRecord {
   turn: number;
   date: string;
@@ -269,6 +287,8 @@ export interface GameState {
   outcome: GameOutcome | null;
   briefing: string[]; // 직전 턴 종료 시 상황 브리핑
   lastTurn: TurnRecord | null;
+  /** 진행 기록 (매 턴 한 칸) */
+  history: HistoryEntry[];
   settings: { fog: boolean }; // 전장의 안개 (기본 꺼짐)
   warWeariness: number; // 남측 전쟁 피로도 0~100
   armisticeProgress: number; // 정전협상 진척 0~100

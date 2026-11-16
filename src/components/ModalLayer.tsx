@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '../store/gameStore';
 import Tutorial, { tutorialSeen } from './Tutorial';
+import ReplayScreen from './ReplayScreen';
+import AchievementsScreen from './AchievementsScreen';
 import { AllBattlesModal, BattleModal, BriefingModal, EventModal, GameOverModal, HelpModal, LandingReportModal, ManagementModal, MenuModal, MobilizedModal } from './Modals';
 
 /** 데스크톱·모바일이 함께 쓰는 팝업 계층: 모달, 이벤트 창, 토스트, 튜토리얼 */
@@ -12,6 +14,7 @@ export default function ModalLayer() {
   const playing = useGame((s) => s.playback !== null);
   const turn = useGame((s) => s.game.turn);
   const setTutorial = useGame((s) => s.setTutorial);
+  const setModal = useGame((s) => s.setModal);
   const tutorialAsked = useRef(false);
   // 첫 플레이: 첫 이벤트·브리핑을 닫은 뒤 한 번만 안내를 띄운다 (건너뛰기 가능)
   useEffect(() => {
@@ -29,6 +32,8 @@ export default function ModalLayer() {
           {toast.text}
         </div>
       )}
+      {modal === 'replay' && <ReplayScreen onClose={() => setModal(outcome ? 'gameover' : null)} />}
+      {modal === 'achievements' && <AchievementsScreen />}
       {modal === 'menu' && <MenuModal />}
       {modal === 'help' && <HelpModal />}
       {!playing && modal === 'briefing' && pending === 0 && !outcome && <BriefingModal />}

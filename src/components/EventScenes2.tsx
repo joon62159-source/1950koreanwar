@@ -10,7 +10,7 @@ export type NewSceneKind =
   | 'railway_retreat' | 'river_tank' | 'ship_conference' | 'beachhead' | 'wreck_beach' | 'hotline'
   | 'convoy' | 'river_defense' | 'command_post' | 'victory_street' | 'hilltop' | 'bugle_charge'
   | 'rail_yard' | 'refugees_ice' | 'red_train' | 'river_border' | 'campaign_map' | 'barbed_wire'
-  | 'monsoon_rain' | 'cold_forecast' | 'frozen_front' | 'spring_thaw';
+  | 'monsoon_rain' | 'cold_forecast' | 'frozen_front' | 'spring_thaw' | 'front_letter' | 'home_letter';
 
 type Stop = [number, string];
 const Sky = ({ id, stops }: { id: string; stops: Stop[] }) => (
@@ -858,6 +858,62 @@ function Scene2Inner({ kind, id }: { kind: NewSceneKind; id: string }) {
           {[120, 300, 500].map((x, i) => <ellipse key={x} cx={x} cy={166 + i * 4} rx="90" ry="6" fill="#fff6dc" opacity=".25" />)}
         </>
       );
+    case 'front_letter':
+      return (
+        <>
+          <Sky id={g('sky')} stops={[[0, '#0a0c10'], [1, '#1a1612']]} />
+          {/* 참호 벽면과 통나무 기둥 */}
+          {Array.from({ length: 18 }, (_, i) => <rect key={i} x={i * 38 - 4} y="0" width="30" height="240" fill={i % 2 ? '#201a12' : '#241d14'} />)}
+          <rect x="0" y="0" width={W} height="26" fill="#0c0a08" />
+          {/* 촛불의 빛 */}
+          <Cone x={320} y={60} w={420} h={190} color="#ffcf7a" o={0.2} />
+          <circle cx="320" cy="150" r="90" fill="#ffcf7a" opacity=".12" />
+          {/* 탄약 상자 책상 */}
+          <rect x="200" y="170" width="240" height="40" fill="#3a2e1c" stroke="#171109" strokeWidth="2" />
+          <rect x="200" y="164" width="240" height="8" fill="#4a3b24" />
+          {/* 편지지, 연필, 촛불 */}
+          <path d="M268 168 L372 164 L376 128 L272 132Z" fill="#e8dec2" />
+          {Array.from({ length: 5 }, (_, i) => <line key={i} x1={282} y1={140 + i * 5.5} x2={364} y2={138 + i * 5.5} stroke="#3a3224" strokeWidth="1" opacity=".7" />)}
+          <rect x="396" y="132" width="10" height="34" fill="#efe6c8" />
+          <ellipse cx="401" cy="130" rx="4" ry="7" fill="#ffd98a" />
+          <circle cx="401" cy="128" r="22" fill="#ffd98a" opacity=".35" />
+          {/* 글을 쓰는 병사의 실루엣 */}
+          <Bust x={236} y={172} s={3.4} />
+          <path d="M252 150 L272 152" stroke="#05080c" strokeWidth="6" strokeLinecap="round" />
+          {/* 철모와 소총 */}
+          <path d="M440 168 C440 150 478 150 478 168Z" fill="#2a3022" />
+          <rect x="480" y="120" width="5" height="90" fill="#17130c" transform="rotate(12 482 160)" />
+          <Smoke x={401} y={118} n={3} seed={7} color="#d8d0c0" spread={0.5} />
+        </>
+      );
+    case 'home_letter':
+      return (
+        <>
+          <Sky id={g('sky')} stops={[[0, '#0d1018'], [1, '#2a2118']]} />
+          {/* 창과 달 */}
+          <rect x="60" y="34" width="120" height="110" fill="#10192b" stroke="#2a2218" strokeWidth="6" />
+          <circle cx="132" cy="70" r="14" fill="#f2ecd2" />
+          <circle cx="132" cy="70" r="34" fill="#f2ecd2" opacity=".12" />
+          <path d="M120 34 L120 144 M60 90 L180 90" stroke="#2a2218" strokeWidth="4" />
+          {/* 방바닥과 상 */}
+          <rect x="0" y="176" width={W} height="64" fill="#3a2c1c" />
+          <path d="M0 176 L640 176" stroke="#241a10" strokeWidth="3" />
+          <ellipse cx="320" cy="196" rx="120" ry="16" fill="#4a3a24" />
+          {/* 호롱불 */}
+          <rect x="414" y="150" width="18" height="30" fill="#1a1208" />
+          <ellipse cx="423" cy="146" rx="5" ry="10" fill="#ffd98a" />
+          <circle cx="423" cy="146" r="60" fill="#ffd98a" opacity=".25" />
+          <circle cx="423" cy="146" r="26" fill="#ffd98a" opacity=".35" />
+          {/* 편지를 읽는 어머니와 아이 */}
+          <Bust x={300} y={190} s={3.6} />
+          <path d="M316 150 L346 138 L352 168 L322 176Z" fill="#e8dec2" />
+          {Array.from({ length: 4 }, (_, i) => <line key={i} x1={324} y1={152 + i * 5} x2={344} y2={146 + i * 5} stroke="#3a3224" strokeWidth=".9" opacity=".7" />)}
+          <Bust x={368} y={198} s={2.2} />
+          <rect x="342" y="196" width="22" height="10" fill="#e8dec2" opacity=".0" />
+          {/* 밥상 위 그릇 */}
+          {[260, 290, 350, 380].map((x) => <ellipse key={x} cx={x} cy={196} rx="9" ry="3.4" fill="#d8cfb8" opacity=".9" />)}
+        </>
+      );
     case 'barbed_wire':
       return (
         <>
@@ -905,5 +961,5 @@ export const NEW_SCENE_KINDS: NewSceneKind[] = [
   'airstrip', 'war_room', 'tokyo_crowd', 'telegram', 'mushroom', 'empty_capital', 'flag_raise', 'railway_retreat', 'river_tank',
   'ship_conference', 'beachhead', 'wreck_beach', 'hotline', 'convoy', 'river_defense', 'command_post', 'victory_street',
   'hilltop', 'bugle_charge', 'rail_yard', 'refugees_ice', 'red_train', 'river_border', 'campaign_map', 'barbed_wire',
-  'monsoon_rain', 'cold_forecast', 'frozen_front', 'spring_thaw',
+  'monsoon_rain', 'cold_forecast', 'frozen_front', 'spring_thaw', 'front_letter', 'home_letter',
 ];

@@ -4,6 +4,7 @@ import { DIFFICULTY } from '../game/balance';
 import type { Difficulty } from '../game/types';
 import EventScene from './EventScene';
 import { formatDate } from '../game/util';
+import { ACHIEVEMENTS } from '../game/achievements';
 
 const KEY = 'korea1950.difficulty';
 const ORDER: Difficulty[] = ['easy', 'normal', 'hard'];
@@ -51,6 +52,8 @@ export default function TitleScreen() {
   const load = useGame((s) => s.load);
   const saveInfo = useGame((s) => s.saveInfo);
   const setScreen = useGame((s) => s.setScreen);
+  const setModal = useGame((s) => s.setModal);
+  const have = useGame((s) => s.achievements);
   const inGame = useGame((s) => s.game.turn > 1 || s.game.log.length > 2);
   const [sel, setSel] = useState<Difficulty>(savedDifficulty);
   const choose = (d: Difficulty) => {
@@ -105,6 +108,7 @@ export default function TitleScreen() {
             <button className="btn !px-6 !py-3 !text-[14px]" onClick={load}>이어하기 (저장: {saveInfo.turn}턴 · {saveInfo.date ? formatDate(saveInfo.date) : ''})</button>
           )}
           {inGame && <button className="btn !px-6 !py-3 !text-[14px]" onClick={() => setScreen('game')}>진행 중인 게임으로 돌아가기</button>}
+          <button className="btn !px-6 !py-3 !text-[14px]" onClick={() => setModal('achievements')}>🏆 업적 ({ACHIEVEMENTS.filter((a) => have[a.id]).length}/{ACHIEVEMENTS.length})</button>
         </div>
         <div className="mt-3 text-center text-[11px] text-slate-600">난이도는 새 게임을 시작할 때만 정할 수 있습니다. 이어하기는 저장한 난이도 그대로 진행됩니다.</div>
       </div>
