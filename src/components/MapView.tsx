@@ -7,6 +7,9 @@ import { fogOn } from '../game/visibility';
 import type { GameState, Province, Side } from '../game/types';
 import { useIsMobile } from './useIsMobile';
 import { routeToHub, supplyInfo } from '../game/supply';
+import { COMBAT, ECONOMY, MOVEMENT } from '../game/balance';
+import { TERRAIN_KO } from './common';
+import type { Terrain } from '../game/types';
 
 const SOUTH = '#2f6db8';
 const NORTH = '#b23a3a';
@@ -618,6 +621,34 @@ export default function MapView() {
         <span><i className="mr-1 inline-block h-0 w-5 border-t-2 border-dotted border-[#6fd0ff] align-middle" />해상</span>
         <span className="text-yellow-200/80">해칭 = 보급 단절</span>
       </div>
+      {layer === 'stability' && !playback && (
+        <div className={'pointer-events-none absolute left-2 max-w-[calc(100%-70px)] rounded border border-ink-600 bg-ink-900/90 px-2 py-1.5 text-[10.5px] leading-[1.5] text-slate-300 ' + (mobile ? 'top-[58px]' : 'top-12')}>
+          <div className="mb-0.5 font-bold text-brass">안정도 보기</div>
+          <div className="h-3 w-full min-w-[190px] rounded-sm border border-black/40" style={{ background: `linear-gradient(90deg, ${[0, 25, 50, 75, 100].map((p) => `hsl(${Math.round((p / 100) * 110)} 55% ${30 + (p / 100) * 12}%) ${p}%`).join(', ')})` }} />
+          <div className="mt-0.5 flex justify-between text-slate-400"><span>0 불안</span><span>50</span><span>100 안정</span></div>
+          <div className="mt-1">안정도가 낮을수록 <b className="text-red-300">붉게</b>, 높을수록 <b className="text-emerald-300">초록</b>으로 보입니다.</div>
+          <ul className="mt-0.5 list-disc pl-4 text-slate-400">
+            <li>점령 직후에는 {ECONOMY.stabilityOccupiedStart}에서 시작해 시간이 지나며 회복됩니다.</li>
+            <li>{ECONOMY.draftMinStability} 미만이면 징병 접근률이 낮거나 0이고 산업 생산도 줄어듭니다.</li>
+            <li>원래 내 영토가 아닌 점령지는 안정도가 최대 85까지만 오릅니다.</li>
+          </ul>
+        </div>
+      )}
+      {layer === 'terrain' && !playback && (
+        <div className={'pointer-events-none absolute left-2 max-w-[calc(100%-70px)] rounded border border-ink-600 bg-ink-900/90 px-2 py-1.5 text-[10.5px] leading-[1.5] text-slate-300 ' + (mobile ? 'top-[58px]' : 'top-12')}>
+          <div className="mb-0.5 font-bold text-brass">지형 보기</div>
+          <div className="grid grid-cols-1 gap-x-3 gap-y-0.5 min-[480px]:grid-cols-2">
+            {(['plain', 'paddy', 'hills', 'mountain', 'urban', 'river', 'coastal'] as Terrain[]).map((t) => (
+              <div key={t} className="flex items-center gap-1.5 whitespace-nowrap">
+                <i className="inline-block h-3 w-3 shrink-0 rounded-sm border border-black/40" style={{ background: terrainTint({ terrain: t } as Province) }} />
+                <b className="text-slate-100">{TERRAIN_KO[t]}</b>
+                <span className="text-slate-400">방어 ×{COMBAT.terrainDefense[t]} · 이동 ×{MOVEMENT.terrainCost[t]}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-0.5 text-slate-500">방어 수치가 클수록 지키기 유리하고, 이동 수치가 클수록 행군이 느립니다.</div>
+        </div>
+      )}
       {layer === 'supply' && !playback && (
         <div className={'pointer-events-none absolute left-2 max-w-[calc(100%-70px)] rounded border border-ink-600 bg-ink-900/90 px-2 py-1.5 text-[10.5px] leading-[1.55] text-slate-300 ' + (mobile ? 'top-[58px]' : 'top-12')}>
           <div className="font-bold text-brass">보급 보기</div>
