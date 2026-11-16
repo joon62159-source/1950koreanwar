@@ -6,6 +6,7 @@ import { cancelOrder, issueOrder, type Result } from '../game/orders';
 import { resolveEvent } from '../game/events';
 import * as eco from '../game/economy';
 import * as man from '../game/manpower';
+import { buildDepot, removeDepot } from '../game/supply';
 import { needsRest, unitsAt } from '../game/units';
 import { usePolicy } from '../game/policies';
 import { loadFromStorage, peekSave, saveToStorage, type SaveSlotInfo } from '../game/save';
@@ -65,6 +66,8 @@ interface Store {
   cancelUnits: (ids: string[]) => void;
   mapClick: (provinceId: string) => void;
   province: (action: string) => void;
+  /** 전진 보급소 설치(기본)·철수 */
+  depot: (id: string, remove?: boolean) => void;
   policy: (id: string) => void;
   chooseEvent: (eventId: string, choiceId?: string) => void;
   toggleLanding: (key: string) => void;
@@ -234,6 +237,13 @@ export const useGame = create<Store>((set, get) => ({
     });
     // 새로 창설된 부대가 선택 목록에 반영되도록 갱신
     set({ selectedUnits: selectableUnitIds(get().game, pid).filter((i) => get().selectedUnits.includes(i)) });
+    if (res && !res.ok) get().notify(res.reason ?? '실행할 수 없습니다.', 'err');
+    else get().notify(res?.reason ?? '실행했습니다.');
+  },
+
+  depot: (id, remove = false) => {
+    const side = get().game.playerSide;
+    const res = mutate(get, set, (g) => (remove ? removeDepot(g, side, id) : buildDepot(g, side, id)));
     if (res && !res.ok) get().notify(res.reason ?? '실행할 수 없습니다.', 'err');
     else get().notify(res?.reason ?? '실행했습니다.');
   },

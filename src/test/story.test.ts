@@ -180,3 +180,48 @@ describe('보급 자원 수지', () => {
     }
   });
 });
+
+describe('보급 거점·보급선·전진 보급소 관리', () => {
+  it('보급선 경로는 지역에서 주 거점(부산)까지 이어진다', async () => {
+    const { supplyInfo, routeToHub, computeSupply } = await import('../game/supply');
+    const g = createGame(3);
+    computeSupply(g);
+    const info = supplyInfo(g, 'south');
+    expect(info.hubs.map((h) => h.id)).toContain('busan');
+    const route = routeToHub(info.parent, new Set(info.hubs.map((h) => h.id)), 'seoul');
+    expect(route[0]).toBe('seoul');
+    expect(route.at(-1)).toBe('busan');
+  });
+  it('전진 보급소: 항만·철도 지역에 자원을 써서 설치하고 최대 3곳, 철수할 수 있다', async () => {
+    const { buildDepot, removeDepot, hubDetails, computeSupply, depotBlockReason } = await import('../game/supply');
+    const g = createGame(3);
+    computeSupply(g);
+    g.nations.south.commandPoints = 10;
+    g.nations.south.supplyStock = 500;
+    expect(depotBlockReason(g, 'south', 'busan')).toBe('이미 보급 거점입니다.');
+    expect(depotBlockReason(g, 'south', 'seoul')).toBeNull();
+    const cp0 = g.nations.south.commandPoints, st0 = g.nations.south.supplyStock;
+    expect(buildDepot(g, 'south', 'daegu').ok).toBe(true);
+    expect(g.nations.south.commandPoints).toBe(cp0 - 2);
+    expect(g.nations.south.supplyStock).toBe(st0 - 60);
+    computeSupply(g);
+    expect(hubDetails(g, 'south', false).some((h) => h.id === 'daegu' && h.kind === 'built')).toBe(true);
+    expect(buildDepot(g, 'south', 'daejeon').ok).toBe(true);
+    expect(buildDepot(g, 'south', 'seoul').ok).toBe(true);
+    expect(buildDepot(g, 'south', 'cheongju').ok).toBe(false); // 4번째: 한도 초과
+    expect(removeDepot(g, 'south', 'seoul').ok).toBe(true);
+    expect(removeDepot(g, 'south', 'seoul').ok).toBe(false);
+  });
+  it('적에게 넘어간 전진 보급소는 파괴되고, 끊긴 보급소는 2턴 안에 사라진다', async () => {
+    const { buildDepot, hubDetails, computeSupply } = await import('../game/supply');
+    const g = createGame(3);
+    computeSupply(g);
+    g.nations.south.commandPoints = 10;
+    g.nations.south.supplyStock = 500;
+    expect(buildDepot(g, 'south', 'daejeon').ok).toBe(true);
+    g.provinces.daejeon.owner = 'north';
+    computeSupply(g);
+    expect(hubDetails(g, 'south', false).some((h) => h.id === 'daejeon')).toBe(false);
+    expect(g.flags['depotBuilt:south:daejeon']).toBeUndefined();
+  });
+});

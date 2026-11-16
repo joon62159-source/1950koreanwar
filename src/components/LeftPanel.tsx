@@ -4,6 +4,7 @@ import { currentPhase } from '../game/ai';
 import { totalStrength } from '../game/units';
 import { Bar, colorFor, fmt, Stat } from './common';
 import type { GameState } from '../game/types';
+import SupplyPanel from './SupplyPanel';
 
 const PHASE_TEXT: Record<string, { title: string; body: string }> = {
   blitz: { title: '1950년 6월~7월 · 압도적 열세', body: '북한군의 기습·기갑·화력 우위가 압도적입니다. 정면 사수보다 병력을 보존하며 지연전을 펼치세요. 서울을 끝까지 사수하면 주력이 포위될 수 있습니다.' },
@@ -56,6 +57,8 @@ export default function LeftPanel({ embedded = false }: { embedded?: boolean }) 
         <Stat label="누적 인명 손실" value={fmt(me.casualties)} />
         <div className="mt-1"><Bar value={avg((u) => u.supply)} color={colorFor(avg((u) => u.supply))} /></div>
       </section>
+
+      <SupplyPanel />
 
       {(game.flags.talks === 'on' || game.warWeariness > 5) && (
         <section>

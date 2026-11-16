@@ -6,6 +6,7 @@ import { viewAt } from '../game/record';
 import { fogOn } from '../game/visibility';
 import type { GameState, Province, Side } from '../game/types';
 import { useIsMobile } from './useIsMobile';
+import { routeToHub, supplyInfo } from '../game/supply';
 
 const SOUTH = '#2f6db8';
 const NORTH = '#b23a3a';
@@ -34,6 +35,15 @@ function trim(a: [number, number], b: [number, number], gap: number): [number, n
   const len = Math.hypot(dx, dy) || 1;
   const g = Math.min(gap, len / 3);
   return [a[0] + (dx / len) * g, a[1] + (dy / len) * g, b[0] - (dx / len) * g, b[1] - (dy / len) * g];
+}
+
+/** 별(★) 다각형 점 목록: 주 보급 거점 표시용 */
+function starPts(x: number, y: number, r: number): string {
+  return Array.from({ length: 10 }, (_, i) => {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 ? r * 0.45 : r;
+    return `${(x + Math.cos(a) * rr).toFixed(1)},${(y + Math.sin(a) * rr).toFixed(1)}`;
+  }).join(' ');
 }
 
 function visibleFromView(g: GameState, units: { loc: string; side: Side }[], owners: Record<string, Side>, side: Side): Set<string> {
@@ -202,6 +212,18 @@ export default function MapView() {
     }
     return m;
   }, [unitList, game.playerSide]);
+
+  // 보급 레이어: 거점·보급선(거점에서 뻗어 나가는 트리). 안개가 켜져 있으면 아군 것만 보인다.
+  const supplyView = useMemo(() => {
+    if (layer !== 'supply' || playback) return null;
+    const sides: Side[] = fog ? [game.playerSide] : ['south', 'north'];
+    return sides.map((side) => ({ side, ...supplyInfo(game, side) }));
+  }, [layer, playback, game, fog]);
+  const supplyRoute = useMemo(() => {
+    if (!supplyView || !selected) return [] as string[];
+    const sv = supplyView.find((x) => x.side === game.provinces[selected].owner);
+    return sv ? routeToHub(sv.parent, new Set(sv.hubs.map((h) => h.id)), selected) : [];
+  }, [supplyView, selected, game]);
 
   const step = playback ? game.lastTurn?.steps[playback.index] : null;
   const stepReport = step?.reportId ? game.reports.find((r) => r.id === step.reportId) : null;
@@ -482,6 +504,38 @@ export default function MapView() {
             <circle cx={seatOf(step.province)[0]} cy={seatOf(step.province)[1]} className="battle-ring" stroke="#ffe08a" pointerEvents="none" />
           )}
 
+          {/* 보급 레이어: 보급선(거점에서 뻗는 선), 선택 지역의 보급 경로, 거점 표시 */}
+          {supplyView && (
+            <g pointerEvents="none" fill="none">
+              {supplyView.map((sv) =>
+                Object.entries(sv.parent).map(([id, par]) => {
+                  const lv = game.provinces[id].supplyLevel / 100;
+                  const [x1, y1, x2, y2] = trim(seatOf(par), seatOf(id), gap * 0.6);
+                  return <line key={sv.side + id} x1={x1} y1={y1} x2={x2} y2={y2} stroke={sv.side === 'south' ? '#6fb6ff' : '#ff8a8a'} strokeOpacity={0.3 + 0.6 * lv} strokeWidth={1.4 + 3 * lv} vectorEffect="non-scaling-stroke" strokeLinecap="round" />;
+                }),
+              )}
+              {supplyRoute.length > 1 && <path d={pathD(supplyRoute)} stroke="#ffe08a" strokeWidth={3.4} strokeDasharray="8 5" vectorEffect="non-scaling-stroke" strokeLinecap="round" className="march" />}
+              {supplyView.flatMap((sv) =>
+                sv.hubs.map((h) => {
+                  const [x, y] = seatOf(h.id);
+                  const S = (h.kind === 'main' ? 13 : 10) / Math.pow(k, 0.35);
+                  const own = sv.side === 'south';
+                  return (
+                    <g key={sv.side + h.id + 'hub'} transform={`translate(${x} ${y})`}>
+                      <circle r={S * 1.5} fill="#000" fillOpacity=".45" />
+                      {h.kind === 'main' && <polygon points={starPts(0, 0, S)} fill={own ? '#ffe08a' : '#ff9a9a'} stroke="#000" strokeWidth=".8" />}
+                      {h.kind === 'depot' && <path d={`M0 ${-S} L${S * 0.95} ${S * 0.7} L${-S * 0.95} ${S * 0.7}Z`} fill={own ? '#9fd0ff' : '#ff9a9a'} stroke={h.cut ? '#ff5a5a' : '#000'} strokeWidth={h.cut ? 1.8 : 0.8} strokeDasharray={h.cut ? '3 2' : undefined} />}
+                      {h.kind === 'built' && <path d={`M0 ${-S} L${S} 0 L0 ${S} L${-S} 0Z`} fill="#7ff0a2" stroke={h.cut ? '#ff5a5a' : '#000'} strokeWidth={h.cut ? 1.8 : 0.8} strokeDasharray={h.cut ? '3 2' : undefined} />}
+                      <text y={S + 11 / Math.pow(k, 0.5)} textAnchor="middle" fontSize={10 / Math.pow(k, 0.55)} fill={h.cut ? '#ffb0b0' : '#fff'} stroke="#05080c" strokeWidth={2.6 / Math.pow(k, 0.55)} paintOrder="stroke" fontWeight={700}>
+                        {h.cut ? `고립 ${h.turnsLeft}턴` : h.level}
+                      </text>
+                    </g>
+                  );
+                }),
+              )}
+            </g>
+          )}
+
           {/* 지역 점·이름 */}
           {Object.values(game.provinces).map((p) => {
             const [x, y] = seatOf(p.id);
@@ -564,6 +618,14 @@ export default function MapView() {
         <span><i className="mr-1 inline-block h-0 w-5 border-t-2 border-dotted border-[#6fd0ff] align-middle" />해상</span>
         <span className="text-yellow-200/80">해칭 = 보급 단절</span>
       </div>
+      {layer === 'supply' && !playback && (
+        <div className={'pointer-events-none absolute left-2 max-w-[calc(100%-70px)] rounded border border-ink-600 bg-ink-900/90 px-2 py-1.5 text-[10.5px] leading-[1.55] text-slate-300 ' + (mobile ? 'top-[58px]' : 'top-12')}>
+          <div className="font-bold text-brass">보급 보기</div>
+          <div><span className="text-[#ffe08a]">★</span> 주 거점 · <span className="text-[#9fd0ff]">▲</span> 전진 보급소 · <span className="text-[#7ff0a2]">◆</span> 설치한 보급소</div>
+          <div>굵고 밝은 선 = 보급이 잘 닿는 길 · 빗금 = 보급 단절(포위)</div>
+          <div className="text-yellow-200/90">지역을 누르면 그곳의 보급 경로가 노란 점선으로 보입니다</div>
+        </div>
+      )}
       {hover && !playback && !mobile && (
         <div className="pointer-events-none absolute bottom-10 right-3 rounded border border-ink-600 bg-ink-900/90 px-2 py-1 text-[11px]">
           <b>{game.provinces[hover].name}</b> · {game.provinces[hover].owner === 'south' ? '대한민국' : '북한'} · 보급 {game.provinces[hover].supplied ? game.provinces[hover].supplyLevel : '단절'}

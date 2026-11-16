@@ -167,8 +167,13 @@ export const SUPPLY = {
   /** 보급 거점과 연결(포위되지 않음)되어 있으면 아무리 멀어도 최소 이 수준의 보급은 도달한다 */
   minConnectedLevel: 15,
   /** 주 거점에서 끊긴 전진 보급소: 이 턴 수만큼은 비축분으로 유지, 이후 턴마다 이 비율씩 약해진다 */
-  depotGraceTurns: 1,
-  depotDecayPerTurn: 0.25,
+  depotGraceTurns: 0,
+  depotDecayPerTurn: 0.5, // 끊긴 전진 보급소는 2턴 안에 사라진다 (포위 판정이 곧바로 시작된다)
+  /** 플레이어가 설치하는 전진 보급소 */
+  builtDepotLevel: 60,
+  builtDepotCP: 2,
+  builtDepotStock: 60,
+  maxBuiltDepots: 3,
   unitDrawPerDay: 14,
   unitDecayCutOffPerDay: 9,
   cutOffOrgLoss: 3,

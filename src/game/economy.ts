@@ -68,15 +68,20 @@ export function advanceEconomy(state: GameState, days: number): void {
   }
 }
 
+/** 보급 자원의 하루 수입(생산·원조)과 지출(병력 소모). 화면 표시와 턴 계산이 같은 값을 쓴다. */
+export function supplyBalance(state: GameState, side: Side): { production: number; aid: number; consumption: number; net: number } {
+  let production = 0;
+  for (const p of Object.values(state.provinces)) if (p.owner === side) production += effectiveIndustry(p) * ECONOMY.stockPerIndustryDay;
+  const aid = (side === 'south' ? state.diplomacy.usCommitment : state.diplomacy.sovietSupport) * ECONOMY.aidPerPoint[side];
+  const consumption = (unitsOfSide(state, side).reduce((s, u) => s + u.strength * (u.faction === 'UN' || u.faction === 'PLA' || u.faction === 'SOV' ? ECONOMY.foreignConsumptionMult : 1), 0) / 1000) * ECONOMY.consumptionPerThousandDay;
+  return { production, aid, consumption, net: production + aid - consumption };
+}
+
 /** 보급 자원 수지 */
 export function advanceNations(state: GameState, days: number): void {
   for (const side of ['south', 'north'] as Side[]) {
     const n = state.nations[side];
-    let production = 0;
-    for (const p of Object.values(state.provinces)) if (p.owner === side) production += effectiveIndustry(p) * ECONOMY.stockPerIndustryDay;
-    const aid = (side === 'south' ? state.diplomacy.usCommitment : state.diplomacy.sovietSupport) * ECONOMY.aidPerPoint[side];
-    const consumption = (unitsOfSide(state, side).reduce((s, u) => s + u.strength * (u.faction === 'UN' || u.faction === 'PLA' || u.faction === 'SOV' ? ECONOMY.foreignConsumptionMult : 1), 0) / 1000) * ECONOMY.consumptionPerThousandDay;
-    n.supplyStock = clamp(n.supplyStock + (production + aid - consumption) * days, 0, ECONOMY.supplyStockCap);
+    n.supplyStock = clamp(n.supplyStock + supplyBalance(state, side).net * days, 0, ECONOMY.supplyStockCap);
   }
 }
 

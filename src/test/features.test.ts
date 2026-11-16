@@ -510,20 +510,18 @@ describe('전진 보급소는 주 거점과 이어질 때만 유효하다', () =
     for (const id of ['daejeon', 'cheongju', 'nonsan', 'yeongdong']) g.provinces[id].owner = 'north';
     return g;
   };
-  it('주 거점에서 끊긴 대전 지대는 처음 1턴은 보급이 유지되고 이후 점차 약해져 단절된다', () => {
+  it('주 거점에서 끊긴 대전 지대는 끊긴 턴만 유지되고 다음 턴 절반으로 약해지며 2턴째에 단절된다', () => {
     const g = setup();
     computeSupply(g);
     const lv0 = g.provinces.cheongju.supplyLevel;
-    expect(g.provinces.cheongju.supplied).toBe(true); // 비축분
+    expect(g.provinces.cheongju.supplied).toBe(true); // 끊긴 턴: 비축분
     g.turn += 1;
     computeSupply(g);
-    expect(g.provinces.cheongju.supplyLevel).toBe(lv0); // 아직 유예
+    expect(g.provinces.cheongju.supplyLevel).toBeLessThan(lv0); // 다음 턴: 절반으로 약해짐
+    expect(g.provinces.cheongju.supplied).toBe(true);
     g.turn += 1;
     computeSupply(g);
-    expect(g.provinces.cheongju.supplyLevel).toBeLessThan(lv0);
-    g.turn += 4;
-    computeSupply(g);
-    expect(g.provinces.cheongju.supplied).toBe(false);
+    expect(g.provinces.cheongju.supplied).toBe(false); // 2턴째: 보급소가 사라져 포위
     expect(g.provinces.daejeon.supplied).toBe(false);
   });
   it('끊긴 지대의 북한군은 보급이 완전히 소진되면 포위 효과를 받는다', () => {

@@ -13,6 +13,8 @@ import { visibleProvinces } from '../game/visibility';
 import { infantryPower, stateFactor, troopQuality, equipmentFactor } from '../game/combat';
 import { effectiveIndustry } from '../game/economy';
 import { MAP } from '../game/map';
+import { depotBlockReason, supplyInfo } from '../game/supply';
+import { SUPPLY } from '../game/balance';
 
 function UnitCard({ u, selected, onToggle, ordered, onCancel }: { u: Unit; selected: boolean; onToggle: () => void; ordered: boolean; onCancel: () => void }) {
   const setMode = useGame((s) => s.setMode);
@@ -199,6 +201,7 @@ function DomesticTab({ p }: { p: Province }) {
   const game = useGame((s) => s.game);
   const act = useGame((s) => s.province);
   const nation = useGame((s) => s.nation);
+  const depot = useGame((s) => s.depot);
   const setModal = useGame((s) => s.setModal);
   const me = game.nations[game.playerSide];
   const own = p.owner === game.playerSide;
@@ -242,6 +245,24 @@ function DomesticTab({ p }: { p: Province }) {
         <div className="text-slate-300">생산 가능: {keys.length ? keys.map((k) => EQUIP_KO[k]).join(', ') : '없음 (산업 기반 부족)'}</div>
         <div className="mt-1 text-[10.5px] text-slate-500">일일 생산 점수 {p.equipmentProduction.toFixed(2)} · 국가 전체 부족 현황에 맞춰 자동 생산되어 국가 군수 재고로 들어가고, 부족한 부대에 자동 배분됩니다.</div>
       </div>
+      {(() => {
+        const hub = supplyInfo(game, game.playerSide).hubs.find((h) => h.id === p.id);
+        const why = depotBlockReason(game, game.playerSide, p.id);
+        return (
+          <div className="rounded border border-ink-600 bg-ink-800/60 p-2">
+            <div className="panel-title mb-1">▍보급 · 전진 보급소</div>
+            <div className="text-slate-300">보급 수준 {p.supplied ? <b style={{ color: colorFor(p.supplyLevel) }}>{p.supplyLevel}</b> : <b className="text-red-400">단절(포위)</b>}{hub ? <> · <b className="text-brass">{hub.kind === 'main' ? '주 보급 거점' : hub.kind === 'built' ? '설치한 보급소' : '전진 보급소'}</b>{hub.cut && <span className="text-red-300"> (고립 · {hub.turnsLeft}턴 뒤 소멸)</span>}</> : null}</div>
+            {hub?.kind === 'built' ? (
+              <button className="btn mt-1.5 w-full" onClick={() => depot(p.id, true)}>이 보급소 철수</button>
+            ) : (
+              <button className="btn mt-1.5 w-full" disabled={!!why} title={why ?? '이 지역에 전진 보급소를 설치합니다'} onClick={() => depot(p.id)}>
+                전진 보급소 설치 (CP{SUPPLY.builtDepotCP} · 보급 {SUPPLY.builtDepotStock})
+              </button>
+            )}
+            <div className="mt-1 text-[10.5px] text-slate-500">{why && !hub ? why + ' ' : ''}항만·철도 지역에 설치하며, 주 거점과 이어져 있어야 작동합니다. 보급 레이어에서 보급선을 확인하세요.</div>
+          </div>
+        );
+      })()}
       <div className="rounded border border-ink-600 bg-ink-800/60 p-2">
         <div className="panel-title mb-1">▍기반시설 · 방어</div>
         <div className="grid grid-cols-2 gap-1">
