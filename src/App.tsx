@@ -9,6 +9,7 @@ import PlaybackPanel from './components/PlaybackPanel';
 import ModalLayer from './components/ModalLayer';
 import MobileApp from './mobile/MobileApp';
 import TitleScreen from './components/TitleScreen';
+import { MusicControl, MusicDirector } from './components/MusicControl';
 
 function DesktopApp() {
   const playing = useGame((s) => s.playback !== null);
@@ -37,6 +38,8 @@ export default function App() {
     <>
       {mobile ? <MobileApp /> : <DesktopApp />}
       {screen === 'title' && <TitleScreen />}
+      <MusicDirector />
+      {screen === 'title' && <MusicControl className="fixed bottom-3 left-3 z-[90] w-[230px] rounded border border-ink-600 bg-[#0f151c]/90 p-1.5" />}
     </>
   );
 }

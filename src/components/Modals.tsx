@@ -1,3 +1,4 @@
+import { MusicControl } from './MusicControl';
 import { useState } from 'react';
 import { useGame } from '../store/gameStore';
 import { EVENT_BY_ID, type Effect } from '../data/events';
@@ -259,6 +260,7 @@ export function MenuModal() {
             불러오기 {saveInfo.exists ? `(저장: ${saveInfo.turn}턴, ${saveInfo.date})` : '(저장 데이터 없음)'}
           </button>
           <button className="btn py-2" onClick={() => setModal('help')}>조작 방법</button>
+          <MusicControl />
           <button className="btn btn-blue mt-1 py-2" onClick={() => setModal(null)}>닫기</button>
         </div>
         <div className="mt-3 text-[11px] text-slate-500">저장은 이 브라우저의 localStorage 에 보관됩니다. 매 턴 종료 시 자동 저장 슬롯에도 기록됩니다.</div>
