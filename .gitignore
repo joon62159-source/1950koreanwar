@@ -3,4 +3,4 @@ dist
 *.log
 .claude
 .playtest
-PLAYTEST_REPORT.md
+PLAYTEST_REPORT*.md
