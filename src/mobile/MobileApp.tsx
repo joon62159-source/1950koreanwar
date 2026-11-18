@@ -88,7 +88,7 @@ function StatusBody() {
   const me = game.nations[game.playerSide];
   const d = game.diplomacy;
   const strength = totalStrength(game, game.playerSide);
-  const rows: [string, number, boolean][] = [['미국 개입', d.usCommitment, false], ['UN 지지', d.unSupport, false], ['중국 개입 위험', d.chinaThreat, true], ['소련 지원(적)', d.sovietSupport, true]];
+  const rows: [string, number, boolean][] = [['미국 개입', d.usCommitment, false], ['UN 지지', d.unSupport, false]];
   return (
     <div>
       <div className="grid grid-cols-2 gap-2 p-3">

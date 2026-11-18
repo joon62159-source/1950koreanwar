@@ -5,6 +5,7 @@ import { resolveEvent } from '../src/game/events';
 import { EVENT_BY_ID } from '../src/data/events';
 import * as man from '../src/game/manpower';
 import { usePolicy } from '../src/game/policies';
+import { crossPhase, declareCross } from '../src/game/china';
 
 type Bot = 'skilled' | 'passive' | 'idle';
 const bot = (process.argv[2] ?? 'skilled') as Bot;
@@ -18,6 +19,8 @@ for (let seed = start; seed < start + N; seed++) {
   const s = createGame(seed, dif);
   while (!s.outcome) {
     while (s.pendingEvents.length) { const ev = EVENT_BY_ID[s.pendingEvents[0].eventId]; const h = ev.choices.find((c) => !c.isCounterfactual) ?? ev.choices[0]; resolveEvent(s, ev.id, h?.id); }
+    // 38선 월경 결정: 시험용 자동 플레이어는 역사처럼 1950년 10월 1일에 38선을 넘기로 한다 (CROSS_DATE 환경변수로 바꿀 수 있다)
+    if (bot !== 'idle' && s.date >= (process.env.CROSS_DATE ?? '1950-10-01') && crossPhase(s) !== 'open' && crossPhase(s) !== 'closed') declareCross(s);
     if (bot !== 'idle') {
       if (bot === 'skilled') {
         usePolicy(s, 'south', 'request_us');

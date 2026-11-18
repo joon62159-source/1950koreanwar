@@ -1,6 +1,6 @@
 import { CHINA_SEED, PROVINCE_SEEDS } from '../data/provinceSeeds';
 import { INITIAL_UNITS, REINFORCEMENTS, type UnitTemplate } from '../data/orbat';
-import { ECONOMY, AI_BALANCE, DIFFICULTY, SCENARIO } from './balance';
+import { ECONOMY, AI_BALANCE, DIFFICULTY, PLA, SCENARIO } from './balance';
 import { MAP } from './map';
 import { computeSupply } from './supply';
 import { recordHistory } from './history';
@@ -12,7 +12,7 @@ import { addLog } from './util';
 import { updateIntel } from './visibility';
 import type { Difficulty, GameState, Province, Side } from './types';
 
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 const SOUTH_POP_TOTAL = 20200; // 천 명, 1949년 전후 남한 총인구 약 2,000만 (추정 총량)
 const NORTH_POP_TOTAL = 9600; // 천 명, 북한 총인구 추정 총량
 
@@ -107,8 +107,20 @@ export function tuneTemplate(state: GameState, t: UnitTemplate): UnitTemplate {
   };
 }
 
+/** 후반으로 갈수록 인해전술 부대의 훈련도·조직력은 떨어진다 (1.0 → 하한) */
+export function massQuality(date: string): number {
+  const [y, m] = date.split('-').map(Number);
+  const [y0, m0] = PLA.massDecayFrom.split('-').map(Number);
+  const months = (y - y0) * 12 + (m - m0);
+  return Math.max(PLA.massDecayFloor, Math.min(1, 1 - Math.max(0, months) * PLA.massDecayPerMonth));
+}
+
 export function spawnTemplate(state: GameState, t0: UnitTemplate) {
-  const t = tuneTemplate(state, t0);
+  let t = tuneTemplate(state, t0);
+  if (t.traits?.includes('인해전술')) {
+    const q = massQuality(state.date);
+    t = { ...t, training: t.training * q, organization: (t.organization ?? 90) * q };
+  }
   const u = createUnit(state, {
     faction: t.faction, name: t.name, parent: t.parent, kind: t.kind, echelon: t.echelon, location: t.location,
     training: t.training, experience: t.experience, morale: t.morale, strengthPct: t.strengthPct,
@@ -193,7 +205,7 @@ export function newGame(seed = 1950, difficulty: Difficulty = 'normal'): GameSta
         stats: { killed: 0, wounded: 0, returned: 0, missing: 0, prisoners: 0, unitsDestroyed: 0 },
       },
     },
-    diplomacy: { usCommitment: dif.usStart, unSupport: 15, chinaThreat: 5, sovietSupport: 45 },
+    diplomacy: { usCommitment: dif.usStart, unSupport: 15, sovietSupport: 45 },
     flags: {},
     firedEvents: [],
     pendingEvents: [],

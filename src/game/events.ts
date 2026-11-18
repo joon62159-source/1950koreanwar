@@ -7,6 +7,7 @@ import { plaBrigades, sovietDivisions } from '../data/orbat';
 import { DIFFICULTY, NUKE } from './balance';
 import { executeLanding } from './amphibious';
 import { mobilize } from './mobilization';
+import { declareCross, declareEarlyArmistice } from './china';
 import { MOBILIZATION_PROFILES } from '../data/mobilization';
 import { applyLosses, unitsAt } from './units';
 import { EQUIP_KEYS, type GameState } from './types';
@@ -36,6 +37,10 @@ export function conditionHolds(state: GameState, c: Condition): boolean {
       return Object.values(state.provinces).filter((p) => p.initialOwner === c.side && p.owner !== c.side).length >= c.min;
     case 'flagSet':
       return state.flags[c.key] !== undefined;
+    case 'flagDateReached': {
+      const at = state.flags[c.key];
+      return typeof at === 'string' && state.date >= at;
+    }
     case 'eventFired':
       return state.firedEvents.includes(c.id);
     case 'quietTurns':
@@ -160,6 +165,12 @@ export function applyEffect(state: GameState, e: Effect): void {
     }
     case 'plaOffensive':
       if (!state.flags.nukeUsed && Object.values(state.units).some((u) => u.faction === 'PLA')) state.flags.plaOffensiveUntil = state.turn + e.turns;
+      break;
+    case 'crossDeclare':
+      declareCross(state);
+      break;
+    case 'earlyArmistice':
+      declareEarlyArmistice(state);
       break;
     case 'armisticeSet':
       state.armisticeProgress = clamp(state.armisticeProgress + e.delta, 0, 100);

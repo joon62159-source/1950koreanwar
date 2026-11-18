@@ -249,6 +249,7 @@ export const RECOVERY = {
  *  - startStock / aidMult / usStart: 시작 보급 자원 / 미국 원조 배율 / 시작 미국 개입도
  *  - plaExtra: 중국군 참전 규모(사단) 가감
  *  - northWaves: 북한·중국 후속 증원(재편 부대, 중국군 후속 병력)의 규모 배율
+ *  - plaArrivalDays: 남한군이 38선을 넘기로 한 날부터 중공군이 참전하기까지 걸리는 일수 (쉬움 14턴 / 보통 10턴 / 어려움 7턴, 7일 턴 기준)
  */
 export const DIFFICULTY: Record<Difficulty, {
   label: string;
@@ -267,24 +268,25 @@ export const DIFFICULTY: Record<Difficulty, {
   usStart: number;
   plaExtra: number;
   northWaves: number;
+  plaArrivalDays: number;
 }> = {
   easy: {
     label: '쉬움',
     blurb: '북한군이 약하고 신중하며, 미군과 원조가 빨리 옵니다. 전쟁을 처음 접하는 분께 권합니다.',
     northForce: 0.8, southForce: 1.08, northQuality: -8, northCombat: 0.92, northReplace: 0.6, aiAttackRatio: 1.3, unDelayDays: -7,
-    startCP: 8, cpBonus: 1, startStock: 500, aidMult: 1.5, usStart: 30, plaExtra: -6, northWaves: 0.6,
+    startCP: 8, cpBonus: 1, startStock: 500, aidMult: 1.5, usStart: 30, plaExtra: -6, northWaves: 0.6, plaArrivalDays: 98,
   },
   normal: {
     label: '보통',
     blurb: '기본 밸런스입니다. 지연전으로 시간을 벌고 낙동강에서 버티는 흐름을 경험합니다.',
     northForce: 1, southForce: 1, northQuality: 0, northCombat: 1, northReplace: 1, aiAttackRatio: 1, unDelayDays: 0,
-    startCP: 6, cpBonus: 0, startStock: 320, aidMult: 1, usStart: 10, plaExtra: 0, northWaves: 1,
+    startCP: 6, cpBonus: 0, startStock: 320, aidMult: 1, usStart: 10, plaExtra: 0, northWaves: 1, plaArrivalDays: 70,
   },
   hard: {
     label: '어려움',
     blurb: '북한군이 정예이고 공세적이며 증원이 빠릅니다. 미군은 늦게 오고 원조도 적어, 모든 판단이 정확해야 합니다.',
     northForce: 1, southForce: 0.88, northQuality: 8, northCombat: 1.12, northReplace: 1.8, aiAttackRatio: 0.8, unDelayDays: 14,
-    startCP: 5, cpBonus: 0, startStock: 220, aidMult: 0.7, usStart: 0, plaExtra: 8, northWaves: 1.3,
+    startCP: 5, cpBonus: 0, startStock: 220, aidMult: 0.7, usStart: 0, plaExtra: 8, northWaves: 1.3, plaArrivalDays: 49,
   },
 };
 
@@ -312,14 +314,16 @@ export const PLA = {
   wave2: 18,
   depots: { gangye: 80, hyesan: 60 } as Record<string, number>,
   /** 평양 함락 후 압록강을 건너 투입되는 중국군 총 규모(사단급) */
-  invasionTotal: 24,
-  /** 38선 월경 직후 중국 영내에 집결하는 규모(사단급) */
-  massingCount: 10,
+  invasionTotal: 30,
   /** 압록강·두만강에 닿은 북한 영토는 중국 참전 후 보급 거점 역할을 한다 (포위 판정을 받지 않는다) */
   borderHubLevel: 60,
   /** 인해전술 부대: 숫자는 많지만 훈련도·조직력이 낮다 */
   mass: { training: 26, experience: 24, morale: 72, organization: 45, strengthPct: 0.7, fill: { rifles: 0.6, machineGuns: 0.3, mortars: 0.35, artillery: 0.1, antiTank: 0.05, tanks: 0, vehicles: 0.02 } },
   /** 공세 기간(턴): 이 동안 중국군 AI 는 우세비를 따지지 않고 훨씬 많은 지점을 동시에 공격한다 */
+  /** 후반으로 갈수록 인해전술 부대의 훈련도·조직력이 떨어진다: 이 날짜 이후 매달 perMonth 만큼 (하한 floor) */
+  massDecayFrom: '1951-03-01',
+  massDecayPerMonth: 0.04,
+  massDecayFloor: 0.7,
   offensiveRatioMult: 0.85,
   offensiveExtraTargets: 5,
 };
@@ -334,15 +338,30 @@ export const NUKE = {
   sovietDivisions: 60,
 };
 
-/** 정전협상과 전쟁 피로도 */
+/** 38선 월경 제한: 중국의 경고를 받고 멈추면 이 일수 동안(8턴×7일) 원래 국경을 넘을 수 없다 */
+export const CROSS = {
+  banDays: 56,
+};
+
+/**
+ * 정전협상과 전쟁 피로도.
+ * 협상은 1951년 6월 25일 미국의 압박으로 시작된다. 기본 속도는 '계획 일수'에 100%가 되는 속도이고, 전쟁 피로가 높을수록 빨라진다.
+ * 계획 일수 728일 = 14일 턴 52개 (1953년 6월 말). '38선에서 멈춘 뒤 이른 정전'을 고르면 계획 일수가 짧아진다.
+ */
 export const ARMISTICE = {
-  talksFrom: '1951-07-10',
-  baseProgressPerWeek: 0.45,
-  wearinessProgress: 0.01,
+  talksFrom: '1951-06-25',
+  plannedDays: 728,
+  earlyDays: 84,
+  wearinessBoost: 0.5,
   wearinessPerThousandCasualties: 0.35,
   wearinessDecayPerWeek: 0.8,
   supportLossAbove: 60,
   signAt: 100,
+  /** 이른 정전(38선 정전)의 점수 상한 */
+  earlyScoreCap: 69,
+  /** 미국 설득: 성공하면 협상 진척이 이만큼 물러난다 / 실패하면 이만큼 앞당겨진다 */
+  persuadeDelay: 8,
+  persuadeBackfire: 3,
 };
 
 /**

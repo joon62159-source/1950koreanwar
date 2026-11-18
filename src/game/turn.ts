@@ -18,6 +18,8 @@ import { updateIntel } from './visibility';
 import { addDays, addLog, clamp, formatDate, other, turnDaysFor } from './util';
 import { weatherAt } from './weather';
 import { recordHistory } from './history';
+import { advanceChina } from './chinaStage';
+import { advanceArmistice } from './armistice';
 
 const SEOUL_HOLD = ['seoul', 'uijeongbu', 'gimpo'];
 const PERIMETER_RETREAT_PENALTY = ['daegu', 'waegwan', 'masan', 'changnyeong', 'yeongcheon', 'pohang'];
@@ -425,9 +427,8 @@ export function endTurn(state: GameState): { ok: boolean; reason?: string } {
   state.nations.south.commandPoints = cpBase + (state.nations.south.popularSupport > 60 ? 1 : 0) + DIFFICULTY[state.difficulty ?? 'normal'].cpBonus;
   state.nations.north.commandPoints = cpBase;
   state.nations.south.popularSupport = clamp(state.nations.south.popularSupport + 0.3 * (days / 7), 0, 100);
-  // 중국 개입 위험: 38선 이북에 아군이 있으면 서서히 증가
-  const beyond = Object.values(state.provinces).some((p) => p.owner === 'south' && p.initialOwner === 'north' && MAP.geometry[p.id].lat >= 38.3);
-  if (beyond) state.diplomacy.chinaThreat = clamp(state.diplomacy.chinaThreat + 3 * (days / 7), 0, 100);
+  // 월경 뒤 중공군 집결(압록강 너머에 쌓임)과 참전 타이머
+  advanceChina(state);
 
   // 전쟁 피로도와 정전협상 진척
   state.warWeariness = clamp(state.warWeariness + (state.nations.south.casualties - casBefore) / 1000 * ARMISTICE.wearinessPerThousandCasualties - ARMISTICE.wearinessDecayPerWeek * (days / 7), 0, 100);
@@ -437,7 +438,7 @@ export function endTurn(state: GameState): { ok: boolean; reason?: string } {
     state.nations.south.popularSupport = clamp(state.nations.south.popularSupport - (state.warWeariness - ARMISTICE.supportLossAbove) * 0.03 * (days / 7), 0, 100);
   }
   if (state.flags.talks === 'on') {
-    state.armisticeProgress = clamp(state.armisticeProgress + (ARMISTICE.baseProgressPerWeek + ARMISTICE.wearinessProgress * state.warWeariness) * (days / 7), 0, 100);
+    advanceArmistice(state, days);
     summary.push(`【정전협상】 진척도 ${Math.round(state.armisticeProgress)}% (전쟁 피로도 ${Math.round(state.warWeariness)})`);
   }
 

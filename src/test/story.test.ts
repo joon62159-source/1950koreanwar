@@ -76,29 +76,6 @@ describe('중국 프로빈스와 중공군 개입', () => {
     expect(validateOrder(g, u, 'attack', 'china').ok).toBe(false);
     expect(validateOrder(g, u, 'move', 'china').ok).toBe(false);
   });
-  it('38선을 넘으면 중국 영내에 10개 사단이 집결하고, 평양 함락 2턴 뒤 24개 사단이 국경을 넘는다', () => {
-    const g = createGame(3);
-    g.pendingEvents = [];
-    g.date = '1950-10-10';
-    g.provinces.sariwon.owner = 'south';
-    g.provinces.hwangju.owner = 'south';
-    g.provinces.hwangju.initialOwner = 'north';
-    g.provinces.sariwon.initialOwner = 'north';
-    checkEvents(g);
-    expect(g.pendingEvents.map((p) => p.eventId)).toContain('pla_massing');
-    const pla = () => Object.values(g.units).filter((u) => u.faction === 'PLA');
-    expect(pla().length).toBe(10);
-    expect(pla().every((u) => u.location === 'china')).toBe(true);
-    g.provinces.pyongyang.owner = 'south';
-    g.flags.pyongyangFallTurn = g.turn - 2;
-    g.pendingEvents = [];
-    checkEvents(g);
-    expect(pla().length).toBe(24);
-    expect(pla().every((u) => u.location !== 'china' && g.provinces[u.location].owner === 'north')).toBe(true);
-  });
-});
-
-describe('중국 프로빈스는 병력이 넘어오는 곳일 뿐이다', () => {
   it('북한군·중국군도 중국으로 이동할 수 없고, 중국 영내 부대는 포위·보급 단절 판정을 받지 않는다', async () => {
     const { validateOrder, findPath } = await import('../game/orders');
     const { computeSupply } = await import('../game/supply');

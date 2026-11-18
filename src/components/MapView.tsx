@@ -415,6 +415,8 @@ export default function MapView() {
           </g>
           <path d={MAP.outlinePath} fill="none" stroke="#9fb5c9" strokeOpacity=".7" strokeWidth={1.6 / Math.sqrt(k)} pointerEvents="none" />
           <path d={MAP.jejuPath} fill="none" stroke="#9fb5c9" strokeOpacity=".7" strokeWidth={1.6 / Math.sqrt(k)} pointerEvents="none" />
+          <path d={MAP.originalBorder} fill="none" stroke="#f1e3b7" strokeOpacity=".55" strokeWidth={5.2 / Math.sqrt(k)} strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
+          <path d={MAP.originalBorder} fill="none" stroke="#000" strokeWidth={2.8 / Math.sqrt(k)} strokeLinecap="round" strokeLinejoin="round" pointerEvents="none" />
           <line x1={MAP.parallel38[0][0]} y1={MAP.parallel38[0][1]} x2={MAP.parallel38[1][0]} y2={MAP.parallel38[1][1]} stroke="#e1c274" strokeOpacity=".55" strokeDasharray="6 5" strokeWidth={1 / Math.sqrt(k)} pointerEvents="none" />
           <text x={MAP.parallel38[1][0] + 6} y={MAP.parallel38[1][1] + 3} fontSize={9 / Math.sqrt(k)} fill="#e1c274" fillOpacity=".8" pointerEvents="none">38°N</text>
 

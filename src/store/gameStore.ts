@@ -15,10 +15,11 @@ import { loadFromStorage, peekSave, saveToStorage, type SaveSlotInfo } from '../
 import { updateIntel } from '../game/visibility';
 import { selectableUnitIds } from '../game/selection';
 import { EVENT_BY_ID } from '../data/events';
+import { crossGate, declareCross, declareHalt } from '../game/china';
 
 export type MapMode = 'select' | 'move' | 'attack';
 export type MapLayer = 'control' | 'supply' | 'stability' | 'terrain';
-export type Modal = 'menu' | 'help' | 'briefing' | 'ending' | 'gameover' | 'battle' | 'allBattles' | 'landing' | 'manage' | 'mobilized' | 'replay' | 'achievements' | null;
+export type Modal = 'menu' | 'help' | 'briefing' | 'ending' | 'crossWarning' | 'gameover' | 'battle' | 'allBattles' | 'landing' | 'manage' | 'mobilized' | 'replay' | 'achievements' | null;
 
 export interface Playback {
   index: number; // 현재 단계(steps 인덱스)
@@ -65,6 +66,10 @@ interface Store {
   setHoverTarget: (id: string | null) => void;
 
   orderUnits: (type: OrderType, target?: string) => void;
+  /** 38선 월경 경고창이 떠 있는 동안 보류 중인 공격 명령 */
+  crossPrompt: { target: string; ids: string[] } | null;
+  /** 경고창에서 '넘는다'(cross) 또는 '멈춘다'(halt)를 고른다 */
+  resolveCross: (choice: 'cross' | 'halt') => void;
   cancelUnits: (ids: string[]) => void;
   mapClick: (provinceId: string) => void;
   province: (action: string) => void;
@@ -139,6 +144,7 @@ export const useGame = create<Store>((set, get) => ({
   landingToggled: [],
   hoverTarget: null,
   orderScope: null,
+  crossPrompt: null,
 
   // 아군 주둔 지역을 클릭하면 명령 가능한 아군 부대를 전부 선택한다. 적 지역은 정보만 표시하고 아무것도 선택하지 않는다.
   selectProvince: (id) => {
@@ -218,6 +224,11 @@ export const useGame = create<Store>((set, get) => ({
     const scope = get().orderScope;
     const ids = scope ?? get().selectedUnits;
     if (!ids.length) return get().notify('먼저 부대를 선택하세요.', 'err');
+    // 원래 북한 영토를 처음 공격하려는 순간에는 중국의 경고를 먼저 보여 준다 (명령은 보류)
+    if (type === 'attack' && target && crossGate(get().game, get().game.playerSide, target)?.kind === 'warn') {
+      set({ crossPrompt: { target, ids: [...ids] }, modal: 'crossWarning', mode: 'select', orderScope: null });
+      return;
+    }
     const okIds: string[] = [];
     let firstErr = '';
     mutate(get, set, (g) => {
@@ -232,6 +243,16 @@ export const useGame = create<Store>((set, get) => ({
     set({ selectedUnits: remaining, mode: 'select', orderScope: null });
     if (okIds.length) get().notify(`${okIds.length}개 부대에 명령을 내렸습니다. (선택된 부대 ${remaining.length}개 남음)`);
     if (firstErr) get().notify(firstErr, 'err');
+  },
+  resolveCross: (choice) => {
+    const p = get().crossPrompt;
+    mutate(get, set, (g) => (choice === 'cross' ? declareCross(g) : declareHalt(g)));
+    set({ crossPrompt: null, modal: null });
+    if (choice === 'cross' && p) {
+      set({ selectedUnits: p.ids });
+      get().orderUnits('attack', p.target);
+      get().notify('38선을 넘기로 했습니다. 압록강 너머에 중공군이 집결하기 시작합니다.', 'err');
+    } else get().notify('38선에서 멈춥니다. 한동안 월경이 금지되고, 이후 최종 결정을 내려야 합니다.');
   },
   cancelUnits: (ids) => {
     mutate(get, set, (g) => ids.forEach((id) => cancelOrder(g, id)));
@@ -349,7 +370,7 @@ export const useGame = create<Store>((set, get) => ({
 
   screen: 'title',
   setScreen: (screen) => set({ screen }),
-  newGame: (difficulty) => set({ game: fresh(difficulty ?? get().game.difficulty), gameAch: [], screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, flashTurn: 0, playback: null, focus: null, landingToggled: [] }),
+  newGame: (difficulty) => set({ game: fresh(difficulty ?? get().game.difficulty), gameAch: [], screen: 'game', selectedProvince: null, selectedUnits: [], mode: 'select', modal: null, flashTurn: 0, playback: null, focus: null, landingToggled: [], crossPrompt: null }),
   save: () => {
     const ok = saveToStorage(get().game);
     set({ saveInfo: peekSave() });

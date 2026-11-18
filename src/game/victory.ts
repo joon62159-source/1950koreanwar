@@ -31,7 +31,7 @@ export function computeScore(state: GameState): ScoreBreakdown {
   let bonus = 0;
   if (state.provinces.seoul.owner === 'south') bonus += SCORE.bonusSeoul;
   const beyond38 = Object.values(state.provinces).some((p) => p.owner === 'south' && p.initialOwner === 'north' && MAP.geometry[p.id].lat >= 38.2);
-  if (beyond38 && state.diplomacy.chinaThreat < 60 && state.warWeariness < 70) bonus += SCORE.bonusBeyond38;
+  if (beyond38 && state.warWeariness < 70) bonus += SCORE.bonusBeyond38;
   const total = clamp(Math.round(remainingForce + territory + popularSupport + warDamage - casualtyPenalty + bonus), 0, 100);
   return { remainingForce, territory, popularSupport, warDamage, casualtyPenalty, bonus, total };
 }
@@ -55,18 +55,32 @@ export function checkOutcome(state: GameState): GameOutcome | null {
   if (totalStrength(state, 'south') <= 0) {
     return { ...base, result: 'defeat', grade: '-', title: '전 부대 소멸', reasons: ['더 이상 운용할 수 있는 부대가 없습니다.'], score: null };
   }
-  // 북한 체제 붕괴: 북측 지역이 거의 없고 중국군도 없음
+  // 북한 체제 붕괴: 북한의 모든 영토를 점령함 (압록강 너머에 중국군이 몇 개 사단이든 상관없다)
   const northOwned = Object.values(state.provinces).filter((p) => p.owner === 'north' && !p.external).length;
-  const plaLeft = Object.values(state.units).some((u) => u.faction === 'PLA');
-  if (northOwned <= 4 && !plaLeft && state.provinces.pyongyang.owner === 'south') {
+  if (northOwned === 0 && state.provinces.pyongyang.owner === 'south') {
     const score = computeScore(state);
-    return { ...base, result: 'victory', grade: 'S', title: '한반도 전역 확보 (대체역사)', reasons: ['북한 지역 대부분을 확보하고 중국군 개입도 없었습니다. 실제 역사와 다른 결과입니다.'], score };
+    return { ...base, result: 'victory', grade: 'S', title: '한반도 전역 확보 (대체역사)', reasons: [state.flags.plaIntervened ? '중국군이 참전했지만 북한의 모든 영토를 점령했습니다. 실제 역사와 다른 결과입니다.' : '중국군이 도하하기 전에 북한의 모든 영토를 점령했습니다. 실제 역사와 다른 결과입니다.'], score };
   }
   const armistice = state.armisticeProgress >= ARMISTICE.signAt;
   if (state.date >= SCENARIO.endDate || armistice) {
     const score = computeScore(state);
     if (score.total < MIN_VICTORY_SCORE) {
       return { ...base, result: 'defeat', grade: '-', title: '명목상의 생존 — 국가 기능 상실', reasons: [`부산은 지켰지만 종합 점수 ${score.total}점으로 최소 기준(${MIN_VICTORY_SCORE}점)에 미달했습니다.`, '병력·영토·국민 지지·전쟁 피해를 종합하면 국가가 전쟁을 지속할 수 없는 상태입니다.'], score };
+    }
+    if (state.flags.earlyArmistice && armistice) {
+      const capped = { ...score, total: Math.min(score.total, ARMISTICE.earlyScoreCap) };
+      return {
+        ...base,
+        result: 'victory',
+        grade: gradeFor(capped.total),
+        title: '38선에서 맺은 정전',
+        reasons: [
+          `${formatDate(state.date)} 38선 부근에서 정전협상이 타결되었습니다.`,
+          '북한 체제를 무너뜨리고 통일을 이룰 기회를 포기하는 대신 전쟁을 일찍 끝냈습니다. 이른 정전은 평가 점수에 상한이 있습니다.',
+          `전쟁 피로도 ${Math.round(state.warWeariness)}`,
+        ],
+        score: capped,
+      };
     }
     const grade = gradeFor(score.total);
     const seoul = state.provinces.seoul.owner === 'south';
@@ -80,7 +94,7 @@ export function checkOutcome(state: GameState): GameOutcome | null {
         armistice ? `${formatDate(state.date)} 정전협상이 타결되었습니다.` : `${formatDate(SCENARIO.endDate)} 정전 시점까지 대한민국이 존속했습니다.`,
         `전쟁 피로도 ${Math.round(state.warWeariness)} · 북측에서 확보한 지역 ${gained}곳 — 군사적 성과가 곧 국가 이익은 아닙니다.`,
         seoul ? '수도 서울을 수복했습니다.' : '서울은 아직 적의 손에 있습니다.',
-        state.diplomacy.chinaThreat >= 60 ? '북진은 중국 개입 위험을 크게 높였습니다. 다음 단계의 전쟁이 기다리고 있습니다.' : '중국 개입 위험은 아직 관리 가능한 수준입니다.',
+        state.flags.plaIntervened ? '북진은 중국군의 참전을 불렀습니다. 다음 단계의 전쟁이 기다리고 있습니다.' : '중국은 끝내 참전하지 않았습니다.',
       ],
       score,
     };

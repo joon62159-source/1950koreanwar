@@ -7,11 +7,12 @@ import type { GameState } from '../game/types';
 import SupplyPanel from './SupplyPanel';
 import { weatherAt, weatherEffectLines } from '../game/weather';
 import { DIFFICULTY } from '../game/balance';
+import { warFrontStatus } from '../game/overview';
 
 const PHASE_TEXT: Record<string, { title: string; body: string }> = {
   blitz: { title: '1950년 6월~7월 · 압도적 열세', body: '북한군의 기습·기갑·화력 우위가 압도적입니다. 정면 사수보다 병력을 보존하며 지연전을 펼치세요. 서울을 끝까지 사수하면 주력이 포위될 수 있습니다.' },
   naktong: { title: '1950년 8월~9월 · 낙동강 방어전', body: '미군 증원이 도착하고 있지만 북한군은 여러 축선에서 돌파를 노립니다. 기동 예비대를 어디에 투입할지가 승패를 가릅니다.' },
-  counter: { title: '1950년 9월~ · 반격과 북진', body: '북한군의 보급선이 흔들립니다. 하지만 과도한 북진은 보급 부담과 중국 개입 위험을 키웁니다.' },
+  counter: { title: '1950년 9월~ · 반격과 북진', body: '북한군의 보급선이 흔들립니다. 하지만 38선을 넘으면 중국이 개입합니다. 넘기 전에 시간제한을 계산하세요.' },
   chinese: { title: '1950년 10월~ · 중국군 참전', body: '압도적인 중국군 병력이 야간 공격·침투·측면 포위로 밀려옵니다. 하지만 포·대전차·보급이 약합니다. 지연전, 지형, 포병·항공 지원, 보급선 공격으로 막으세요.' },
   stalemate: { title: '1951년 6월~ · 교착기와 정전협상', body: '참호전과 고지전이 이어집니다. 전쟁 피로도가 쌓이고 협상이 진행됩니다. 군사적 승리가 곧 국가 이익은 아닙니다.' },
 };
@@ -26,7 +27,6 @@ function objectives(g: GameState) {
   if (cut) list.push({ text: `보급 단절 부대 ${cut}개 구제`, state: 'bad' });
   if (!g.flags.incheonPlan && g.date >= '1950-08-12') list.push({ text: '상륙작전 계획 결정 대기', state: 'info' });
   if (g.flags.counteroffensive) list.push({ text: '서울 수복 · 북한군 보급선 차단', state: own('seoul') ? 'ok' : 'info' });
-  if (g.diplomacy.chinaThreat >= 50) list.push({ text: '중국 개입 위험 관리', state: 'warn' });
   return list;
 }
 
@@ -37,6 +37,8 @@ export default function LeftPanel({ embedded = false }: { embedded?: boolean }) 
   const me = game.nations[game.playerSide];
   const phase = currentPhase(game);
   const txt = PHASE_TEXT[phase];
+  const fs = warFrontStatus(game);
+  const toneCls = { ok: 'text-emerald-300', warn: 'text-amber-300', bad: 'text-red-300', info: 'text-sky-300' };
   const units = Object.values(game.units).filter((u) => u.side === game.playerSide);
   const avg = (f: (u: (typeof units)[number]) => number) => (units.length ? units.reduce((a, u) => a + f(u) * u.strength, 0) / units.reduce((a, u) => a + u.strength, 0) : 0);
   return (
@@ -46,6 +48,14 @@ export default function LeftPanel({ embedded = false }: { embedded?: boolean }) 
         <div className="rounded border border-ink-600 bg-ink-800/60 p-2">
           <div className="text-[12px] font-bold text-brass">{txt.title}</div>
           <p className="mt-1 text-[11.5px] leading-[1.45] text-slate-300">{txt.body}</p>
+        </div>
+      </section>
+
+      <section>
+        <div className="panel-title mb-1">▍38선 · 중국</div>
+        <div className="rounded border border-ink-600 bg-ink-800/60 p-2 text-[11.5px] leading-[1.5]">
+          <div className={'font-bold ' + toneCls[fs.china.chip.tone]}>{fs.china.chip.label}: {fs.china.chip.value}</div>
+          <ul className="mt-1 flex flex-col gap-0.5 text-slate-300">{fs.china.lines.map((l, i) => <li key={i}>· {l}</li>)}</ul>
         </div>
       </section>
 
@@ -82,6 +92,7 @@ export default function LeftPanel({ embedded = false }: { embedded?: boolean }) 
           <div className="panel-title mb-1">▍정전협상 · 전쟁 피로</div>
           <Stat label="협상 진척도" value={game.flags.talks === 'on' ? `${Math.round(game.armisticeProgress)}%` : '미개시'} />
           {game.flags.talks === 'on' && <Bar value={game.armisticeProgress} color="#c9a24b" />}
+          {fs.armistice && <div className="mt-1 text-[11px] leading-[1.45] text-slate-400">{fs.armistice.lines[0].replace(/^협상 진척 \d+% · /, '')}<br />{fs.armistice.lines[1]}</div>}
           <Stat label="전쟁 피로도" value={Math.round(game.warWeariness)} />
           <Bar value={game.warWeariness} color={colorFor(game.warWeariness, true)} />
         </section>

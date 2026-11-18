@@ -202,13 +202,6 @@ describe('이벤트는 날짜와 실제 전황이 모두 맞아야 발생한다'
     g.date = '1950-09-20';
     expect(firedAfterCheck(g)).not.toContain('naktong_breakout');
   });
-  it('중국 경고는 아군이 38선 이북에 진출하지 않았다면 발생하지 않는다', () => {
-    const g = base();
-    g.date = '1950-10-01';
-    expect(firedAfterCheck(g)).not.toContain('china_warning');
-    g.provinces.haeju.owner = 'south';
-    expect(firedAfterCheck(g)).toContain('china_warning');
-  });
   it('이미 인천을 아군이 확보했거나 북한군이 남진하지 않았다면 인천상륙 준비 이벤트는 없다', () => {
     const g = base();
     expect(firedAfterCheck(g)).not.toContain('incheon_preparation');

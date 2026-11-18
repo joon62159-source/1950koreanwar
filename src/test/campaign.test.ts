@@ -51,28 +51,24 @@ describe('중국군 참전', () => {
     expect(fire(g)).not.toContain('china_intervention');
     expect(plaCount(g)).toBe(0);
   });
-  it('평양을 함락하지 않았다면(북진만 했어도) 중국군이 참전하지 않는다 (대체역사)', () => {
-    const g = fresh();
-    g.date = '1950-10-25';
-    g.diplomacy.chinaThreat = 90;
-    g.provinces.haeju.owner = 'south';
-    g.provinces.sariwon.owner = 'south';
-    expect(fire(g)).not.toContain('china_intervention');
-  });
-  it('평양 함락 직후(1턴 뒤)에는 참전하지 않고, 함락 2턴 뒤에 참전하며 중국군 24개 사단이 국경을 넘는다', () => {
+  it('38선을 넘기로 하기 전에는 평양을 점령해도 중국군이 참전하지 않는다 (평양 꼼수 차단)', () => {
     const g = fresh();
     g.date = '1950-10-25';
     g.provinces.pyongyang.owner = 'south';
-    g.flags.pyongyangFallTurn = g.turn - 1;
+    g.flags.pyongyangFallTurn = g.turn - 5;
     expect(fire(g)).not.toContain('china_intervention');
-    g.flags.pyongyangFallTurn = g.turn - 2;
+    expect(plaCount(g)).toBe(0);
+  });
+  it('참전 시점(plaArrived)이 되면 참전 이벤트가 발동하고 중국군 30개 사단이 국경을 넘는다', () => {
+    const g = fresh();
+    g.date = '1950-12-15';
+    g.flags.crossPhase = 'open';
+    g.flags.plaArrived = true;
     expect(fire(g)).toContain('china_intervention');
-    expect(plaCount(g)).toBe(24);
+    expect(plaCount(g)).toBe(30);
     expect(g.flags.plaIntervened).toBe(true);
-    expect(Object.values(g.units).some((u) => u.faction === 'PLA' && u.location === 'china')).toBe(false); // 모두 국경을 넘었다
     for (const u of Object.values(g.units).filter((x) => x.faction === 'PLA')) {
       expect(u.side).toBe('north');
-      expect(g.provinces[u.location].owner).toBe('north');
       expect(u.traits).toContain('야간전');
       expect(u.equip.tanks).toBe(0);
     }
@@ -87,7 +83,7 @@ describe('중국군 참전', () => {
     expect(checkEvents(g)).not.toContain('china_second_offensive');
     g.flags.plaIntervenedTurn = g.turn - 4;
     expect(checkEvents(g)).toContain('china_second_offensive');
-    expect(plaCount(g)).toBe(14);
+    expect(plaCount(g)).toBe(16);
   });
   it('압록강변 중국군 보급소는 참전 후에만 생기며 중국군 후속 증원도 참전 후에만 온다', () => {
     const g = fresh();
@@ -96,7 +92,7 @@ describe('중국군 참전', () => {
     g.flags.plaIntervened = true;
     expect(hubLevels(g, 'north').gangye).toBeGreaterThan(0);
     expect(applyReinforcement(g, 'pla-wave-3')).not.toBeNull();
-    expect(plaCount(g)).toBe(8);
+    expect(plaCount(g)).toBe(4);
   });
   it('야간전·측면 공격 보너스: 중국군이 같은 조건에서 더 강하게 공격하고, 여러 방향 공격이 더 강하다', () => {
     const g = fresh();
@@ -151,19 +147,17 @@ describe('국면과 AI', () => {
 });
 
 describe('정전협상과 최종 승패', () => {
-  it('협상을 수락해야 진척도가 오른다 (거부하면 오르지 않고 제안이 다시 온다)', () => {
+  it('개전 1주년(1951.6.25)에 미국이 협상을 강제로 시작한다 (거부 선택지 없음)', () => {
     const g = fresh();
-    g.date = '1951-07-14';
+    g.date = '1951-06-26';
     fire(g);
     expect(g.pendingEvents.some((p) => p.eventId === 'armistice_talks')).toBe(true);
-    resolveEvent(g, 'armistice_talks', 'refuse');
-    expect(g.flags.talks).toBe('refused');
-    expect(g.firedEvents).not.toContain('armistice_talks');
-    expect(g.warWeariness).toBeGreaterThan(0);
+    expect(EVENTS.find((e) => e.id === 'armistice_talks')!.choices.length).toBe(0);
+    expect(g.flags.talks).toBe('on');
     const p0 = g.armisticeProgress;
     clear(g);
     endTurn(g);
-    expect(g.armisticeProgress).toBe(p0);
+    expect(g.armisticeProgress).toBeGreaterThan(p0);
   });
   it('협상 수락 후 턴이 지나면 진척도가 오르고 전쟁 피로도가 높을수록 빠르다', () => {
     const run = (wear: number) => {
@@ -213,34 +207,18 @@ describe('정전협상과 최종 승패', () => {
     endTurn(g);
     expect(g.warWeariness).toBeGreaterThanOrEqual(w0);
   });
-  it('북한 체제가 사실상 붕괴하고 중국군이 없으면 대체역사 승리가 된다', () => {
+  it('북한의 모든 영토를 점령하면 중국군이 몇 부대든 대체역사 승리가 된다', () => {
     const g = fresh();
-    for (const p of Object.values(g.provinces)) if (p.initialOwner === 'north' && !['hoeryong', 'musan', 'hyesan', 'najin'].includes(p.id)) p.owner = 'south';
+    for (const p of Object.values(g.provinces)) if (p.initialOwner === 'north' && !p.external) p.owner = 'south';
     for (const id of Object.keys(g.units)) if (g.units[id].side === 'north') delete g.units[id];
+    spawn(g, 'PLA', 'china'); // 압록강 너머 중국군은 승패에 영향이 없다
     const o = checkOutcome(g)!;
     expect(o.result).toBe('victory');
     expect(o.title).toContain('대체역사');
   });
-});
-
-describe('평양 함락 → 2턴 후 중국군 참전 (실제 턴 진행)', () => {
-  it('평양을 점령하는 턴 기록 후 2턴이 지나면 중국군이 나타난다', () => {
+  it('북한 영토가 한 곳이라도 남아 있으면 대체역사 승리가 아니다', () => {
     const g = fresh();
-    clear(g);
-    // 평양 인접 지역에 아군을 두고 무방비 평양을 점령
-    for (const id of Object.keys(g.units)) delete g.units[id];
-    g.provinces.pyongyang.owner = 'north';
-    const u = spawn(g, 'ROK', 'sunchon_n');
-    g.provinces.sunchon_n.owner = 'south';
-    u.order = { type: 'attack', target: 'pyongyang', issuedTurn: g.turn };
-    endTurn(g);
-    expect(g.provinces.pyongyang.owner).toBe('south');
-    expect(g.flags.pyongyangFallTurn).toBeDefined();
-    clear(g);
-    const inKorea = () => Object.values(g.units).filter((x) => x.faction === 'PLA' && x.location !== 'china').length;
-    expect(inKorea()).toBe(0); // 함락 직후 1턴 시점: 중국군은 중국 영내에서 집결만 한다
-    endTurn(g);
-    clear(g);
-    expect(inKorea()).toBeGreaterThan(0); // 2턴 후 압록강을 건넌다
+    for (const p of Object.values(g.provinces)) if (p.initialOwner === 'north' && !p.external && p.id !== 'musan') p.owner = 'south';
+    expect(checkOutcome(g)).toBeNull();
   });
 });

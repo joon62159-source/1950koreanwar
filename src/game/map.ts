@@ -31,6 +31,8 @@ export interface MapData {
   outlinePath: string;
   jejuPath: string;
   parallel38: [number, number][];
+  /** 시작 때 남북 영토가 맞닿는 경계(원래 국경)만 이은 SVG 경로 */
+  originalBorder: string;
 }
 
 function pointInPoly(x: number, y: number, poly: [number, number][]): boolean {
@@ -166,6 +168,28 @@ function build(): MapData {
   const toArr = (m: Record<string, Set<string>>) =>
     Object.fromEntries(Object.entries(m).map(([k, v]) => [k, [...v].sort()]));
 
+  // 원래 국경: 시작 때 남측(위도<38)·북측 영토의 셀이 맞닿은 변만 모은다
+  const initSide = (id: string) => (seeds[idx[id]].lat < 38 ? 's' : 'n');
+  const ek = (a: [number, number], b: [number, number]) => {
+    const ka = `${a[0].toFixed(1)},${a[1].toFixed(1)}`, kb = `${b[0].toFixed(1)},${b[1].toFixed(1)}`;
+    return ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+  };
+  const edgeOwners = new Map<string, { id: string; a: [number, number]; b: [number, number] }[]>();
+  for (const s of seeds) {
+    const poly = geometry[s.id].polygon;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      const k = ek(a, b);
+      const arr = edgeOwners.get(k) ?? [];
+      arr.push({ id: s.id, a, b });
+      edgeOwners.set(k, arr);
+    }
+  }
+  const borderSegs: string[] = [];
+  for (const arr of edgeOwners.values()) {
+    if (arr.length === 2 && initSide(arr[0].id) !== initSide(arr[1].id)) borderSegs.push(`M${arr[0].a[0].toFixed(1)},${arr[0].a[1].toFixed(1)}L${arr[0].b[0].toFixed(1)},${arr[0].b[1].toFixed(1)}`);
+  }
+
   const p38: [number, number][] = [project(124.2, 38.0), project(129.2, 38.0)];
   return {
     geometry,
@@ -179,6 +203,7 @@ function build(): MapData {
     outlinePath: toPath(PENINSULA_OUTLINE),
     jejuPath: toPath(JEJU_OUTLINE),
     parallel38: p38,
+    originalBorder: borderSegs.join(''),
   };
 }
 

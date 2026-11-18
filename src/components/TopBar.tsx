@@ -4,6 +4,7 @@ import { formatDate, turnDaysFor } from '../game/util';
 import { SCENARIO } from '../game/balance';
 import { Bar, colorFor, fmt } from './common';
 import WeatherBadge from './WeatherBadge';
+import { warFrontStatus } from '../game/overview';
 
 function Metric({ label, value, color, children }: { label: string; value: React.ReactNode; color?: string; children?: React.ReactNode }) {
   return (
@@ -22,6 +23,9 @@ export default function TopBar() {
   const strength = totalStrength(game, game.playerSide);
   const brigades = Object.values(game.units).filter((u) => u.side === game.playerSide).length;
   const d = game.diplomacy;
+  const fs = warFrontStatus(game);
+  const chip = fs.armistice ?? fs.china;
+  const toneCls = { ok: 'text-emerald-300', warn: 'text-amber-300', bad: 'text-red-300', info: 'text-sky-300' }[chip.chip.tone];
   const days = turnDaysFor(game.date);
   const ownCount = Object.values(game.provinces).filter((p) => p.owner === game.playerSide).length;
   return (
@@ -49,13 +53,14 @@ export default function TopBar() {
         <Bar value={me.popularSupport} color={colorFor(me.popularSupport)} />
       </Metric>
       <div className="flex shrink-0 items-center gap-2 px-2 text-[11px] xl:gap-4 xl:px-3">
-        {[['미국 개입', '미국', d.usCommitment, false], ['UN 지지', 'UN', d.unSupport, false], ['중국 개입 위험', '중국', d.chinaThreat, true], ['소련 지원(적)', '소련', d.sovietSupport, true]].map(([l, short, v, inv]) => (
+        {[['미국 개입', '미국', d.usCommitment, false], ['UN 지지', 'UN', d.unSupport, false]].map(([l, short, v, inv]) => (
           <div key={l as string} className="w-[52px] shrink-0 xl:w-[74px]" title={l as string}>
             <div className="flex justify-between gap-1 text-slate-400"><span><span className="xl:hidden">{short}</span><span className="hidden xl:inline">{l}</span></span><span className="tabular-nums text-slate-200">{Math.round(v as number)}</span></div>
             <Bar value={v as number} color={colorFor(v as number, inv as boolean)} />
           </div>
         ))}
       </div>
+      <Metric label={chip.chip.label} value={<span className={'text-[13px] ' + toneCls}>{chip.chip.value}</span>} />
       <div className="ml-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2 xl:gap-2 xl:px-3">
         <button data-tour="manage" className="btn btn-blue" onClick={() => setModal('manage')}>국가 관리</button>
         <button className="btn" onClick={() => setModal('help')}>도움말</button>

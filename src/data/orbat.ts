@@ -173,11 +173,10 @@ export const REINFORCEMENTS: Reinforcement[] = [
   { id: 'un-aid-4', date: '1951-06-01', side: 'south', message: '미국의 4차 원조 물자가 도착했습니다.', units: [], stock: { province: 'busan', equip: { rifles: 10000, machineGuns: 250, mortars: 150, artillery: 60, antiTank: 400, vehicles: 400 } } },
   // 북측 재편·중국군 후속 증원 (중국군 참전 후에만)
   { id: 'kpa-rebuild-1', date: '1951-01-01', side: 'north', message: '북한군이 재편되어 신편 부대가 투입됩니다.', units: kpaRegiments('재편 제1사단', 'wonsan', 3, 45, 15, [], 'division') },
-  { id: 'pla-wave-3', date: '1951-02-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 후속 병력이 압록강을 건넜습니다.', units: plaBrigades(8, '제3진', 'sinuiju', true) },
-  { id: 'pla-wave-4', date: '1951-04-15', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 후속 병력이 추가 투입되었습니다.', units: plaBrigades(10, '제4진', 'sinuiju', true) },
+  { id: 'pla-wave-3', date: '1951-02-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 후속 병력이 압록강을 건넜습니다.', units: plaBrigades(4, '제3진', 'sinuiju', true) },
   { id: 'kpa-rebuild-2', date: '1951-07-01', side: 'north', message: '북한군 신편 부대가 투입됩니다.', units: kpaRegiments('재편 제2사단', 'wonsan', 3, 45, 15, [], 'division') },
-  { id: 'pla-wave-5', date: '1951-09-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(6, '제5진', 'sinuiju', true) },
-  { id: 'pla-wave-6', date: '1952-06-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(6, '제6진', 'sinuiju', true) },
+  { id: 'pla-wave-5', date: '1951-09-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(4, '제5진', 'sinuiju', true) },
+  { id: 'pla-wave-6', date: '1952-06-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(4, '제6진', 'sinuiju', true) },
   // ── UN군 ──
   {
     id: 'un-tf-smith', date: '1950-07-01', side: 'south', message: '미 제24사단 선견대가 부산에 공수·상륙했습니다.',

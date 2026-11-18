@@ -20,6 +20,11 @@ export function addDays(iso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** b - a (일수) */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
+}
+
 export function turnDaysFor(iso: string): number {
   if (iso < SCENARIO.shortTurnUntil) return SCENARIO.shortTurnDays;
   return iso >= SCENARIO.longTurnFrom ? SCENARIO.longTurnDays : SCENARIO.normalTurnDays;

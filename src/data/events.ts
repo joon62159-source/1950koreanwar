@@ -24,6 +24,8 @@ export type Condition =
   /** flags[key] 에 기록된 턴으로부터 min 턴 이상 지났음 */
   | { kind: 'flagTurnsAgo'; key: string; min: number }
   | { kind: 'flagSet'; key: string }
+  /** flags[key] 에 기록된 날짜(YYYY-MM-DD)에 도달했거나 지났음 */
+  | { kind: 'flagDateReached'; key: string }
   | { kind: 'warCapacityBelow'; side: Side; value: number }
   /** side 의 초기 소유 프로빈스 중 현재 잃은 지역이 min 곳 이상 */
   | { kind: 'provincesLostAtLeast'; side: Side; min: number }
@@ -87,6 +89,10 @@ export type Effect =
   | { kind: 'plaOffensive'; turns: number }
   /** 정전협상 진척도를 delta 만큼 바꾼다 (0~100) */
   | { kind: 'armisticeSet'; delta: number }
+  /** 38선을 넘기로 한다: 중공군 집결 시작 (src/game/china.ts) */
+  | { kind: 'crossDeclare' }
+  /** 최종 결정에서 38선 정전협상을 택한다 */
+  | { kind: 'earlyArmistice' }
   /** 전선(적 통제 지역과 맞닿은) 프로빈스의 방어시설을 양측 모두 강화 */
   | { kind: 'fortifyFront'; delta: number }
   | { kind: 'weariness'; delta: number }
@@ -568,46 +574,6 @@ export const EVENTS: HistoricalEvent[] = [
     isCounterfactual: false,
   },
   {
-    id: 'china_warning',
-    title: '중국의 경고와 38선 월경 결정',
-    description:
-      '중국 지도부가 UN군이 38선을 넘으면 개입할 수 있다는 경고를 외교 경로로 전달했습니다. 38선 이북으로 진격하면 북한 체제를 무너뜨릴 수 있지만 중국군 참전의 위험이 크게 높아집니다. (이번 프로토타입 시나리오는 이 시점에서 종료되며, 중국군 참전은 후속 단계에서 구현됩니다.)',
-    earliestDate: '1950-09-30',
-    latestDate: '1950-10-07',
-    conditions: [
-      { kind: 'dateAtLeast', date: '1950-09-30' },
-      { kind: 'ownerAny', provinces: ['geumcheon', 'haeju', 'cheorwon', 'gimhwa', 'hwacheon', 'inje', 'sokcho', 'goseong', 'pyeonggang', 'tongcheon', 'songnim', 'singye'], side: 'south', min: 1 },
-    ],
-    choices: [
-      {
-        id: 'cross',
-        label: '38선 이북으로 진격한다',
-        description: '북한군 완전 붕괴의 기회지만 중국 개입 위험이 크게 상승합니다.',
-        isCounterfactual: false,
-        effects: [
-          { kind: 'diplomacy', field: 'chinaThreat', delta: 35 },
-          { kind: 'flag', key: 'cross38', value: true },
-        ],
-      },
-      {
-        id: 'halt',
-        label: '38선에서 정지하고 협상을 모색한다',
-        description: '중국 개입 위험이 낮아지지만 북한군은 재편의 시간을 얻습니다.',
-        isCounterfactual: true,
-        effects: [
-          { kind: 'diplomacy', field: 'chinaThreat', delta: -10 },
-          { kind: 'flag', key: 'cross38', value: false },
-        ],
-      },
-    ],
-    effects: [{ kind: 'diplomacy', field: 'chinaThreat', delta: 20 }],
-    historicalContext: '1950년 10월 초 중국 지도부는 인도 대사 등을 통해 UN군의 38선 이북 진격 시 개입할 수 있다는 경고를 전달했다. 한국군 일부는 10월 1일 38선을 넘었다.',
-    historicalDate: '1950-10-03',
-    source: `${SRC_APP}; ${SRC_KMA}`,
-    needsVerification: true,
-    isCounterfactual: false,
-  },
-  {
     id: 'phase1_review',
     title: '1단계 종료 — 전쟁은 계속된다',
     description: '1950년 6월 말부터 10월 초까지의 첫 국면이 끝났습니다. 전쟁은 여기서 끝나지 않습니다. 북진 여부에 따라 중국의 개입이 있을 수 있고, 그 뒤에는 교착과 정전협상의 시간이 이어집니다. 지금까지의 전황이 이후의 선택지를 결정합니다.',
@@ -626,17 +592,16 @@ export const EVENTS: HistoricalEvent[] = [
     id: 'china_intervention',
     title: '중국군 참전',
     description:
-      '평양이 함락되자 압록강 너머에서 대규모 중국군이 야음을 틈타 이동해 들어왔습니다. 정찰되지 않은 병력이 능선을 따라 침투하고, 야간 공격과 측면 포위가 시작됩니다. 중국군은 숫자는 압도적이지만 포·대전차·차량이 부족하고 보급선이 길어, 지형과 화력 지원, 보급선 차단, 지연전으로 막을 수 있습니다.',
+      '38선을 넘은 뒤 정해진 시간이 흘러, 압록강 너머에서 대규모 중국군이 야음을 틈타 이동해 들어왔습니다. 정찰되지 않은 병력이 능선을 따라 침투하고, 야간 공격과 측면 포위가 시작됩니다. 중국군은 숫자는 압도적이지만 포·대전차·차량이 부족하고 보급선이 길어, 지형과 화력 지원, 보급선 차단, 지연전으로 막을 수 있습니다.',
     earliestDate: '1950-06-25',
     latestDate: '1953-07-27',
-    // 평양을 함락한 순간부터 2턴 뒤에 참전한다 (날짜가 아니라 실제 전황이 기준)
-    conditions: [{ kind: 'flagTurnsAgo', key: 'pyongyangFallTurn', min: 2 }],
+    // 38선을 넘기로 한 날로부터 난이도별 일수(쉬움 98일·보통 70일·어려움 49일)가 지나면 참전한다
+    conditions: [{ kind: 'flagSet', key: 'plaArrived' }, { kind: 'flagUnset', key: 'plaIntervened' }],
     choices: [],
     effects: [
       { kind: 'plaCross', total: PLA.invasionTotal, label: '제1진' },
       { kind: 'flag', key: 'plaIntervened', value: true },
       { kind: 'flagTurn', key: 'plaIntervenedTurn' },
-      { kind: 'diplomacy', field: 'chinaThreat', delta: 25 },
       { kind: 'diplomacy', field: 'sovietSupport', delta: 10 },
       { kind: 'units', side: 'south', area: 'all', morale: -4 },
     ],
@@ -655,7 +620,7 @@ export const EVENTS: HistoricalEvent[] = [
     conditions: [{ kind: 'flagTurnsAgo', key: 'plaIntervenedTurn', min: 4 }],
     choices: [],
     effects: [
-      { kind: 'spawnPla', count: 14, label: '제2진', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
+      { kind: 'spawnPla', count: 16, label: '제2진', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
       { kind: 'plaOffensive', turns: 3 },
       { kind: 'units', side: 'south', area: 'all', morale: -3 },
     ],
@@ -682,18 +647,19 @@ export const EVENTS: HistoricalEvent[] = [
   },
   {
     id: 'armistice_talks',
-    title: '정전협상 개시',
-    description: '교전 당사자들이 협상 테이블에 앉을 것을 제안했습니다. 협상에 응하면 정전협상이 진행되며 시간이 지날수록(그리고 전쟁 피로가 쌓일수록) 타결에 가까워집니다. 거부하면 전쟁은 계속되지만 국민 지지가 흔들립니다.',
-    earliestDate: '1951-07-10',
+    title: '전쟁 1주년 — 미국, 협상을 강제하다',
+    description: '개전 1주년을 맞아 전쟁에 지친 미국이 정전협상을 강제로 시작했습니다. 분단이 굳어질 것을 우려한 남한은 소극적이지만 협상 테이블에 앉을 수밖에 없습니다. 협상은 시간이 지날수록(그리고 전쟁 피로가 쌓일수록) 타결에 가까워집니다. 협상이 끝나기 전에 전선을 최대한 북쪽으로 올리거나, 불리하다면 남쪽에서 버텨야 합니다. 미국을 설득해 협상을 늦출 수도 있습니다.',
+    earliestDate: '1951-06-25',
     latestDate: '1953-06-30',
-    conditions: [{ kind: 'dateAtLeast', date: '1951-07-10' }],
-    choices: [
-      { id: 'accept', label: '정전협상에 응한다', description: '협상이 시작됩니다. 협상 진척도가 서서히 오르며 100%가 되면 정전이 타결됩니다.', isCounterfactual: false, effects: [{ kind: 'flag', key: 'talks', value: 'on' }, { kind: 'nation', side: 'south', field: 'popularSupport', delta: 2 }] },
-      { id: 'refuse', label: '협상을 거부하고 공세를 계속한다', description: '국민 지지와 국제 지지가 떨어지고 전쟁 피로가 늘며, 얼마 뒤 협상 제안이 다시 올 것입니다.', isCounterfactual: true, effects: [{ kind: 'flag', key: 'talks', value: 'refused' }, { kind: 'diplomacy', field: 'unSupport', delta: -8 }, { kind: 'weariness', delta: 4 }, { kind: 'postpone', eventId: 'armistice_talks' }] },
+    conditions: [{ kind: 'dateAtLeast', date: '1951-06-25' }, { kind: 'flagUnset', key: 'talks' }],
+    choices: [],
+    effects: [
+      { kind: 'flag', key: 'talks', value: 'on' },
+      { kind: 'diplomacy', field: 'unSupport', delta: 4 },
+      { kind: 'nation', side: 'south', field: 'popularSupport', delta: -2 },
     ],
-    effects: [],
-    historicalContext: '1951년 7월 정전회담이 시작되어 2년 넘게 이어졌고, 1953년 7월 27일 정전협정이 체결되었다.',
-    historicalDate: '1951-07-10',
+    historicalContext: '1951년 6월 말 소련이 정전을 제의했고 7월 정전회담이 시작되어 2년 넘게 이어졌다. 1953년 7월 27일 정전협정이 체결되었다.',
+    historicalDate: '1951-06-25',
     source: SRC_KMA,
     needsVerification: true,
     isCounterfactual: false,

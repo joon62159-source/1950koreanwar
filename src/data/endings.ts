@@ -9,6 +9,7 @@ import { formatDate } from '../game/util';
  */
 export type EndingKey =
   | 'unification'
+  | 'armistice_38'
   | 'armistice_north'
   | 'armistice_seoul'
   | 'armistice_seoul_lost'
@@ -32,6 +33,7 @@ export interface Ending {
 export function endingKey(o: GameOutcome): EndingKey {
   const t = o.title;
   if (t.includes('세계대전')) return 'world_war';
+  if (t.includes('38선에서')) return 'armistice_38';
   if (t.includes('부산')) return 'busan_fall';
   if (t.includes('붕괴')) return 'collapse';
   if (t.includes('전 부대')) return 'annihilated';
@@ -55,6 +57,18 @@ const BASE: Record<EndingKey, Omit<Ending, 'key' | 'paragraphs'> & { paragraphs:
       '역사가 가지 않은 길이다. 어느 교과서에도 없는 아침을, 이 전쟁에서 살아남은 사람들이 맞는다. 이제 남은 것은 총이 아니라 폐허를 일으키는 일이다.',
     ],
     quote: { text: '이 강이 더 이상 국경이 아니라는 것을, 믿을 수가 없다.', by: '선두 부대 병사' },
+  },
+  armistice_38: {
+    scene: 'talks',
+    kicker: '판문점, 38선 위의 서명',
+    title: '38선에서 맺은 정전',
+    mood: 'victory',
+    tone: 'win',
+    paragraphs: [
+      '선을 넘지 않기로 한 결정은 오래 논쟁으로 남을 것이다. 천막 회담장의 펜이 종이 위를 지나가자 38선 부근에서 총성이 멎었다. 북진의 기회를 놓쳤다고 한탄하는 이도, 더 큰 전쟁을 피했다고 안도하는 이도 있다.',
+      '이 선은 전쟁이 시작된 자리에서 그어졌다. 그러나 이 땅의 사람들에게 이 선은 이제 막 시작되는 다른 시간의 경계다.',
+    ],
+    quote: { text: '넘지 않은 선이 우리를 구했는지, 가두었는지는 후세가 말할 것이다.', by: '수석 대표' },
   },
   armistice_north: {
     scene: 'talks',

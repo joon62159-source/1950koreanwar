@@ -262,6 +262,7 @@ describe('전투 해결과 점령', () => {
   it('압도적인 공격측이 승리하면 지역을 점령하고 소유권이 바뀐다', () => {
     const g = fresh();
     emptyBoard(g);
+    g.flags.crossPhase = 'open'; // 38선 월경 허용 (경고 절차는 cross.test 에서 따로 검증)
     const att: Unit[] = [];
     for (let i = 0; i < 4; i++) att.push(spawn(g, 'ROK', 'dongducheon', { training: 90, experience: 70, morale: 95 }));
     spawn(g, 'KPA', 'cheorwon', { strength: 600, training: 20, morale: 40, organization: 40 });
@@ -275,6 +276,7 @@ describe('전투 해결과 점령', () => {
   it('방어측이 후퇴할 곳이 없으면 포위로 큰 손실을 입는다', () => {
     const g = fresh();
     emptyBoard(g);
+    g.flags.crossPhase = 'open'; // 38선 월경 허용 (경고 절차는 cross.test 에서 따로 검증)
     // 철원의 모든 이웃을 아군(공격측) 영토로 만들어 후퇴로 차단
     for (const n of MAP.adjacency.cheorwon) g.provinces[n].owner = 'south';
     const att = [spawn(g, 'ROK', 'dongducheon', { training: 90, experience: 60, morale: 95 }), spawn(g, 'ROK', 'dongducheon', { training: 90, experience: 60, morale: 95 })];
@@ -288,6 +290,7 @@ describe('전투 해결과 점령', () => {
   it('무방비 적 지역은 공격 명령으로 점령된다', () => {
     const g = fresh();
     emptyBoard(g);
+    g.flags.crossPhase = 'open'; // 38선 월경 허용 (경고 절차는 cross.test 에서 따로 검증)
     const a = spawn(g, 'ROK', 'dongducheon');
     issueOrder(g, a.id, 'attack', 'cheorwon');
     clearEvents(g);

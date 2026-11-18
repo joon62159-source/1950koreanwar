@@ -3,6 +3,7 @@ import { MAP } from './map';
 import { MOVEMENT } from './balance';
 import { clamp, turnDaysFor } from './util';
 import { weatherAt } from './weather';
+import { crossGate, crossGateReason } from './china';
 
 export interface Result {
   ok: boolean;
@@ -101,6 +102,8 @@ export function validateOrder(state: GameState, u: Unit, type: OrderType, target
       if (!attackableTargets(state, u).includes(target)) return fail('인접한 적 통제 지역만 공격할 수 있습니다.');
       if (u.organization < 15) return fail('조직력이 너무 낮아 공격할 수 없습니다.');
       if (u.fatigue > 92) return fail('피로가 극심해 공격할 수 없습니다.');
+      const gate = crossGate(state, u.side, target);
+      if (gate) return fail(crossGateReason(state, gate));
       return { ok: true };
     }
     default:

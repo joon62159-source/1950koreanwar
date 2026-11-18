@@ -130,14 +130,6 @@ export const NARRATIVES: Record<string, Narrative> = {
       '정부는 수도로 돌아올 채비를 한다. 이 도시의 폐허 위에서 다시 시작해야 한다. 그러나 오늘 이 하루만큼은, 이 승리를 즐겨도 좋다.',
     ],
   },
-  china_warning: {
-    scene: 'headquarters',
-    kicker: '국경 너머의 경고',
-    paragraphs: [
-      '외교 통로를 통해 전달된 말은 짧고 분명했다 — 선을 넘으면 더는 지켜보지 않겠다. 사령부의 공기가 무겁다. 누군가는 허세라고 말하고 누군가는 이를 갈며 지도의 북쪽 끝을 쳐다본다.',
-      '38선을 넘어 북진하면 한반도 전체를 되찾을 기회를 잡는다. 그러나 압록강 너머에서 더 큰 군대가 깨어날 수도 있다.',
-    ],
-  },
   phase1_review: {
     scene: 'advance',
     kicker: '첫 국면의 끝',
@@ -173,11 +165,13 @@ export const NARRATIVES: Record<string, Narrative> = {
   },
   armistice_talks: {
     scene: 'talks',
-    kicker: '회담 천막',
+    kicker: '개전 1주년, 회담 천막',
     paragraphs: [
+      '전쟁 1주년. 워싱턴은 더는 이 전쟁을 끌고 갈 뜻이 없다. 지친 여론과 늘어나는 전사 통지서 앞에서 미국은 정전협상을 강제로 시작하기로 했다. 서울의 정부는 분단이 굳어질 것을 우려해 마지못해 대표를 보낸다.',
       '비가 천막 지붕을 두드린다. 탁자 한가운데에 그어진 선 위로 두 깃발이 서로를 마주 본다. 총성은 멈추지 않았지만, 이제 이 전쟁에는 다른 종류의 전투가 시작되었다 — 말과 말, 지도 위의 선.',
-      '협상에 응하면 시간이 갈수록 타결에 가까워진다. 그러나 전선에서 흘리는 피가 협상 테이블에서의 선이 된다.',
+      '협상이 끝나기 전에 전선을 한 걸음이라도 북쪽으로 올릴 것인가, 아니면 버틴 선에서 서둘러 매듭지을 것인가. 전선에서 흘리는 피가 협상 테이블 위의 선이 된다.',
     ],
+    quote: { text: '이 선은 우리가 서 있는 자리에서 그어진다.', by: '수석 대표' },
   },
   general_mobilization: {
     scene: 'conscripts',
@@ -204,7 +198,6 @@ const SCENE_BY_EVENT: Record<string, SceneKind> = {
   macarthur_arrives: 'airstrip',
   macarthur_relieved: 'tokyo_crowd',
   nuclear_debate: 'war_room',
-  china_warning: 'telegram',
   nuclear_aftermath: 'mushroom',
   seoul_fall: 'empty_capital',
   seoul_recaptured: 'flag_raise',
@@ -220,7 +213,10 @@ const SCENE_BY_EVENT: Record<string, SceneKind> = {
   seoul_defense_held: 'victory_street',
   front_crisis: 'hilltop',
   china_second_offensive: 'bugle_charge',
-  pla_massing: 'rail_yard',
+  pla_intel_start: 'rail_yard',
+  pla_intel_mid: 'telegram',
+  pla_intel_imminent: 'river_border',
+  cross_final_decision: 'campaign_map',
   seoul_second_fall: 'refugees_ice',
   soviet_intervention: 'red_train',
   yalu_reached: 'river_border',
@@ -240,7 +236,6 @@ const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 const DIP: Record<string, [string, boolean]> = {
   usCommitment: ['미국 개입도', true],
   unSupport: ['UN 지지', true],
-  chinaThreat: ['중국 개입 위험', false],
   sovietSupport: ['소련 지원(적)', false],
 };
 
@@ -303,6 +298,10 @@ export function describeEffect(e: Effect, state: GameState): EffectLine | null {
       return { text: `소련군 ${e.count}개 사단 참전`, tone: 'bad' };
     case 'plaOffensive':
       return { text: `중국군 공세 ${e.turns}턴 (우세비를 따지지 않고 여러 곳을 동시에 공격)`, tone: 'bad' };
+    case 'crossDeclare':
+      return { text: '38선 이북으로 진격 개시 — 중공군이 압록강 너머에 집결하고 정해진 시간 뒤 참전', tone: 'bad' };
+    case 'earlyArmistice':
+      return { text: '38선에서 정전협상 시작 (약 12턴 내 타결, 점수 상한 있음)', tone: 'neutral' };
     case 'armisticeSet':
       return { text: `정전협상 진척도 ${sgn(e.delta)}%p`, tone: e.delta > 0 ? 'good' : 'bad' };
     case 'chance': {
@@ -377,6 +376,17 @@ export function situationLines(state: GameState, eventId: string): string[] {
       lines.push(`방어선 일대: 아군 ${mine}개 부대 vs 적 ${theirs}개 부대`);
       break;
     }
+    case 'pla_intel_start':
+    case 'pla_intel_mid':
+    case 'pla_intel_imminent': {
+      const pla = Object.values(state.units).filter((u) => u.faction === 'PLA' && u.location === 'china').length;
+      const left = Math.max(0, Math.round((Date.parse(String(state.flags.plaArrivalDate ?? state.date)) - Date.parse(state.date)) / 86400000));
+      lines.push(`압록강 북안에 중공군 약 ${pla}개 사단급 집결 · 도하까지 약 ${left}일`);
+      break;
+    }
+    case 'cross_final_decision':
+      lines.push('이른 정전을 택하면 약 12턴 안에 타결되며 점수 상한이 있습니다. 넘으면 중국의 개입을 각오해야 합니다.');
+      break;
     case 'china_intervention':
     case 'china_second_offensive': {
       const pla = Object.values(state.units).filter((u) => u.faction === 'PLA');

@@ -148,7 +148,6 @@ export interface NationStats {
 export interface Diplomacy {
   usCommitment: number; // 미국 개입도
   unSupport: number; // UN 지지
-  chinaThreat: number; // 중국 개입 위험
   sovietSupport: number; // 소련 지원
 }
 

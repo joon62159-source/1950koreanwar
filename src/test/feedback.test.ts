@@ -58,6 +58,7 @@ describe('훈련·휴식', () => {
   it('전투를 치르면 훈련도가 오른다', () => {
     const g = fresh();
     g.date = '1950-08-01';
+    g.flags.crossPhase = 'open'; // 38선 월경 허용
     const a = spawn(g, 'daegu', { training: 40 });
     const t0 = a.training;
     // 인접한 북측 지역을 공격시킨다
@@ -196,6 +197,7 @@ describe('엔딩과 거제도', () => {
   it('거제도 포로 석방 이벤트: 협상 중인 1953년 6월에 뜨며 석방·송환 선택이 협상과 국민 지지를 바꾼다', () => {
     const g = fresh();
     g.date = '1953-06-01';
+    g.firedEvents.push('armistice_talks'); // 협상이 시작되지 않은 상태
     expect(checkEvents(g)).not.toContain('geoje_pow_release');
     g.flags.talks = 'on';
     g.armisticeProgress = 50;

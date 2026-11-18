@@ -3,7 +3,7 @@ import { useGame } from '../store/gameStore';
 import Tutorial, { tutorialSeen } from './Tutorial';
 import ReplayScreen from './ReplayScreen';
 import AchievementsScreen from './AchievementsScreen';
-import { AllBattlesModal, BattleModal, BriefingModal, EndBanner, EndingModal, EventModal, GameOverModal, HelpModal, LandingReportModal, ManagementModal, MenuModal, MobilizedModal } from './Modals';
+import { AllBattlesModal, BattleModal, BriefingModal, CrossWarningModal, EndBanner, EndingModal, EventModal, GameOverModal, HelpModal, LandingReportModal, ManagementModal, MenuModal, MobilizedModal } from './Modals';
 
 /** 데스크톱·모바일이 함께 쓰는 팝업 계층: 모달, 이벤트 창, 토스트, 튜토리얼 */
 export default function ModalLayer() {
@@ -42,6 +42,7 @@ export default function ModalLayer() {
       {modal === 'landing' && <LandingReportModal />}
       {modal === 'manage' && <ManagementModal />}
       {modal === 'mobilized' && <MobilizedModal />}
+      {modal === 'crossWarning' && <CrossWarningModal />}
       {!playing && pending === 0 && modal === 'ending' && <EndingModal />}
       {!playing && modal === 'gameover' && <GameOverModal />}
       {!playing && outcome && modal === null && pending === 0 && <EndBanner />}

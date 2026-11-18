@@ -8,6 +8,8 @@ import NewspaperModal from './Newspaper';
 import { ACHIEVEMENT_BY_ID } from '../game/achievements';
 import { EVENT_IMAGES } from '../data/eventImages';
 import { endingFor } from '../data/endings';
+import { plaArrivalDays, plaForceTotal } from '../game/china';
+import { CROSS } from '../game/balance';
 import { formatDate } from '../game/util';
 import { fmt } from './common';
 import { SCORE } from '../game/balance';
@@ -195,6 +197,43 @@ export function BattleModal() {
           <div><div className="text-slate-400">방어측</div>{names(r.defenderUnits).map((n) => <div key={n}>{n}</div>)}</div>
         </div>
         <div className="mt-4 flex justify-end"><button className="btn px-4" onClick={() => showBattle(null)}>닫기</button></div>
+      </div>
+    </Shell>
+  );
+}
+
+/** 38선 월경 경고: 원래 북한 영토를 처음 공격하려는 순간 뜨는 중국의 경고 (결정 전까지 명령은 보류된다) */
+export function CrossWarningModal() {
+  const game = useGame((s) => s.game);
+  const resolve = useGame((s) => s.resolveCross);
+  const prompt = useGame((s) => s.crossPrompt);
+  const setModal = useGame((s) => s.setModal);
+  const arrival = plaArrivalDays(game);
+  const total = plaForceTotal(game);
+  return (
+    <Shell width={720} z={66}>
+      <div className="overflow-hidden rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
+        <EventScene kind="telegram" title="중국의 경고" kicker="국경 너머의 경고" date={formatDate(game.date)} />
+        <div className="p-5">
+          <div className="flex flex-col gap-2.5 font-serif text-[14.5px] leading-[1.8] text-[#efe6cb]">
+            <p>새벽 외교 전문이 사령부에 도착했다. 문장은 짧고 분명하다 — 선을 넘으면 더는 지켜보지 않겠다. 사령부의 공기가 얼어붙는다. 누군가는 허세라고 말하고, 누군가는 지도의 북쪽 끝을 오래 바라본다.</p>
+            <p>지금 {prompt ? game.provinces[prompt.target]?.name : '북쪽'} 방면으로 내리려는 첫 공격 명령이 38선을 넘는 명령이다. 북진하면 한반도 전체를 되찾을 기회를 얻지만, 압록강 너머의 군대가 깨어난다.</p>
+            <blockquote className="border-l-2 border-[#c9a24b] pl-3 italic text-[#e1c274]">“선을 넘는 것은 쉽다. 넘고 난 뒤에 무엇이 기다리는지를 아는 것이 어렵다.”<span className="ml-2 text-[12px] not-italic text-[#a99a6e]">— 외교 참모</span></blockquote>
+          </div>
+          <div className="mt-4 flex flex-col gap-2">
+            <button onClick={() => resolve('cross')} className="rounded border border-[#4a3f26] bg-[#1d1910] p-3 text-left transition hover:border-[#a88c4a] hover:bg-[#25201a]">
+              <div className="text-[14.5px] font-bold text-[#f4ead0]">그래도 38선을 넘는다</div>
+              <div className="mt-1 text-[12.5px] leading-[1.55] text-[#c9bd9a]">중공군이 압록강 너머에 집결하기 시작하며, 약 {Math.ceil(arrival / 7)}턴({arrival}일) 뒤 참전합니다. 참전 규모는 약 {total}개 사단급입니다. 집결 상황은 첩보 이벤트와 전황 개요에 표시됩니다. 그 안에 최대한 북쪽으로 올라가야 합니다. (쉬움은 더 길고 어려움은 더 짧습니다)</div>
+            </button>
+            <button onClick={() => resolve('halt')} className="rounded border border-[#4a3f26] bg-[#1d1910] p-3 text-left transition hover:border-[#a88c4a] hover:bg-[#25201a]">
+              <div className="text-[14.5px] font-bold text-[#f4ead0]">38선에서 멈춘다</div>
+              <div className="mt-1 text-[12.5px] leading-[1.55] text-[#c9bd9a]">{CROSS.banDays}일({Math.ceil(CROSS.banDays / 7)}턴) 동안 원래 국경 이북을 공격할 수 없습니다. 남은 턴은 전황 개요에 표시됩니다. 기간이 끝나면 <b>이른 정전협상</b>과 <b>월경</b> 가운데 최종 결정을 내려야 합니다.</div>
+            </button>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button className="btn px-4" onClick={() => { useGame.setState({ crossPrompt: null }); setModal(null); }}>보류 (명령 취소)</button>
+          </div>
+        </div>
       </div>
     </Shell>
   );
