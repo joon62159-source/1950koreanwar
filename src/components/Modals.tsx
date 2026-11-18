@@ -6,7 +6,7 @@ import { NARRATIVES, describeEffects, situationLines } from '../data/eventNarrat
 import EventScene from './EventScene';
 import NewspaperModal from './Newspaper';
 import { ACHIEVEMENT_BY_ID } from '../game/achievements';
-import { EVENT_IMAGES } from '../data/eventImages';
+import { ENDING_IMAGES, EVENT_IMAGES } from '../data/eventImages';
 import { endingFor } from '../data/endings';
 import { plaArrivalDays, plaForceTotal } from '../game/china';
 import { CROSS } from '../game/balance';
@@ -259,7 +259,7 @@ export function EndingModal() {
   return (
     <Shell width={760} z={65}>
       <div className={'overflow-clip rounded border bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)] ' + (end.tone === 'win' ? 'border-[#c9a24b]' : 'border-red-900')}>
-        <EventScene kind={end.scene} title={end.title} kicker={end.kicker} date={formatDate(game.date)} />
+        <EventScene kind={end.scene} title={end.title} kicker={end.kicker} date={formatDate(game.date)} imageSrc={ENDING_IMAGES[end.key]} />
         <div className="p-5">
           <div className="mb-2"><span className={'tag ' + (end.tone === 'win' ? 'tag-fake' : '')}>{end.tone === 'win' ? '엔딩' : '엔딩 — 패배'}</span></div>
           <div className="flex flex-col gap-2.5 font-serif text-[14.5px] leading-[1.8] text-[#efe6cb]">

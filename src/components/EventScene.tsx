@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SCENE_IMAGES } from '../data/eventImages';
 
 /**
  * 이벤트 장면 일러스트 (코드로 그린 SVG, 실제 사진 아님).
@@ -328,12 +329,13 @@ function PostFx({ id, kind }: { id: string; kind: SceneKind }) {
 
 export default function EventScene({ kind, title, date, kicker, imageSrc, hideTitle = false }: { kind: SceneKind; title: string; date: string; kicker?: string; imageSrc?: string; hideTitle?: boolean }) {
   const id = `sc-${kind}`;
-  const [imgFailed, setImgFailed] = useState(false);
-  const useImage = !!imageSrc && !imgFailed;
+  const resolvedImageSrc = imageSrc ?? SCENE_IMAGES[kind];
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const useImage = failedSrc !== resolvedImageSrc;
   return (
     <div>
       <div className="relative overflow-hidden">
-        {useImage && <img src={imageSrc} alt={title} className="block w-full" style={{ aspectRatio: `${W} / ${H}`, objectFit: 'cover' }} onError={() => setImgFailed(true)} />}
+        {useImage && <img src={resolvedImageSrc} alt={title} className="block w-full" style={{ aspectRatio: `${W} / ${H}`, objectFit: 'cover' }} onError={() => setFailedSrc(resolvedImageSrc)} />}
         {!useImage && <svg viewBox={`0 0 ${W} ${H}`} className="scene-zoom block w-full" preserveAspectRatio="xMidYMid slice" role="img" aria-label={title}>
           <defs>
             <radialGradient id={`${id}-vig`} cx="50%" cy="50%" r="75%">
@@ -347,6 +349,7 @@ export default function EventScene({ kind, title, date, kicker, imageSrc, hideTi
           <rect width={W} height={H} fill={`url(#${id}-scan)`} />
           <rect width={W} height={H} fill={`url(#${id}-vig)`} />
         </svg>}
+        {useImage && <div className="pointer-events-none absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-black/50 to-transparent" />}
         <div className="absolute right-3 top-2 text-[10px] tracking-widest text-[#e1c274]/90 drop-shadow">{date}</div>
         {!useImage && <div className="absolute bottom-2 right-3 rounded bg-black/40 px-1.5 text-[9px] text-slate-300/80">일러스트</div>}
       </div>

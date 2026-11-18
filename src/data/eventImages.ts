@@ -1,6 +1,98 @@
-/**
- * 이벤트 장면을 사진·일러스트 파일로 바꾸려면 여기에 등록한다 (파일은 public/events/ 에 둔다).
- * 등록하지 않은 이벤트는 코드로 그린 장면(EventScene)을 보여 준다.
- * 예) macarthur_arrives: '/events/macarthur_arrives.jpg',
- */
-export const EVENT_IMAGES: Record<string, string> = {};
+/** 사건별 그림이 우선이고, 나머지는 장면 종류별 그림을 사용한다. */
+import type { EndingKey } from './endings';
+import type { SceneKind } from '../components/EventScene';
+
+export const SCENE_IMAGES: Record<SceneKind, string> = {
+  dawn_barrage: '/events/invasion.webp',
+  headquarters: '/events/war-room.webp',
+  bridge: '/events/han-river.webp',
+  burning_city: '/events/city-ruins.webp',
+  port: '/events/busan-arrival.webp',
+  trench: '/events/frontline.webp',
+  landing: '/events/west-coast-landing.webp',
+  advance: '/events/news-advance.webp',
+  winter_march: '/events/winter-intervention.webp',
+  talks: '/events/armistice.webp',
+  conscripts: '/events/mobilization.webp',
+  memorial: '/events/memorial.webp',
+  airstrip: '/events/airstrip.webp',
+  war_room: '/events/war-room.webp',
+  tokyo_crowd: '/events/tokyo-press.webp',
+  telegram: '/events/telegram.webp',
+  mushroom: '/events/nuclear.webp',
+  empty_capital: '/events/city-ruins.webp',
+  flag_raise: '/events/unification.webp',
+  railway_retreat: '/events/news-retreat.webp',
+  river_tank: '/events/news-advance.webp',
+  ship_conference: '/events/war-room.webp',
+  beachhead: '/events/incheon-success.webp',
+  wreck_beach: '/events/landing-failure.webp',
+  hotline: '/events/war-room.webp',
+  convoy: '/events/news-convoy.webp',
+  river_defense: '/events/naktong-crisis.webp',
+  command_post: '/events/naktong.webp',
+  victory_street: '/events/seoul-return.webp',
+  hilltop: '/events/front-crisis.webp',
+  bugle_charge: '/events/spring-offensive.webp',
+  rail_yard: '/events/rail-intel.webp',
+  refugees_ice: '/events/winter-refugees.webp',
+  red_train: '/events/soviet-train.webp',
+  river_border: '/events/northern-border.webp',
+  campaign_map: '/events/war-room.webp',
+  barbed_wire: '/events/frontline.webp',
+  monsoon_rain: '/events/monsoon.webp',
+  cold_forecast: '/events/frozen-front.webp',
+  frozen_front: '/events/frozen-front.webp',
+  spring_thaw: '/events/spring-thaw.webp',
+  front_letter: '/events/letters.webp',
+  home_letter: '/events/letters.webp',
+};
+
+export const EVENT_IMAGES: Record<string, string> = {
+  kpa_invasion: '/events/invasion.webp',
+  unsc_support: '/events/un-council.webp',
+  seoul_crisis: '/events/han-river.webp',
+  un_command: '/events/busan-arrival.webp',
+  walker_stand: '/events/naktong.webp',
+  naktong_crisis: '/events/naktong-crisis.webp',
+  front_crisis: '/events/front-crisis.webp',
+  incheon_preparation: '/events/war-room.webp',
+  incheon_landing: '/events/incheon.webp',
+  incheon_success: '/events/incheon-success.webp',
+  gunsan_landing: '/events/west-coast-landing.webp',
+  seoul_fall_battle: '/events/seoul-fall-battle.webp',
+  seoul_fall: '/events/city-ruins.webp',
+  seoul_recaptured: '/events/seoul-return.webp',
+  china_intervention: '/events/winter-intervention.webp',
+  china_second_offensive: '/events/winter-offensive.webp',
+  cold_warning: '/events/northern-border.webp',
+  pla_spring_offensive: '/events/spring-offensive.webp',
+  pla_may_offensive: '/events/may-offensive.webp',
+  trench_warfare: '/events/frontline.webp',
+  armistice_talks: '/events/armistice.webp',
+  general_mobilization: '/events/mobilization.webp',
+};
+
+export const ENDING_IMAGES: Record<EndingKey, string> = {
+  unification: '/events/unification.webp',
+  armistice_38: '/events/armistice.webp',
+  armistice_north: '/events/armistice.webp',
+  armistice_seoul: '/events/seoul-return.webp',
+  armistice_seoul_lost: '/events/city-ruins.webp',
+  hollow: '/events/memorial.webp',
+  busan_fall: '/events/busan-evacuation.webp',
+  collapse: '/events/winter-refugees.webp',
+  annihilated: '/events/city-ruins.webp',
+  world_war: '/events/nuclear.webp',
+};
+
+export const NEWSPAPER_IMAGES: Partial<Record<SceneKind, string>> = {
+  empty_capital: '/events/news-retreat.webp',
+  flag_raise: '/events/news-advance.webp',
+  railway_retreat: '/events/news-retreat.webp',
+  advance: '/events/news-advance.webp',
+  victory_street: '/events/news-advance.webp',
+  trench: '/events/frontline.webp',
+  hilltop: '/events/frontline.webp',
+  convoy: '/events/news-convoy.webp',
+};

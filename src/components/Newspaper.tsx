@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useGame } from '../store/gameStore';
 import { buildNewspaper } from '../game/newspaper';
 import EventScene from './EventScene';
+import { NEWSPAPER_IMAGES } from '../data/eventImages';
 import { BriefingDetails, Shell } from './Modals';
 
 /** 턴이 끝날 때 뜨는 "오늘의 전황" 신문. 기존 브리핑의 정보를 신문 형식으로 보여 주고, 상세 보고서는 펼쳐서 본다. */
@@ -37,7 +38,7 @@ export default function NewspaperModal() {
         <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           <div>
             <div className="overflow-hidden rounded-sm border border-[#2a2418]" style={{ filter: 'grayscale(1) sepia(.5) contrast(1.15) brightness(1.04)' }}>
-              <EventScene kind={paper.scene} title={paper.headline} date={paper.dateLine} hideTitle />
+              <EventScene kind={paper.scene} title={paper.headline} date={paper.dateLine} imageSrc={NEWSPAPER_IMAGES[paper.scene]} hideTitle />
             </div>
             <div className="mt-2 flex flex-col gap-2 font-serif text-[14px] leading-[1.75] [text-align:justify]">
               {paper.lead.map((p, i) => <p key={i} className={i === 0 ? 'first-letter:float-left first-letter:mr-1 first-letter:text-[34px] first-letter:font-black first-letter:leading-[0.9]' : ''}>{p}</p>)}

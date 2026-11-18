@@ -3,6 +3,7 @@ import { useGame } from '../store/gameStore';
 import { DIFFICULTY } from '../game/balance';
 import type { Difficulty } from '../game/types';
 import EventScene from './EventScene';
+import { EVENT_IMAGES } from '../data/eventImages';
 import { formatDate } from '../game/util';
 import { ACHIEVEMENTS } from '../game/achievements';
 import { MusicControl } from './MusicControl';
@@ -72,7 +73,7 @@ export default function TitleScreen() {
       <div className="mx-auto flex min-h-full max-w-[980px] flex-col px-4 pt-3">
         <MusicControl className="mb-2 ml-auto w-[220px] max-w-full rounded border border-ink-600 bg-[#0f151c]/90 p-1.5" />
         <div className="overflow-hidden rounded border border-[#8a7a4f]/70 shadow-2xl">
-          <EventScene kind="dawn_barrage" title="6.25: 운명의 한반도" date="1950-06-25" hideTitle />
+          <EventScene kind="dawn_barrage" title="6.25: 운명의 한반도" date="1950-06-25" imageSrc={EVENT_IMAGES.kpa_invasion} hideTitle />
           <div className="bg-[#16130c] px-5 pb-4 pt-1 text-center">
             <div className="text-[11px] tracking-[0.35em] text-[#e1c274]">전략 시뮬레이션</div>
             <div className="mt-1 font-serif text-[30px] font-black leading-tight text-[#f4ead0] sm:text-[40px]">6.25: 운명의 한반도</div>
