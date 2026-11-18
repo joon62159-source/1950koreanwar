@@ -67,7 +67,10 @@ export function checkOutcome(state: GameState): GameOutcome | null {
     if (score.total < MIN_VICTORY_SCORE) {
       return { ...base, result: 'defeat', grade: '-', title: '명목상의 생존 — 국가 기능 상실', reasons: [`부산은 지켰지만 종합 점수 ${score.total}점으로 최소 기준(${MIN_VICTORY_SCORE}점)에 미달했습니다.`, '병력·영토·국민 지지·전쟁 피해를 종합하면 국가가 전쟁을 지속할 수 없는 상태입니다.'], score };
     }
-    if (state.flags.earlyArmistice && armistice) {
+    // 이른 정전은 38선 부근에서 전선을 지킨 경우에만 해당한다 (서울을 잃었거나 남측 영토 대부분을 잃었다면 일반 정전 결말)
+    const southInitial = Object.values(state.provinces).filter((p) => p.initialOwner === 'south' && !p.external);
+    const holdsLine = state.provinces.seoul.owner === 'south' && southInitial.filter((p) => p.owner === 'south').length >= southInitial.length * 0.7;
+    if (state.flags.earlyArmistice && armistice && holdsLine) {
       const capped = { ...score, total: Math.min(score.total, ARMISTICE.earlyScoreCap) };
       return {
         ...base,

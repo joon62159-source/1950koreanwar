@@ -19,7 +19,7 @@ import { endingFor } from '../src/data/endings';
 import { needsRest, unitsAt } from '../src/game/units';
 import { MAP } from '../src/game/map';
 import { formatDate, turnDaysFor } from '../src/game/util';
-import { crossGate, declareCross, declareHalt } from '../src/game/china';
+import { crossGate, crossPhase, declareCross, declareHalt } from '../src/game/china';
 import { warFrontStatus } from '../src/game/overview';
 import { supplyBalance } from '../src/game/economy';
 import { weatherAt } from '../src/game/weather';
@@ -127,6 +127,7 @@ function order(s: GameState, type: OrderType, unitsArg: string, target?: string)
       say('⚠ [중국의 경고] 원래 북한 영토(38선 이북)를 처음 공격하려 합니다. 명령은 보류되었습니다.');
       say('  선택: `cross yes <부대> <목표>` → 월경(중공군 집결 시작, 정해진 시간 뒤 참전) / `cross no` → 38선에서 멈춤(56일간 월경 금지, 이후 최종 결정)');
       say(`  (이번 명령: 부대 ${unitsArg} → ${target})`);
+      s.flags.playCrossWarned = true; // 경고를 실제로 받은 뒤에만 cross yes/no 를 허용한다
       return;
     }
   }
@@ -252,6 +253,7 @@ function main() {
       case 'train': order(s, 'train', a[0]); break;
       case 'cancel': for (const id of parseUnits(s, a[0])) cancelOrder(s, id); say('취소했습니다.'); break;
       case 'cross': {
+        if (!s.flags.playCrossWarned && crossPhase(s) === 'idle') { say('지금은 중국의 경고가 없습니다. 원래 북한 영토(38선 이북)를 처음 공격하려는 명령(attack)을 내리면 경고가 뜹니다.'); break; }
         if (a[0] === 'no') { declareHalt(s); say('38선에서 멈춥니다. 56일간 월경이 금지되고, 끝나면 최종 결정 사건이 뜹니다.'); log('cross', s, { choice: 'halt' }); break; }
         if (a[0] === 'yes') {
           declareCross(s);

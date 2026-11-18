@@ -239,4 +239,14 @@ describe('이른 정전과 업적', () => {
     h.outcome = checkOutcome(h);
     expect(ACHIEVEMENTS.find((a) => a.id === 'win')!.check(h)).toBe(true);
   });
+
+  it('서울을 잃고 남측 영토 대부분을 잃은 채로는 "38선에서 맺은 정전"이 되지 않는다', () => {
+    const g = make();
+    for (const p of Object.values(g.provinces)) if (!p.external && p.initialOwner === 'south' && p.id !== 'busan') p.owner = 'north';
+    g.flags.talks = 'on';
+    g.flags.earlyArmistice = true;
+    g.armisticeProgress = 100;
+    const o = checkOutcome(g);
+    expect(o?.title).not.toBe('38선에서 맺은 정전');
+  });
 });
