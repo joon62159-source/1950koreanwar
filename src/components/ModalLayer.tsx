@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '../store/gameStore';
 import Tutorial, { tutorialSeen } from './Tutorial';
+import Hints from './Hints';
 import ReplayScreen from './ReplayScreen';
 import AchievementsScreen from './AchievementsScreen';
 import { AllBattlesModal, BattleModal, BriefingModal, CrossWarningModal, EndBanner, EndingModal, EventModal, GameOverModal, HelpModal, LandingReportModal, ManagementModal, MenuModal, MobilizedModal } from './Modals';
@@ -27,6 +28,7 @@ export default function ModalLayer() {
   return (
     <>
       <Tutorial />
+      <Hints />
       {toast && (
         <div className={'fade-in fixed left-1/2 top-16 z-[80] max-w-[92vw] -translate-x-1/2 rounded border px-4 py-2 text-[13px] shadow-lg ' + (toast.kind === 'ok' ? 'border-emerald-700 bg-emerald-950/95 text-emerald-100' : 'border-red-700 bg-red-950/95 text-red-100')}>
           {toast.text}
