@@ -88,6 +88,7 @@ interface Store {
   playToResult: () => void;
   setAuto: (a: boolean) => void;
   skipPlayback: () => void;
+  skipAll: () => void;
 
   /** 난이도를 정해 새 게임을 시작한다 (생략하면 지금 게임의 난이도) */
   newGame: (difficulty?: Difficulty) => void;
@@ -367,6 +368,23 @@ export const useGame = create<Store>((set, get) => ({
     if (p) set({ playback: { ...p, auto } });
   },
   skipPlayback: () => set({ playback: null, focus: null, modal: afterPlaybackModal(get().game) }),
+  // 전투 재생·선택지 없는 알림 사건·신문을 한 번에 넘긴다. 결정이 필요한 사건에서는 멈춘다.
+  skipAll: () => {
+    set({ playback: null, focus: null });
+    let skipped = 0;
+    for (let guard = 0; guard < 30; guard++) {
+      const p = get().game.pendingEvents[0];
+      if (!p) break;
+      const ev = EVENT_BY_ID[p.eventId];
+      if (!ev || ev.choices.length > 0 || ev.operation || ev.mobilization) break;
+      get().chooseEvent(p.eventId);
+      if (get().game.pendingEvents[0]?.eventId === p.eventId) break; // 처리되지 않으면 중단
+      skipped++;
+    }
+    const g = get().game;
+    set({ modal: g.outcome ? 'ending' : null });
+    if (skipped > 0) get().notify(`알림 ${skipped}건을 건너뛰었습니다.`, 'ok');
+  },
 
   screen: 'title',
   setScreen: (screen) => set({ screen }),

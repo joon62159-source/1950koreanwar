@@ -48,6 +48,7 @@ function EffectChips({ effects }: { effects: Effect[] }) {
 export function EventModal() {
   const game = useGame((s) => s.game);
   const choose = useGame((s) => s.chooseEvent);
+  const skipAll = useGame((s) => s.skipAll);
   const pending = game.pendingEvents[0];
   const [pick, setPick] = useState<string | null>(null);
   const ev = pending ? EVENT_BY_ID[pending.eventId] : null;
@@ -56,8 +57,10 @@ export function EventModal() {
   if (!pending || !ev) return null;
   const needChoice = ev.choices.length > 0;
   return (
-    <Shell width={760} z={60}>
-      <div className="overflow-clip rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
+    <div className="modal-bg fixed inset-0 flex items-center justify-center p-2 sm:p-4" style={{ zIndex: 60 }}>
+      <div className="fade-in flex max-h-[94dvh] flex-col overflow-hidden rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]" style={{ width: 760, maxWidth: '100%' }}>
+        {/* 위: 그림·서술(스크롤) / 아래: 선택지·결정 버튼(항상 보임) */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
         <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date < ev.earliestDate ? ev.earliestDate : game.date)} imageSrc={EVENT_IMAGES[ev.id]} />
         <div className="p-5">
           {ev.isCounterfactual && <div className="mb-2"><span className="tag tag-fake">가상 시나리오</span></div>}
@@ -94,34 +97,38 @@ export function EventModal() {
             {ev.casualtyReport && <div className="mt-3"><CasualtyPanel /></div>}
           </div>
 
+        </div>
+        </div>
+        {/* 하단 고정 영역: 선택지와 결정 버튼은 스크롤 없이 항상 보인다 */}
+        <div className="shrink-0 border-t border-[#8a7a4f]/60 bg-[#16130c] px-5 pb-3 pt-3">
           {needChoice && (
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="flex max-h-[42dvh] flex-col gap-2 overflow-y-auto">
               {ev.choices.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setPick(c.id)}
-                  className={'rounded border p-3 text-left transition ' + (pick === c.id ? 'border-[#e1c274] bg-[#2d2616] shadow-[inset_0_0_0_1px_#e1c274]' : 'border-[#4a3f26] bg-[#1d1910] hover:border-[#a88c4a] hover:bg-[#25201a]')}
+                  className={'rounded border p-2.5 text-left transition ' + (pick === c.id ? 'border-[#e1c274] bg-[#2d2616] shadow-[inset_0_0_0_1px_#e1c274]' : 'border-[#4a3f26] bg-[#1d1910] hover:border-[#a88c4a] hover:bg-[#25201a]')}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[14.5px] font-bold text-[#f4ead0]">{c.label}</span>
                     {c.isCounterfactual && <span className="tag tag-fake">가상</span>}
                   </div>
-                  <div className="mt-1 text-[12.5px] leading-[1.55] text-[#c9bd9a]">{c.description}</div>
+                  <div className="mt-0.5 text-[12.5px] leading-[1.5] text-[#c9bd9a]">{c.description}</div>
                   <EffectChips effects={c.effects} />
                 </button>
               ))}
             </div>
           )}
-          {/* 하단 고정: 선택지가 길어 스크롤해도 결정·확인 버튼은 항상 보인다 */}
-          <div className="sticky bottom-0 -mx-5 mt-4 flex items-center justify-end gap-3 border-t border-[#3a3220] bg-[#16130c]/95 px-5 py-3 backdrop-blur-sm">
+          <div className="mt-3 flex items-center justify-end gap-3">
             {needChoice && !pick && <span className="mr-auto text-[12px] text-[#a99a6e]">선택지를 고르세요</span>}
+            {!needChoice && <button className="btn mr-auto" onClick={skipAll} title="선택이 필요 없는 알림과 신문을 모두 넘깁니다. 결정이 필요한 사건에서는 멈춥니다.">모두 건너뛰기 ⏭⏭</button>}
             <button className="btn btn-primary px-6 py-2 text-[14px]" disabled={needChoice && !pick} onClick={() => { choose(ev.id, pick ?? undefined); setPick(null); }}>
               {needChoice ? '결정' : '확인'}
             </button>
           </div>
         </div>
       </div>
-    </Shell>
+    </div>
   );
 }
 

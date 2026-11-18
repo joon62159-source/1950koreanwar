@@ -61,6 +61,7 @@ export default function PlaybackPanel() {
   const toResult = useGame((s) => s.playToResult);
   const setAuto = useGame((s) => s.setAuto);
   const skip = useGame((s) => s.skipPlayback);
+  const skipAll = useGame((s) => s.skipAll);
   const setModal = useGame((s) => s.setModal);
   const steps = game.lastTurn?.steps ?? [];
   const step = steps[pb.index];
@@ -89,6 +90,7 @@ export default function PlaybackPanel() {
           <button className={'btn ' + (pb.auto ? 'btn-blue' : '')} onClick={() => setAuto(!pb.auto)}>{pb.auto ? '⏸ 일시정지' : '▶ 자동 진행'}</button>
           <button className="btn" onClick={() => setModal('allBattles')}>전체 전투 결과</button>
           <button className="btn" onClick={skip} title="남은 연출을 모두 건너뜁니다. 게임 결과는 동일합니다.">연출 건너뛰기 ⏭</button>
+          <button className="btn" onClick={skipAll} title="전투 연출, 알림 사건, 신문을 모두 넘깁니다. 결정이 필요한 사건에서는 멈춥니다.">모두 건너뛰기 ⏭⏭</button>
           <button className="btn btn-primary" onClick={next}>{pb.phase === 'intro' ? '결과 보기' : isLast ? '턴 종합 보고 ▶' : '다음 전투 ▶'}</button>
         </div>
       </div>
