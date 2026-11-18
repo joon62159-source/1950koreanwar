@@ -6,6 +6,8 @@ import { computeSupply } from './supply';
 import { recordHistory } from './history';
 import { computeWarCapacity, effectiveIndustry } from './economy';
 import { createUnit, emptyEquip, totalStrength } from './units';
+import { divisionName } from './mobilization';
+import { MOBILIZATION_PROFILES } from '../data/mobilization';
 import { addLog } from './util';
 import { updateIntel } from './visibility';
 import type { Difficulty, GameState, Province, Side } from './types';
@@ -110,7 +112,7 @@ export function spawnTemplate(state: GameState, t0: UnitTemplate) {
   const u = createUnit(state, {
     faction: t.faction, name: t.name, parent: t.parent, kind: t.kind, echelon: t.echelon, location: t.location,
     training: t.training, experience: t.experience, morale: t.morale, strengthPct: t.strengthPct,
-    fill: t.fill, defaultFill: 0.7, traits: t.traits,
+    fill: t.fill, defaultFill: 0.7, traits: t.traits, organization: t.organization,
   });
   state.units[u.id] = u;
   return u;
@@ -124,6 +126,13 @@ export function northSpawnProvince(state: GameState, preferred: string[], index 
   return any.length ? any[index % Math.min(3, any.length)].id : null;
 }
 
+/** 중국군 증원이 도착할 곳: 선호 지역이 북측 통제 아래 있으면 그곳, 압록강변을 잃었으면 국경 너머 중국 영내(거기서 바로 공격한다) */
+export function plaSpawnProvince(state: GameState, preferred: string[], index = 0): string | null {
+  const own = preferred.filter((id) => state.provinces[id]?.owner === 'north' && !state.provinces[id].external);
+  if (own.length) return own[index % own.length];
+  return 'china';
+}
+
 export function applyReinforcement(state: GameState, id: string): string | null {
   const r = REINFORCEMENTS.find((x) => x.id === id);
   if (!r || state.flags[`reinf:${id}`]) return null;
@@ -135,11 +144,16 @@ export function applyReinforcement(state: GameState, id: string): string | null 
   const base = r.units;
   const want = Math.max(base.length ? 1 : 0, Math.round(base.length * waves));
   const units = Array.from({ length: want }, (_, i) => (i < base.length ? base[i] : { ...base[i % base.length], name: `${base[i % base.length].name} (증편 ${i - base.length + 1})` }));
+  // 총동원령 이후 도착하는 국군 신편·UN군 증원은 사단급으로 편성한다 (여단급으로 오면 총동원령이 무의미해진다)
+  const asDivision = !!state.flags.mobilized && (id.startsWith('rok-new') || id.startsWith('un-late'));
   units.forEach((t, i) => {
     if (t.faction === 'PLA' || t.faction === 'KPA') {
-      const loc = northSpawnProvince(state, [t.location], i);
+      const loc = id.startsWith('pla-wave') ? plaSpawnProvince(state, [t.location], i) : northSpawnProvince(state, [t.location], i);
       if (!loc) return;
       spawnTemplate(state, { ...t, location: loc });
+    } else if (asDivision && t.echelon !== 'division') {
+      const u = spawnTemplate(state, { ...t, echelon: 'division', name: divisionName(t.name), strengthPct: Math.min(t.strengthPct ?? 0.8, t.faction === 'ROK' ? MOBILIZATION_PROFILES.rok.fillTarget : 0.85) });
+      u.speed = Math.round(u.speed * MOBILIZATION_PROFILES.rok.speedFactor);
     } else spawnTemplate(state, t);
   });
   if (r.stock) {

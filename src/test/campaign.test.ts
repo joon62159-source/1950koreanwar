@@ -5,7 +5,8 @@ import { endTurn } from '../game/turn';
 import { createUnit } from '../game/units';
 import { battleContextFor, calcSide } from '../game/combat';
 import { currentPhase } from '../game/ai';
-import { hubLevels } from '../game/supply';
+import { hubLevels, computeSupply } from '../game/supply';
+import { CHINA_BORDER_PROVINCES } from '../data/outline';
 import { checkOutcome } from '../game/victory';
 import { usePolicy } from '../game/policies';
 import { turnDaysFor } from '../game/util';
@@ -58,7 +59,7 @@ describe('중국군 참전', () => {
     g.provinces.sariwon.owner = 'south';
     expect(fire(g)).not.toContain('china_intervention');
   });
-  it('평양 함락 직후(1턴 뒤)에는 참전하지 않고, 함락 2턴 뒤에 참전하며 중국군 20개 사단이 국경을 넘는다', () => {
+  it('평양 함락 직후(1턴 뒤)에는 참전하지 않고, 함락 2턴 뒤에 참전하며 중국군 24개 사단이 국경을 넘는다', () => {
     const g = fresh();
     g.date = '1950-10-25';
     g.provinces.pyongyang.owner = 'south';
@@ -66,7 +67,7 @@ describe('중국군 참전', () => {
     expect(fire(g)).not.toContain('china_intervention');
     g.flags.pyongyangFallTurn = g.turn - 2;
     expect(fire(g)).toContain('china_intervention');
-    expect(plaCount(g)).toBe(20);
+    expect(plaCount(g)).toBe(24);
     expect(g.flags.plaIntervened).toBe(true);
     expect(Object.values(g.units).some((u) => u.faction === 'PLA' && u.location === 'china')).toBe(false); // 모두 국경을 넘었다
     for (const u of Object.values(g.units).filter((x) => x.faction === 'PLA')) {
@@ -86,7 +87,7 @@ describe('중국군 참전', () => {
     expect(checkEvents(g)).not.toContain('china_second_offensive');
     g.flags.plaIntervenedTurn = g.turn - 4;
     expect(checkEvents(g)).toContain('china_second_offensive');
-    expect(plaCount(g)).toBe(18);
+    expect(plaCount(g)).toBe(14);
   });
   it('압록강변 중국군 보급소는 참전 후에만 생기며 중국군 후속 증원도 참전 후에만 온다', () => {
     const g = fresh();
@@ -116,8 +117,19 @@ describe('중국군 참전', () => {
     const g = fresh();
     g.flags.plaIntervened = true;
     g.provinces.china.owner = 'north';
-    for (const id of ['sinuiju', 'gangye', 'hyesan', 'pyongyang', 'wonsan']) g.provinces[id].owner = 'south';
+    for (const id of [...CHINA_BORDER_PROVINCES, 'pyongyang', 'wonsan']) g.provinces[id].owner = 'south';
     expect(hubLevels(g, 'north')).toEqual({}); // 중국은 보급 거점이 아니다 (병력이 넘어오는 곳일 뿐)
+  });
+  it('중국 참전 후 압록강·두만강에 닿은 북한 영토(무산·회령·나진 등)는 후방이 끊겨도 포위 판정을 받지 않는다', () => {
+    const g = fresh();
+    for (const id of ['pyongyang', 'wonsan', 'sinuiju', 'gangye', 'hyesan']) g.provinces[id].owner = 'south';
+    computeSupply(g);
+    expect(g.provinces.musan.supplied).toBe(false); // 참전 전: 후방이 끊기면 포위
+    g.flags.plaIntervened = true;
+    computeSupply(g);
+    for (const id of ['musan', 'hoeryong', 'najin']) {
+      if (g.provinces[id].owner === 'north') expect(g.provinces[id].supplied, id).toBe(true);
+    }
   });
 });
 

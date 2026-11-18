@@ -1,5 +1,6 @@
 import type { GameState, Side } from './types';
 import { PLA, SUPPLY } from './balance';
+import { CHINA_BORDER_PROVINCES } from '../data/outline';
 import { MAP } from './map';
 import { clamp } from './util';
 import { weatherAt } from './weather';
@@ -58,10 +59,11 @@ export function builtDepots(state: GameState, side: Side): string[] {
 export function hubDetails(state: GameState, side: Side, record = true): HubInfo[] {
   const out: HubInfo[] = [];
   const main: string[] = [...SUPPLY.hubs[side]];
-  if (side === 'north' && state.flags.plaIntervened) for (const id of Object.keys(PLA.depots)) if (!main.includes(id)) main.push(id);
+  // 중국군 참전 후에는 압록강·두만강에 닿은 북한 영토 전체가 중국에서 직접 보급을 받는다 (포위 판정을 받지 않는다)
+  if (side === 'north' && state.flags.plaIntervened) for (const id of CHINA_BORDER_PROVINCES) if (!main.includes(id)) main.push(id);
   for (const id of main) {
     if (state.provinces[id]?.owner !== side) continue;
-    const lv = side === 'north' && PLA.depots[id] !== undefined && !SUPPLY.hubs[side].includes(id) ? PLA.depots[id] : SUPPLY.hubLevel;
+    const lv = side === 'north' && CHINA_BORDER_PROVINCES.includes(id) && !SUPPLY.hubs[side].includes(id) ? PLA.depots[id] ?? PLA.borderHubLevel : SUPPLY.hubLevel;
     out.push({ id, kind: 'main', level: lv, baseLevel: lv, cut: false, turnsLeft: null });
   }
 

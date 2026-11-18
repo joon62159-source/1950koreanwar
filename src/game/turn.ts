@@ -286,8 +286,12 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
     }
     // 훈련 명령: 장기 능력(훈련도) 증가
     if (order === 'train' && !fought && !cutOff) {
-      u.training = clamp(u.training + ECONOMY.unitTrainPerDay * days * (1 - u.training / 130), 0, ECONOMY.trainingCap.unit);
+      u.training = clamp(u.training + ECONOMY.unitTrainPerWeek * (days / 7), 0, Math.max(u.training, ECONOMY.trainingCap.unit));
       u.fatigue = clamp(u.fatigue + 1.2 * days, 0, 100);
+    }
+    // 실전 경험: 전투를 치르면 훈련도도 조금씩 오른다 (이미 높을수록 증가폭이 줄어든다)
+    if (fought) {
+      u.training = clamp(u.training + ECONOMY.combatTrainGain * (days / 7) * (1 - u.training / 110), 0, Math.max(u.training, ECONOMY.combatTrainCap));
     }
     // 방어선 강화: 같은 지역에서 방어 명령을 유지하면 방어시설이 서서히 올라간다 (지역당 1턴 1회, 보급 자원 소모)
     if (order === 'defend' && !fought && prov.owner === u.side && prov.fortification < 3 && u.organization > 50 && !dug.has(u.location) && state.nations[u.side].supplyStock > 4) {
@@ -306,7 +310,10 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
       // 완전 휴식(휴식 명령)이 가장 크고, 이동만 한 부대는 낮으며, 전투 참여 부대는 휴식 보너스를 받지 못한다
       const activity = fought ? MEDICAL.fightMult : moved ? MEDICAL.movedMult : order === 'rest' ? MEDICAL.restMult * stack : 1 + (stack - 1) * 0.5;
       const medical = 0.6 + 0.4 * (prov.infrastructure / 100);
-      const rate = clamp(MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1) * (u.faction === 'UN' ? UN_REPLACEMENT.medicalMult : 1) * (u.faction === 'PLA' && state.flags.nukeUsed ? 0 : 1) * weatherAt(state.date).recoveryMult, 0, 0.9); // 핵 투하 이후 중국군은 회복 불가
+      const natural = MEDICAL.returnPerWeek * (days / 7) * activity * medical * (0.5 + 0.5 * (u.supply / 100)) * (1 - u.fatigue / 200) * (enemyAdj ? MEDICAL.unsafeMult : 1) * (u.faction === 'UN' ? UN_REPLACEMENT.medicalMult : 1) * weatherAt(state.date).recoveryMult;
+      // 휴식 명령 중이면 위험 지역·악천후여도 주간 복귀율 하한을 보장한다 (3주 휴식이면 '휴식 필요'가 풀린다)
+      const floor = u.side === state.playerSide && order === 'rest' && !fought && !moved ? MEDICAL.restMinRate * (days / 7) : 0;
+      const rate = (u.faction === 'PLA' && state.flags.nukeUsed) ? 0 : clamp(Math.max(natural, floor), 0, 0.9); // 핵 투하 이후 중국군은 회복 불가
       if (u.wounded > 0) {
         const ret = Math.min(u.wounded, u.maxStrength - u.strength, Math.max(rate > 0.03 ? 1 : 0, Math.round(u.wounded * rate)));
         if (ret > 0) {
@@ -316,7 +323,7 @@ function updateUnits(state: GameState, foughtIds: Set<string>) {
         }
       }
       if (!fought) {
-        const fixRate = clamp(MEDICAL.repairPerWeek * (days / 7) * (order === 'rest' ? MEDICAL.repairRestMult : moved ? 0.6 : 1), 0, 0.9);
+        const fixRate = clamp(MEDICAL.repairPerWeek * (days / 7) * (order === 'rest' ? MEDICAL.repairRestMult * (u.side === state.playerSide ? 1.3 : 1) : moved ? 0.6 : 1), 0, 0.9);
         for (const key of Object.keys(u.equipDamaged) as (keyof typeof u.equip)[]) {
           const d = u.equipDamaged[key];
           if (d <= 0) continue;

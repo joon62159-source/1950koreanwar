@@ -32,6 +32,8 @@ export interface UnitSpec {
   fill?: Partial<Record<EquipKey, number>>;
   defaultFill?: number;
   traits?: string[];
+  /** 시작 조직력 (생략하면 90) */
+  organization?: number;
 }
 
 /** 사단급 정원: 여단급 장비 정원을 병력 비율만큼 키운다 (장비가 저절로 생기지는 않는다) */
@@ -74,7 +76,7 @@ export function createUnit(state: GameState, spec: UnitSpec): Unit {
     experience: spec.experience,
     morale: spec.morale ?? 65,
     fatigue: 0,
-    organization: 90,
+    organization: spec.organization ?? 90,
     recovery: 100,
     supply: 85,
     equip,

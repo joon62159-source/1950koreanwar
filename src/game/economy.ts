@@ -71,7 +71,7 @@ export function advanceEconomy(state: GameState, days: number): void {
 
 /** 보급 자원의 하루 수입(생산·원조)과 지출(병력 소모). 화면 표시와 턴 계산이 같은 값을 쓴다. */
 export function supplyBalance(state: GameState, side: Side): { production: number; aid: number; consumption: number; net: number } {
-  let production = 0;
+  let production: number = ECONOMY.baseIncomePerDay[side];
   for (const p of Object.values(state.provinces)) if (p.owner === side) production += effectiveIndustry(p) * ECONOMY.stockPerIndustryDay;
   const aid = (side === 'south' ? state.diplomacy.usCommitment : state.diplomacy.sovietSupport) * ECONOMY.aidPerPoint[side] * (side === 'south' ? DIFFICULTY[state.difficulty ?? 'normal'].aidMult : 1);
   const consumption = (unitsOfSide(state, side).reduce((s, u) => s + u.strength * (u.faction === 'UN' || u.faction === 'PLA' || u.faction === 'SOV' ? ECONOMY.foreignConsumptionMult : 1), 0) / 1000) * ECONOMY.consumptionPerThousandDay * weatherAt(state.date).consumptionMult;

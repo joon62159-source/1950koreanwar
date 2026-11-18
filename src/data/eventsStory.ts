@@ -178,7 +178,7 @@ export const STORY_EVENTS: HistoricalEvent[] = [
       {
         id: 'drop',
         label: '핵을 투하한다',
-        description: '만주의 중국군이 큰 타격을 입고 회복·보충을 받지 못합니다. 그러나 40% 확률로 소련이 40개 사단을 보내 참전하고, 이후 세계대전으로 확대될 수 있습니다. 국제 여론도 크게 악화됩니다.',
+        description: '만주의 중국군이 큰 타격을 입고 회복·보충을 받지 못합니다. 그러나 40% 확률로 소련이 60개 사단을 보내 참전하고, 이후 세계대전으로 확대될 수 있습니다. 국제 여론도 크게 악화됩니다.',
         isCounterfactual: true,
         effects: [
           { kind: 'nuke' },
@@ -220,7 +220,7 @@ export const STORY_EVENTS: HistoricalEvent[] = [
   story(
     'soviet_intervention',
     '소련군 참전',
-    '핵 투하에 대한 보복으로 소련이 극동 군관구의 40개 사단을 투입했습니다. 만주와 북한 국경 지대로 소련군이 쏟아져 내려옵니다. 이 전쟁은 더 이상 한반도의 전쟁이 아닙니다.',
+    '핵 투하에 대한 보복으로 소련이 극동 군관구의 60개 사단을 투입했습니다. 만주와 북한 국경 지대로 소련군이 쏟아져 내려옵니다. 이 전쟁은 더 이상 한반도의 전쟁이 아닙니다.',
     [{ kind: 'flagSet', key: 'sovietPending' }],
     [
       { kind: 'sovietJoin', count: NUKE.sovietDivisions, label: '극동군' },
@@ -253,6 +253,92 @@ export const STORY_EVENTS: HistoricalEvent[] = [
           { kind: 'flag', key: 'talks', value: 'on' },
           { kind: 'diplomacy', field: 'unSupport', delta: 8 },
           { kind: 'nation', side: 'south', field: 'popularSupport', delta: -4 },
+        ],
+      },
+    ],
+  ),
+  // ── 중국군 공세: 인해전술 (훈련도·조직력은 낮지만 숫자가 압도적). 핵 투하 이후에는 일어나지 않는다 ──
+  story(
+    'pla_new_year_offensive',
+    '중국군 신정 공세',
+    '새해 전야, 중국군이 전 전선에서 다시 공세에 나섰습니다. 포와 차량은 부족해도 파도처럼 밀려드는 보병이 눈 덮인 능선을 넘습니다. 훈련도와 조직력은 낮지만 병력이 너무 많아 한 곳을 막으면 다른 곳이 뚫립니다.',
+    [{ kind: 'flagSet', key: 'plaIntervened' }, { kind: 'flagUnset', key: 'nukeUsed' }, { kind: 'flagTurnsAgo', key: 'plaIntervenedTurn', min: 7 }],
+    [
+      { kind: 'spawnPla', count: 10, label: '신정공세군', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
+      { kind: 'plaOffensive', turns: 3 },
+      { kind: 'units', side: 'south', area: 'all', morale: -4 },
+    ],
+    ['1950-12-28', '1951-02-10'],
+  ),
+  story(
+    'pla_spring_offensive',
+    '중국군 춘계 공세',
+    '얼었던 땅이 녹자 중국군이 대규모 춘계 공세를 시작했습니다. 압록강 너머에서 새 사단들이 끝없이 내려오고, 야간 돌파와 측면 포위가 전선 곳곳에서 동시에 일어납니다. 숫자는 압도적이지만 이들은 훈련이 짧고 보급이 길어 오래 버티지 못합니다. 막아낸 곳에서 반격의 기회가 열립니다.',
+    [{ kind: 'flagSet', key: 'plaIntervened' }, { kind: 'flagUnset', key: 'nukeUsed' }],
+    [
+      { kind: 'spawnPla', count: 14, label: '춘계공세군', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
+      { kind: 'plaOffensive', turns: 3 },
+      { kind: 'units', side: 'south', area: 'all', morale: -4 },
+    ],
+    ['1951-04-22', '1951-05-20'],
+  ),
+  story(
+    'pla_may_offensive',
+    '중국군 5월 공세',
+    '춘계 공세가 꺾인 직후 중국군이 동부 전선에 다시 병력을 쏟아부었습니다. 지친 병력을 교대한 새 사단들이 산악 지대로 밀려 내려옵니다. 이 파도를 넘기면 전선은 38선 일대에서 굳어질 것입니다.',
+    [{ kind: 'flagSet', key: 'plaIntervened' }, { kind: 'flagUnset', key: 'nukeUsed' }, { kind: 'eventFired', id: 'pla_spring_offensive' }],
+    [
+      { kind: 'spawnPla', count: 8, label: '5월공세군', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
+      { kind: 'plaOffensive', turns: 2 },
+      { kind: 'units', side: 'south', area: 'all', morale: -2 },
+    ],
+    ['1951-05-16', '1951-06-20'],
+  ),
+  story(
+    'pla_autumn_offensive',
+    '중국군 추계 고지 공세',
+    '가을, 교착된 전선의 고지들을 둘러싸고 중국군이 대규모 공세를 걸어왔습니다. 갱도에서 나온 병력이 포격 속에서 고지로 올라옵니다. 한 고지를 지키는 데 몇 개 대대가 사라집니다.',
+    [{ kind: 'flagSet', key: 'plaIntervened' }, { kind: 'flagUnset', key: 'nukeUsed' }],
+    [
+      { kind: 'spawnPla', count: 8, label: '추계공세군', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
+      { kind: 'plaOffensive', turns: 2 },
+      { kind: 'units', side: 'south', area: 'all', morale: -2 },
+    ],
+    ['1952-10-10', '1952-11-15'],
+  ),
+  story(
+    'geoje_pow_release',
+    '거제도 — 반공 포로 석방',
+    '거제도 포로수용소에는 송환을 거부하는 반공 포로가 수만 명 있습니다. 정전협정 서명이 가까워지자 대통령은 이들을 협정과 상관없이 석방하겠다고 선언했습니다. 석방하면 국민의 지지를 얻지만 협상은 틀어지고 동맹국의 신뢰를 잃습니다. 따르지 않으면 협상은 순조롭지만 포로들의 운명은 돌아올 수 없는 곳으로 넘어갑니다.',
+    [{ kind: 'flagEquals', key: 'talks', value: 'on' }],
+    [],
+    ['1953-05-20', '1953-07-10'],
+    [
+      {
+        id: 'release',
+        label: '반공 포로를 석방한다',
+        description: '수용소 철조망이 열리고 약 2만 7천 명이 풀려납니다. 국민 지지가 크게 오르지만 정전협상은 크게 후퇴하고 UN 지지와 미국 개입도가 떨어집니다. 중국군이 보복 공세에 나설 수 있습니다.',
+        isCounterfactual: false,
+        effects: [
+          { kind: 'flag', key: 'powReleased', value: true },
+          { kind: 'nation', side: 'south', field: 'popularSupport', delta: 8 },
+          { kind: 'diplomacy', field: 'unSupport', delta: -7 },
+          { kind: 'diplomacy', field: 'usCommitment', delta: -8 },
+          { kind: 'weariness', delta: -3 },
+          { kind: 'armisticeSet', delta: -15 },
+          { kind: 'plaOffensive', turns: 2 },
+        ],
+      },
+      {
+        id: 'comply',
+        label: '협정에 따라 송환 절차를 따른다',
+        description: '포로 문제를 협정 절차에 맡깁니다. 협상은 순조롭게 진척되고 UN 지지가 오르지만, 포로 가족과 국민의 반발로 국민 지지가 떨어집니다.',
+        isCounterfactual: false,
+        effects: [
+          { kind: 'flag', key: 'powKept', value: true },
+          { kind: 'nation', side: 'south', field: 'popularSupport', delta: -6 },
+          { kind: 'diplomacy', field: 'unSupport', delta: 6 },
+          { kind: 'armisticeSet', delta: 12 },
         ],
       },
     ],

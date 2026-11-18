@@ -1,4 +1,7 @@
 import type { EquipKey, Faction, UnitKind } from '../game/types';
+import { PLA as PLA_MASS_CFG } from '../game/balance';
+
+const PLA_MASS = PLA_MASS_CFG.mass;
 
 /**
  * 초기 편성 및 증원 데이터.
@@ -19,6 +22,7 @@ export interface UnitTemplate {
   strengthPct?: number;
   fill?: Partial<Record<EquipKey, number>>;
   traits?: string[];
+  organization?: number;
 }
 
 const ROK_FILL = { rifles: 0.85, machineGuns: 0.55, mortars: 0.5, artillery: 0.25, antiTank: 0.12, tanks: 0, vehicles: 0.12 };
@@ -93,7 +97,25 @@ const tankBn = (name: string, parent: string, loc: string, fillTanks: number): U
 });
 
 /** 중국군 여단 템플릿(가상 편성: 군단·여단 번호는 실제 편제가 아님) */
-export function plaBrigades(count: number, label: string, loc: string): UnitTemplate[] {
+export function plaBrigades(count: number, label: string, loc: string, mass = false): UnitTemplate[] {
+  if (mass) {
+    // 인해전술: 숫자는 많지만 훈련도·조직력·장비가 낮다
+    return Array.from({ length: count }, (_, i) => ({
+      faction: 'PLA' as const,
+      name: `중국군 ${label} ${Math.floor(i / 3) + 1}군단 ${(i % 3) + 1}사단급`,
+      parent: '중국인민지원군 (인해전술 · 편제는 근사·가상 편성)',
+      kind: 'infantry' as const,
+      echelon: 'division' as const,
+      location: loc,
+      training: PLA_MASS.training,
+      experience: PLA_MASS.experience,
+      morale: PLA_MASS.morale,
+      organization: PLA_MASS.organization,
+      strengthPct: PLA_MASS.strengthPct,
+      fill: PLA_MASS.fill,
+      traits: ['야간전', '인해전술'],
+    }));
+  }
   return Array.from({ length: count }, (_, i) => ({
     faction: 'PLA' as const,
     name: `중국군 ${label} ${Math.floor(i / 3) + 1}군단 ${(i % 3) + 1}사단급`,
@@ -151,11 +173,11 @@ export const REINFORCEMENTS: Reinforcement[] = [
   { id: 'un-aid-4', date: '1951-06-01', side: 'south', message: '미국의 4차 원조 물자가 도착했습니다.', units: [], stock: { province: 'busan', equip: { rifles: 10000, machineGuns: 250, mortars: 150, artillery: 60, antiTank: 400, vehicles: 400 } } },
   // 북측 재편·중국군 후속 증원 (중국군 참전 후에만)
   { id: 'kpa-rebuild-1', date: '1951-01-01', side: 'north', message: '북한군이 재편되어 신편 부대가 투입됩니다.', units: kpaRegiments('재편 제1사단', 'wonsan', 3, 45, 15, [], 'division') },
-  { id: 'pla-wave-3', date: '1951-02-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 후속 병력이 압록강을 건넜습니다.', units: plaBrigades(8, '제3진', 'sinuiju') },
-  { id: 'pla-wave-4', date: '1951-04-15', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 후속 병력이 추가 투입되었습니다.', units: plaBrigades(10, '제4진', 'sinuiju') },
+  { id: 'pla-wave-3', date: '1951-02-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 후속 병력이 압록강을 건넜습니다.', units: plaBrigades(8, '제3진', 'sinuiju', true) },
+  { id: 'pla-wave-4', date: '1951-04-15', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 후속 병력이 추가 투입되었습니다.', units: plaBrigades(10, '제4진', 'sinuiju', true) },
   { id: 'kpa-rebuild-2', date: '1951-07-01', side: 'north', message: '북한군 신편 부대가 투입됩니다.', units: kpaRegiments('재편 제2사단', 'wonsan', 3, 45, 15, [], 'division') },
-  { id: 'pla-wave-5', date: '1951-09-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(6, '제5진', 'sinuiju') },
-  { id: 'pla-wave-6', date: '1952-06-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(6, '제6진', 'sinuiju') },
+  { id: 'pla-wave-5', date: '1951-09-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(6, '제5진', 'sinuiju', true) },
+  { id: 'pla-wave-6', date: '1952-06-01', side: 'north', requiresFlag: 'plaIntervened', message: '중국군 교대 병력이 도착했습니다.', units: plaBrigades(6, '제6진', 'sinuiju', true) },
   // ── UN군 ──
   {
     id: 'un-tf-smith', date: '1950-07-01', side: 'south', message: '미 제24사단 선견대가 부산에 공수·상륙했습니다.',

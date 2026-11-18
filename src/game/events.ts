@@ -2,7 +2,7 @@ import { EVENTS, EVENT_BY_ID, type Condition, type Effect, type HistoricalEvent 
 import { MAP } from './map';
 import { CHINA_BORDER_PROVINCES } from '../data/outline';
 import { weatherIdAt } from './weather';
-import { applyReinforcement, northSpawnProvince, spawnTemplate } from './scenario';
+import { applyReinforcement, northSpawnProvince, plaSpawnProvince, spawnTemplate } from './scenario';
 import { plaBrigades, sovietDivisions } from '../data/orbat';
 import { DIFFICULTY, NUKE } from './balance';
 import { executeLanding } from './amphibious';
@@ -148,15 +148,22 @@ export function applyEffect(state: GameState, e: Effect): void {
       break;
     }
     case 'spawnPla': {
+      if (state.flags.nukeUsed && e.provinces[0] !== 'china') break; // 핵 투하 이후에는 중국군 증원이 없다
       const cnt = Math.max(1, Math.round(e.count * DIFFICULTY[state.difficulty ?? 'normal'].northWaves)); // 난이도: 중국군 증원 규모
-      const tpls = plaBrigades(cnt, e.label, e.provinces[0]);
+      const tpls = plaBrigades(cnt, e.label, e.provinces[0], !!e.mass);
       tpls.forEach((t, i) => {
-        const loc = northSpawnProvince(state, e.provinces, i);
+        const loc = e.provinces[0] === 'china' ? northSpawnProvince(state, e.provinces, i) : plaSpawnProvince(state, e.provinces, i);
         if (loc) spawnTemplate(state, { ...t, location: loc });
       });
-      addLog(state, 'warn', `중국군 ${cnt}개 사단급 부대가 투입되었습니다.`);
+      addLog(state, 'warn', `중국군 ${cnt}개 사단급 부대가 투입되었습니다.${e.mass ? ' (인해전술: 숫자는 많지만 훈련도·조직력이 낮습니다)' : ''}`);
       break;
     }
+    case 'plaOffensive':
+      if (!state.flags.nukeUsed && Object.values(state.units).some((u) => u.faction === 'PLA')) state.flags.plaOffensiveUntil = state.turn + e.turns;
+      break;
+    case 'armisticeSet':
+      state.armisticeProgress = clamp(state.armisticeProgress + e.delta, 0, 100);
+      break;
     case 'nuke': {
       state.flags.nukeUsed = true;
       for (const u of Object.values(state.units)) {
@@ -176,6 +183,7 @@ export function applyEffect(state: GameState, e: Effect): void {
     case 'sovietJoin': {
       const gates = CHINA_BORDER_PROVINCES.filter((id) => state.provinces[id].owner === 'north');
       const tpls = sovietDivisions(e.count, e.label, 'china');
+      state.flags.plaOffensiveUntil = state.turn + 4; // 소련군도 같은 방식으로 국경에서 몰려든다
       tpls.forEach((t, i) => spawnTemplate(state, { ...t, location: gates.length ? gates[i % gates.length] : 'china' }));
       addLog(state, 'warn', `소련군 ${e.count}개 사단이 국경을 넘어 참전했습니다.`);
       break;
@@ -187,9 +195,17 @@ export function applyEffect(state: GameState, e: Effect): void {
       if (need > 0) {
         plaBrigades(need, e.label, 'china').forEach((t) => spawnTemplate(state, t));
       }
+      // 북측이 쥔 국경 지역으로 들어가는 부대와, 압록강을 사이에 두고 아군(국군·UN군) 지역을 바로 공격하는 부대로 나눈다.
+      // 후자는 중국 영내에 남아 있다가 AI 의 공격 명령으로 맞은편 지역을 곧바로 친다 (중국 영내는 누구도 공격할 수 없다).
       const gates = CHINA_BORDER_PROVINCES.filter((id) => state.provinces[id].owner === 'north');
-      if (gates.length) inChina().forEach((u, i) => { u.location = gates[i % gates.length]; u.order = null; });
-      addLog(state, 'warn', `중국군 ${total}개 사단급이 압록강·두만강을 건너 북한 영토로 진입했습니다.`);
+      const front = CHINA_BORDER_PROVINCES.filter((id) => state.provinces[id].owner === 'south');
+      let crossed = 0;
+      inChina().forEach((u, i) => {
+        u.order = null;
+        if (gates.length && (!front.length || i % 2 === 0)) { u.location = gates[crossed++ % gates.length]; }
+      });
+      state.flags.plaOffensiveUntil = state.turn + 3;
+      addLog(state, 'warn', `중국군 ${total}개 사단급이 압록강·두만강을 건넜습니다.${front.length ? ' 일부는 강 건너 아군 지역을 곧바로 공격합니다.' : ''}`);
       break;
     }
     case 'fortifyFront': {

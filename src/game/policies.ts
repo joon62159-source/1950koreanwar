@@ -1,4 +1,5 @@
 import type { GameState, Side } from './types';
+import { ECONOMY } from './balance';
 import { spendCP } from './economy';
 import { addLog, clamp } from './util';
 import type { Result } from './orders';
@@ -29,24 +30,23 @@ export const POLICIES: Policy[] = [
   {
     id: 'rear_supply',
     name: '후방 보급 집중',
-    description: '민간 물자를 동원해 보급 자원 +45. 국민 지지 -1.',
+    description: `민간 물자를 동원해 보급 자원 +${ECONOMY.rearSupplyBoost}. 국민 지지 -1.`,
     cost: 1,
     cooldownTurns: 2,
     apply(state, side) {
-      state.nations[side].supplyStock += 45;
+      state.nations[side].supplyStock += ECONOMY.rearSupplyBoost;
       state.nations[side].popularSupport = clamp(state.nations[side].popularSupport - 1, 0, 100);
     },
   },
   {
     id: 'push_talks',
     name: '정전협상 추진',
-    description: '외교력을 집중해 협상 진척도 +6. 국민 지지 -2. (협상 개시 후에만)',
+    description: '외교력을 집중해 협상 진척도 +6. (협상 개시 후에만, 국민 지지는 떨어지지 않음)',
     cost: 2,
     cooldownTurns: 3,
     available: (state) => (state.flags.talks === 'on' ? null : '정전협상이 시작되지 않았습니다.'),
-    apply(state, side) {
+    apply(state) {
       state.armisticeProgress = clamp(state.armisticeProgress + 6, 0, 100);
-      state.nations[side].popularSupport = clamp(state.nations[side].popularSupport - 2, 0, 100);
     },
   },
   {

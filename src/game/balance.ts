@@ -124,6 +124,8 @@ export const MEDICAL = {
   unsafeMult: 0.6, // 적과 인접한 위험 지역
   repairPerWeek: 0.3, // 손상 장비 중 수리되는 비율
   repairRestMult: 1.5,
+  /** 휴식 명령 중인 부대(보급 연결 지역)의 주간 부상병 복귀율 하한 — 적과 맞닿아 있어도 '휴식 필요'가 3주 안에 풀리도록 */
+  restMinRate: 0.55,
 };
 
 export const ECONOMY = {
@@ -136,19 +138,28 @@ export const ECONOMY = {
   trainingCap: { recruits: 55, unit: 90 },
   recruitTrainGain: 12, // 훈련 명령 1회
   traineeAutoTrainPerWeek: 5, // 자동 훈련
-  unitTrainPerDay: 0.9,
+  /** 훈련 명령: 1주(7일)에 훈련도 +15 (상한 trainingCap.unit 까지) */
+  unitTrainPerWeek: 15,
+  /** 전투를 치른 턴의 훈련도 증가 (한 전투 턴당, 이미 높을수록 조금씩 줄어든다) */
+  combatTrainGain: 2,
+  /** 실전으로 오를 수 있는 훈련도 상한 (그 이상은 훈련 명령으로만 오른다) */
+  combatTrainCap: 75,
   formationMin: { brigade: 1500, division: 5000 } as Record<'brigade' | 'division', number>,
   formationMax: { brigade: 3000, division: 10000 } as Record<'brigade' | 'division', number>,
   newBrigadeMorale: 55,
   /** 하루당 생산량 (산업 능력 100 기준) */
   productionPerDay: { rifles: 70, machineGuns: 3, mortars: 2, artillery: 0.35, antiTank: 1.2, tanks: 0, vehicles: 1.5 } as Record<EquipKey, number>,
-  stockPerIndustryDay: 0.02,
+  stockPerIndustryDay: 0.03,
+  /** 산업·원조와 별개로 매일 들어오는 기본 보급량 (후방의 민간·정부 비축) */
+  baseIncomePerDay: { south: 16, north: 10 } as Record<'south' | 'north', number>,
   /** 병력 1,000명당 하루 보급 자원 소모 (기존 0.33 은 UN군 도착 후 생산·원조를 훨씬 넘어 가을부터 줄곧 0 이었다) */
   consumptionPerThousandDay: 0.2,
   /** 외국군(UN군·미군, 중국군, 소련군)은 본국 보급선이 따로 있어 국가 보급 자원 소모가 적다 */
   foreignConsumptionMult: 0.6,
   /** 미국 개입도·소련 지원 1포인트당 하루 보급 원조량 (남: 미국 개입도 100 이면 하루 22) */
-  aidPerPoint: { south: 0.22, north: 0.45 } as Record<'south' | 'north', number>,
+  aidPerPoint: { south: 0.42, north: 0.45 } as Record<'south' | 'north', number>,
+  /** 정책 '후방 보급 집중'으로 늘어나는 보급 자원 */
+  rearSupplyBoost: 50,
   /** 보급 자원 보유 상한 (쌓아 두기만 하는 것을 막는다) */
   supplyStockCap: 1000,
   fortifyCost: 1,
@@ -301,9 +312,16 @@ export const PLA = {
   wave2: 18,
   depots: { gangye: 80, hyesan: 60 } as Record<string, number>,
   /** 평양 함락 후 압록강을 건너 투입되는 중국군 총 규모(사단급) */
-  invasionTotal: 20,
+  invasionTotal: 24,
   /** 38선 월경 직후 중국 영내에 집결하는 규모(사단급) */
-  massingCount: 8,
+  massingCount: 10,
+  /** 압록강·두만강에 닿은 북한 영토는 중국 참전 후 보급 거점 역할을 한다 (포위 판정을 받지 않는다) */
+  borderHubLevel: 60,
+  /** 인해전술 부대: 숫자는 많지만 훈련도·조직력이 낮다 */
+  mass: { training: 26, experience: 24, morale: 72, organization: 45, strengthPct: 0.7, fill: { rifles: 0.6, machineGuns: 0.3, mortars: 0.35, artillery: 0.1, antiTank: 0.05, tanks: 0, vehicles: 0.02 } },
+  /** 공세 기간(턴): 이 동안 중국군 AI 는 우세비를 따지지 않고 훨씬 많은 지점을 동시에 공격한다 */
+  offensiveRatioMult: 0.85,
+  offensiveExtraTargets: 5,
 };
 
 /** 핵 투하 (1951년 6월 이벤트) */
@@ -313,7 +331,7 @@ export const NUKE = {
   plaOrgLoss: 35,
   plaMoraleLoss: 25,
   sovietChance: 0.4,
-  sovietDivisions: 40,
+  sovietDivisions: 60,
 };
 
 /** 정전협상과 전쟁 피로도 */

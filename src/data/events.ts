@@ -82,7 +82,11 @@ export type Effect =
   /** 중국 영내에 집결한 중국군을 total 개 사단급까지 증강하고 압록강·두만강을 건너 북한 영토로 투입 */
   | { kind: 'plaCross'; total: number; label: string }
   /** 중국군 여단을 북측 통제 지역(선호 지역 우선)에 배치 */
-  | { kind: 'spawnPla'; count: number; label: string; provinces: string[] }
+  | { kind: 'spawnPla'; count: number; label: string; provinces: string[]; /** 인해전술 부대(훈련도·조직력 낮고 숫자 많음) */ mass?: boolean }
+  /** 중국군 공세 기간: 지정한 턴 동안 중국군 AI 가 우세비를 따지지 않고 여러 지점을 동시에 공격한다 */
+  | { kind: 'plaOffensive'; turns: number }
+  /** 정전협상 진척도를 delta 만큼 바꾼다 (0~100) */
+  | { kind: 'armisticeSet'; delta: number }
   /** 전선(적 통제 지역과 맞닿은) 프로빈스의 방어시설을 양측 모두 강화 */
   | { kind: 'fortifyFront'; delta: number }
   | { kind: 'weariness'; delta: number }
@@ -644,14 +648,15 @@ export const EVENTS: HistoricalEvent[] = [
   },
   {
     id: 'china_second_offensive',
-    title: '중국군 대공세',
-    description: '중국군 후속 병력이 도착해 전 전선에서 대규모 공세에 들어갔습니다. 포위 위험이 커졌습니다. 전선 부대를 보존하며 단계적으로 물러나 보급선을 짧게 하고 지형을 이용하십시오.',
+    title: '중국군 2차 공세',
+    description: '중국군 후속 병력이 도착해 전 전선에서 대규모 공세에 들어갔습니다. 훈련도와 장비는 모자라지만 헤아릴 수 없이 많은 병력이 파도처럼 밀려옵니다. 포위 위험이 커졌습니다. 전선 부대를 보존하며 단계적으로 물러나 보급선을 짧게 하고 지형을 이용하십시오.',
     earliestDate: '1950-06-25',
     latestDate: '1953-07-27',
     conditions: [{ kind: 'flagTurnsAgo', key: 'plaIntervenedTurn', min: 4 }],
     choices: [],
     effects: [
-      { kind: 'spawnPla', count: 18, label: '제2진', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'] },
+      { kind: 'spawnPla', count: 14, label: '제2진', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
+      { kind: 'plaOffensive', turns: 3 },
       { kind: 'units', side: 'south', area: 'all', morale: -3 },
     ],
     historicalContext: '1950년 11월 하순 중국군의 대규모 공세로 UN군은 전선 전반에서 후퇴했다. 정확한 시기와 규모는 자료에 따라 다르다.',

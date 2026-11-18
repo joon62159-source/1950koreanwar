@@ -151,7 +151,7 @@ function UnitsTab({ p }: { p: Province }) {
             <button className={'btn ' + (mode === 'attack' ? 'btn-primary' : '')} disabled={!sel.length || !canAttack} onClick={() => setMode(mode === 'attack' ? 'select' : 'attack')} title="인접한 적 지역 클릭">공격</button>
             <button className="btn" disabled={!sel.length} onClick={() => orderUnits('defend')} title="참호를 파고 방어선을 강화">방어선 강화</button>
             <button className="btn" disabled={!sel.length} onClick={() => orderUnits('rest')} title="피로·조직·회복 개선">휴식·재정비</button>
-            <button className="btn" disabled={!sel.length} onClick={() => orderUnits('train')} title="훈련도 향상(장기 능력)">훈련</button>
+            <button className="btn" disabled={!sel.length} onClick={() => orderUnits('train')} title="훈련 (1주에 훈련도 +15, 상한 90 · 전투 중이거나 보급이 끊기면 불가)">훈련</button>
             <button className="btn" disabled={!mine.some((u) => u.order && u.order.issuedTurn === game.turn)} onClick={() => cancelUnits(mine.filter((u) => u.order && u.order.issuedTurn === game.turn).map((u) => u.id))} title="이번 턴 명령을 받은 부대 전체의 명령을 취소">전체 취소</button>
           </div>
           {mode !== 'select' && <div className="rounded bg-ink-700 px-2 py-1 text-[11px] text-yellow-200">지도에서 {mode === 'move' ? '이동할 아군 지역' : '공격할 인접 적 지역'}을 클릭하세요. (강조 표시된 곳){orderScope ? ` — 대상: 지정한 ${orderScope.length}개 부대만` : ` — 대상: 선택된 ${sel.length}개 부대`}</div>}

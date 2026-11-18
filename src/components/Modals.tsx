@@ -7,6 +7,7 @@ import EventScene from './EventScene';
 import NewspaperModal from './Newspaper';
 import { ACHIEVEMENT_BY_ID } from '../game/achievements';
 import { EVENT_IMAGES } from '../data/eventImages';
+import { endingFor } from '../data/endings';
 import { formatDate } from '../game/util';
 import { fmt } from './common';
 import { SCORE } from '../game/balance';
@@ -196,6 +197,51 @@ export function BattleModal() {
         <div className="mt-4 flex justify-end"><button className="btn px-4" onClick={() => showBattle(null)}>닫기</button></div>
       </div>
     </Shell>
+  );
+}
+
+/** 엔딩 이벤트: 결과 화면 앞에 나오는 마지막 장면 (결과·선택에 따라 그림·서술·음악이 다르다) */
+export function EndingModal() {
+  const game = useGame((s) => s.game);
+  const setModal = useGame((s) => s.setModal);
+  const o = game.outcome;
+  const end = useMemo(() => (o ? endingFor(o, game) : null), [o, game]);
+  if (!o || !end) return null;
+  return (
+    <Shell width={760} z={65}>
+      <div className={'overflow-hidden rounded border bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)] ' + (end.tone === 'win' ? 'border-[#c9a24b]' : 'border-red-900')}>
+        <EventScene kind={end.scene} title={end.title} kicker={end.kicker} date={formatDate(game.date)} />
+        <div className="p-5">
+          <div className="mb-2"><span className={'tag ' + (end.tone === 'win' ? 'tag-fake' : '')}>{end.tone === 'win' ? '엔딩' : '엔딩 — 패배'}</span></div>
+          <div className="flex flex-col gap-2.5 font-serif text-[14.5px] leading-[1.8] text-[#efe6cb]">
+            {end.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+            {end.quote && (
+              <blockquote className="border-l-2 border-[#c9a24b] pl-3 italic text-[#e1c274]">
+                “{end.quote.text}”<span className="ml-2 text-[12px] not-italic text-[#a99a6e]">— {end.quote.by}</span>
+              </blockquote>
+            )}
+          </div>
+          <div className="mt-5 flex justify-end">
+            <button className="btn btn-primary px-6 py-2 text-[14px]" onClick={() => setModal('gameover')}>결과 보기</button>
+          </div>
+        </div>
+      </div>
+    </Shell>
+  );
+}
+
+/** 엔딩 후 지도를 둘러보는 동안 위쪽에 떠 있는 안내줄: 결과 화면으로 되돌아가거나 새 게임을 시작한다 */
+export function EndBanner() {
+  const setModal = useGame((s) => s.setModal);
+  const setScreen = useGame((s) => s.setScreen);
+  const o = useGame((s) => s.game.outcome);
+  if (!o) return null;
+  return (
+    <div className="fixed left-1/2 top-2 z-[60] flex max-w-[96vw] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded border border-[#8a7a4f] bg-[#16130c]/95 px-3 py-2 text-[12.5px] shadow-lg">
+      <span className="font-bold text-[#e9dfc2]">{o.result === 'victory' ? '🏁 전쟁 종료' : '⚑ 전쟁 종료'} · {o.title}</span>
+      <button className="btn btn-primary !px-3 !py-1" onClick={() => setModal('gameover')}>지도 끄기 · 결과 화면</button>
+      <button className="btn !px-3 !py-1" onClick={() => { setModal(null); setScreen('title'); }}>새 게임</button>
+    </div>
   );
 }
 

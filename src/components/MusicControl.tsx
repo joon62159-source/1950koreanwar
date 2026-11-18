@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { music, type Mood } from '../audio/music';
 import { useGame } from '../store/gameStore';
+import { endingMood } from '../data/endings';
 
 function useMusic() {
   return useSyncExternalStore(
@@ -13,7 +14,7 @@ function useMusic() {
 export function MusicDirector() {
   const screen = useGame((s) => s.screen);
   const playing = useGame((s) => s.playback !== null);
-  const result = useGame((s) => s.game.outcome?.result ?? null);
+  const outcome = useGame((s) => s.game.outcome);
   useEffect(() => {
     const go = () => music.unlock();
     window.addEventListener('pointerdown', go, { once: true });
@@ -26,10 +27,10 @@ export function MusicDirector() {
   useEffect(() => {
     let m: Mood = 'campaign';
     if (screen === 'title') m = 'title';
-    else if (result) m = result === 'victory' ? 'victory' : 'defeat';
     else if (playing) m = 'battle';
+    else if (outcome) m = endingMood(outcome);
     music.setMood(m);
-  }, [screen, playing, result]);
+  }, [screen, playing, outcome]);
   return null;
 }
 

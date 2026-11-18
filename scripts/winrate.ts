@@ -12,7 +12,8 @@ const N = Number(process.argv[3] ?? 40);
 const start = Number(process.argv[4] ?? 100);
 const dif = (process.argv[5] ?? 'normal') as 'easy' | 'normal' | 'hard';
 const cnt = { A: 0, B: 0, C: 0, D: 0 };
-let provSum = 0, seoulKept = 0, mob = 0;
+const titles: Record<string, number> = {};
+let provSum = 0, seoulKept = 0, mob = 0, wins = 0, stockMin = 0, plaMax = 0;
 for (let seed = start; seed < start + N; seed++) {
   const s = createGame(seed, dif);
   while (!s.outcome) {
@@ -44,7 +45,10 @@ for (let seed = start; seed < start + N; seed++) {
   else if (['부산 함락', '전쟁수행능력 붕괴', '전 부대 소멸'].includes(o.title)) k = 'D';
   else if (owned >= 62 && seoul) k = 'B';
   else k = 'C';
+  titles[o.title] = (titles[o.title] ?? 0) + 1;
+  if (o.result === 'victory') wins++;
   cnt[k]++; provSum += owned; if (seoul) seoulKept++; if (s.flags.mobilized) mob++;
 }
+console.log(JSON.stringify(titles));
 const pct = (n: number) => `${n} (${((n / N) * 100).toFixed(0)}%)`;
-console.log(`DIF=${dif} BOT=${bot} N=${N}`, JSON.stringify({ '국군 완전점령': pct(cnt.A), '국군 우세 정전': pct(cnt.B), '북한 우세 정전': pct(cnt.C), '북한 완전점령': pct(cnt.D), 평균_국군지역: (provSum / N).toFixed(1), 서울보유: pct(seoulKept), 총동원령: pct(mob) }));
+console.log(`DIF=${dif} BOT=${bot} N=${N}`, JSON.stringify({ '국군 완전점령': pct(cnt.A), '국군 우세 정전': pct(cnt.B), '북한 우세 정전': pct(cnt.C), '북한 완전점령': pct(cnt.D), 평균_국군지역: (provSum / N).toFixed(1), 서울보유: pct(seoulKept), 총동원령: pct(mob), 승리: pct(wins) }));

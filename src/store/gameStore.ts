@@ -18,7 +18,7 @@ import { EVENT_BY_ID } from '../data/events';
 
 export type MapMode = 'select' | 'move' | 'attack';
 export type MapLayer = 'control' | 'supply' | 'stability' | 'terrain';
-export type Modal = 'menu' | 'help' | 'briefing' | 'gameover' | 'battle' | 'allBattles' | 'landing' | 'manage' | 'mobilized' | 'replay' | 'achievements' | null;
+export type Modal = 'menu' | 'help' | 'briefing' | 'ending' | 'gameover' | 'battle' | 'allBattles' | 'landing' | 'manage' | 'mobilized' | 'replay' | 'achievements' | null;
 
 export interface Playback {
   index: number; // 현재 단계(steps 인덱스)
@@ -117,7 +117,7 @@ function grantAchievements(get: () => Store, set: (p: Partial<Store>) => void, g
 const fresh = (difficulty: Difficulty = 'normal') => createGame(Math.floor(Math.random() * 1e9), difficulty);
 
 /** 재생 종료 후 보여줄 모달을 결정 */
-const afterPlaybackModal = (g: GameState): Modal => (g.outcome ? 'gameover' : 'briefing');
+const afterPlaybackModal = (g: GameState): Modal => (g.outcome ? 'ending' : 'briefing');
 
 export const useGame = create<Store>((set, get) => ({
   game: fresh(),

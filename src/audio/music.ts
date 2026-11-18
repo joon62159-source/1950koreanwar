@@ -2,7 +2,7 @@
  * 배경 음악 — 외부 음원 없이 Web Audio 로 그 자리에서 만들어 낸다(저작권·용량 걱정 없음).
  * 분위기(mood)에 따라 음계·박자·악기 구성이 바뀌고, 곡은 끝없이 이어진다.
  */
-export type Mood = 'title' | 'campaign' | 'battle' | 'victory' | 'defeat';
+export type Mood = 'title' | 'campaign' | 'battle' | 'victory' | 'defeat' | 'triumph' | 'solemn' | 'doom';
 
 interface MoodDef {
   bpm: number;
@@ -19,6 +19,9 @@ const MOODS: Record<Mood, MoodDef> = {
   campaign: { bpm: 70, root: 50, scale: [0, 2, 3, 5, 7, 8, 11], pad: true, melody: 0.3, drums: 1, gain: 0.95 },
   battle: { bpm: 104, root: 50, scale: [0, 1, 3, 5, 7, 8, 10], pad: true, melody: 0.18, drums: 2, gain: 1 },
   victory: { bpm: 66, root: 48, scale: [0, 2, 4, 5, 7, 9, 11], pad: true, melody: 0.5, drums: 0, gain: 1 },
+  triumph: { bpm: 92, root: 55, scale: [0, 2, 4, 5, 7, 9, 11], pad: true, melody: 0.7, drums: 1, gain: 1.05 },
+  solemn: { bpm: 52, root: 46, scale: [0, 2, 3, 5, 7, 8, 11], pad: true, melody: 0.3, drums: 0, gain: 0.95 },
+  doom: { bpm: 84, root: 41, scale: [0, 1, 3, 5, 6, 8, 10], pad: true, melody: 0.1, drums: 2, gain: 1.05 },
   defeat: { bpm: 48, root: 43, scale: [0, 2, 3, 5, 7, 8, 10], pad: true, melody: 0.22, drums: 0, gain: 0.9 },
 };
 
