@@ -4,7 +4,8 @@ import { clamp } from './util';
 
 /** 하루 정전협상 진척 (%/일). 계획 일수에 100%가 되는 속도에 전쟁 피로 보정을 곱한다. */
 export function armisticeRatePerDay(state: GameState): number {
-  const planned = state.flags.earlyArmistice ? ARMISTICE.earlyDays : ARMISTICE.plannedDays;
+  const delay = Number(state.flags.armisticeDelayDays ?? 0); // 미국 설득으로 늘어난(+) 또는 줄어든(−) 일수
+  const planned = state.flags.earlyArmistice ? ARMISTICE.earlyDays : Math.max(ARMISTICE.plannedDays * 0.5, ARMISTICE.plannedDays + delay);
   return (100 / planned) * (1 + (ARMISTICE.wearinessBoost * state.warWeariness) / 100);
 }
 

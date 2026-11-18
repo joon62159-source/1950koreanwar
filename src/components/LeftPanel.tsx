@@ -106,7 +106,7 @@ export default function LeftPanel({ embedded = false }: { embedded?: boolean }) 
       <section>
         <div className="panel-title mb-1">▍정책 · 외교 (행정 점수 소모)</div>
         <div className="flex flex-col gap-1.5">
-          {POLICIES.map((p) => {
+          {POLICIES.filter((p) => !p.hidden?.(game)).map((p) => {
             const cd = (me.policyCooldowns[p.id] ?? 0) - game.turn;
             return (
               <button key={p.id} className="btn text-left" disabled={cd > 0 || me.commandPoints < p.cost || !!game.outcome} title={p.description} onClick={() => policy(p.id)}>

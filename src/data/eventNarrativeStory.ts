@@ -266,7 +266,7 @@ for (const y of [1951, 1952, 1953]) STORY_NARRATIVES[`weather_thaw_${y}`] = WEAT
 Object.assign(STORY_NARRATIVES, {
   pla_new_year_offensive: {
     scene: 'frozen_front',
-    kicker: '새해 전야, 영하의 능선',
+    kicker: '한겨울, 영하의 능선',
     paragraphs: [
       '꽹과리와 나팔 소리가 눈 덮인 능선을 타고 밀려온다. 어둠 속에서 흰 솜옷을 입은 병사들이 끝없이 나타난다. 앞줄이 쓰러져도 뒷줄이 그 위를 넘는다. 기관총 총열이 달아오르고 탄약이 바닥을 보이는데도 파도는 그치지 않는다.',
       '이들은 훈련이 짧고 포도 차량도 거의 없다. 그러나 한 곳을 막으면 다른 곳이 뚫리고, 하나를 쓰러뜨리면 둘이 나타난다. 전선 전체가 숫자의 무게에 밀려 천천히 뒤로 휘어진다.',

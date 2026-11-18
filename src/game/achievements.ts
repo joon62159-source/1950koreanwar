@@ -12,7 +12,8 @@ export interface AchievementDef {
 }
 
 const fired = (s: GameState, id: string) => s.firedEvents.includes(id);
-const won = (s: GameState) => s.outcome?.result === 'victory';
+/** 승리 계열 업적은 정상적인 정전 승리에만 준다 (38선에서 일찍 끝낸 '이른 정전'은 제외) */
+const won = (s: GameState) => s.outcome?.result === 'victory' && !s.flags.earlyArmistice;
 
 export const ACHIEVEMENTS: AchievementDef[] = [
   // ── 작전 ──

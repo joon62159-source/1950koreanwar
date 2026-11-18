@@ -47,7 +47,7 @@ export default function AchievementsScreen() {
               </div>
             </section>
           ))}
-          <div className="pb-4 text-center text-[11px] text-slate-600">업적은 이 기기에 저장되며 새 게임을 시작해도 남습니다.</div>
+          <div className="pb-4 text-center text-[11px] text-slate-600">업적은 이 기기에 저장되며 새 게임을 시작해도 남습니다. 38선에서 일찍 끝낸 이른 정전은 승리 업적에 포함되지 않습니다.</div>
         </div>
       </div>
     </div>

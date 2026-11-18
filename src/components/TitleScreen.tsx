@@ -5,6 +5,7 @@ import type { Difficulty } from '../game/types';
 import EventScene from './EventScene';
 import { formatDate } from '../game/util';
 import { ACHIEVEMENTS } from '../game/achievements';
+import { MusicControl } from './MusicControl';
 
 const KEY = 'korea1950.difficulty';
 const ORDER: Difficulty[] = ['easy', 'normal', 'hard'];
@@ -21,7 +22,8 @@ const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 export function difficultyLines(d: Difficulty): string[] {
   const x = DIFFICULTY[d];
   const out: string[] = [];
-  if (d === 'normal') return ['모든 수치가 기본값입니다.'];
+  const arrival = `중공군 참전: 38선을 넘은 뒤 ${x.plaArrivalDays}일(약 ${Math.round(x.plaArrivalDays / 7)}턴) 후`;
+  if (d === 'normal') return ['모든 수치가 기본값입니다.', arrival];
   if (x.northForce !== 1) out.push(`북한군 병력 ${pct(x.northForce)}`);
   if (x.southForce !== 1) out.push(`국군 초기 병력 ${pct(x.southForce)}`);
   if (x.northQuality !== 0) out.push(`북한군 훈련·사기 ${sgn(x.northQuality)}`);
@@ -31,6 +33,7 @@ export function difficultyLines(d: Difficulty): string[] {
   if (x.unDelayDays !== 0) out.push(`미군·UN군 도착 ${Math.abs(x.unDelayDays)}일 ${x.unDelayDays < 0 ? '빠름' : '늦음'}`);
   if (x.aidMult !== 1) out.push(`미국 원조 ${pct(x.aidMult)}`);
   out.push(`시작 행정 점수 ${x.startCP}${x.cpBonus ? ` (매 턴 +${x.cpBonus})` : ''} · 보급 자원 ${x.startStock}`);
+  out.push(arrival);
   if (x.plaExtra !== 0) out.push(`중국군 참전 규모 ${sgn(x.plaExtra)}개 사단`);
   if (x.northWaves !== 1) out.push(`북한·중국 후속 증원 ${pct(x.northWaves)}`);
   return out;
@@ -66,7 +69,8 @@ export default function TitleScreen() {
   };
   return (
     <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#090c10]" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-      <div className="mx-auto flex min-h-full max-w-[980px] flex-col px-4 py-5">
+      <div className="mx-auto flex min-h-full max-w-[980px] flex-col px-4 pt-3">
+        <MusicControl className="mb-2 ml-auto w-[220px] max-w-full rounded border border-ink-600 bg-[#0f151c]/90 p-1.5" />
         <div className="overflow-hidden rounded border border-[#8a7a4f]/70 shadow-2xl">
           <EventScene kind="dawn_barrage" title="6.25: 운명의 한반도" date="1950-06-25" hideTitle />
           <div className="bg-[#16130c] px-5 pb-4 pt-1 text-center">
@@ -102,15 +106,18 @@ export default function TitleScreen() {
           })}
         </div>
 
-        <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:justify-center">
+        <div className="flex-1" />
+        {/* 하단 고정 줄: 난이도 카드가 길어도(특히 모바일) 시작 버튼이 항상 보인다 */}
+        <div className="sticky bottom-0 -mx-4 mt-4 flex flex-col items-stretch gap-2 border-t border-ink-700 bg-[#090c10]/95 px-4 py-3 backdrop-blur-sm sm:flex-row sm:justify-center">
           <button className="btn btn-primary !px-10 !py-3 !text-[17px] tracking-widest" onClick={() => newGame(sel)}>새 게임 시작 ▶</button>
-          {saveInfo.exists && (
-            <button className="btn !px-6 !py-3 !text-[14px]" onClick={load}>이어하기 (저장: {saveInfo.turn}턴 · {saveInfo.date ? formatDate(saveInfo.date) : ''})</button>
-          )}
-          {inGame && <button className="btn !px-6 !py-3 !text-[14px]" onClick={() => setScreen('game')}>진행 중인 게임으로 돌아가기</button>}
-          <button className="btn !px-6 !py-3 !text-[14px]" onClick={() => setModal('achievements')}>🏆 업적 ({ACHIEVEMENTS.filter((a) => have[a.id]).length}/{ACHIEVEMENTS.length})</button>
+          <div className="flex flex-wrap gap-2 sm:contents">
+            {saveInfo.exists && (
+              <button className="btn flex-1 !px-4 !py-2.5 !text-[13px] sm:flex-none sm:!px-6 sm:!py-3 sm:!text-[14px]" onClick={load}>이어하기 ({saveInfo.turn}턴 · {saveInfo.date ? formatDate(saveInfo.date) : ''})</button>
+            )}
+            {inGame && <button className="btn flex-1 !px-4 !py-2.5 !text-[13px] sm:flex-none sm:!px-6 sm:!py-3 sm:!text-[14px]" onClick={() => setScreen('game')}>진행 중인 게임으로</button>}
+            <button className="btn flex-1 !px-4 !py-2.5 !text-[13px] sm:flex-none sm:!px-6 sm:!py-3 sm:!text-[14px]" onClick={() => setModal('achievements')}>🏆 업적 ({ACHIEVEMENTS.filter((a) => have[a.id]).length}/{ACHIEVEMENTS.length})</button>
+          </div>
         </div>
-        <div className="mt-3 text-center text-[11px] text-slate-600">난이도는 새 게임을 시작할 때만 정할 수 있습니다. 이어하기는 저장한 난이도 그대로 진행됩니다.</div>
       </div>
     </div>
   );

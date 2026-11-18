@@ -70,8 +70,8 @@ function capture(state: GameState, target: string, side: Side, summary: string[]
   p.controlStability = Math.min(p.controlStability, ECONOMY.stabilityOccupiedStart);
   p.industrialCapacity *= 0.85;
   p.warDamage = clamp(p.warDamage + 8, 0, 100);
-  state.nations[prev].popularSupport = clamp(state.nations[prev].popularSupport - p.strategicValue * 0.35, 0, 100);
-  state.nations[side].popularSupport = clamp(state.nations[side].popularSupport + p.strategicValue * 0.15, 0, 100);
+  state.nations[prev].popularSupport = clamp(state.nations[prev].popularSupport - p.strategicValue * ECONOMY.supportLossPerValueLost, 0, 100);
+  state.nations[side].popularSupport = clamp(state.nations[side].popularSupport + p.strategicValue * ECONOMY.supportGainPerValueTaken, 0, 100);
   const ours = side === state.playerSide;
   summary.push(`${ours ? '【점령】' : '【함락】'} ${p.name} — ${ours ? '아군이' : '적이'} 점령했습니다.`);
   addLog(state, ours ? 'good' : 'warn', `${p.name}이(가) ${side === 'north' ? '북한군' : '아군'}에게 넘어갔습니다.`);
@@ -426,14 +426,15 @@ export function endTurn(state: GameState): { ok: boolean; reason?: string } {
   const cpBase = days < 7 ? 4 : days > 7 ? 9 : 6;
   state.nations.south.commandPoints = cpBase + (state.nations.south.popularSupport > 60 ? 1 : 0) + DIFFICULTY[state.difficulty ?? 'normal'].cpBonus;
   state.nations.north.commandPoints = cpBase;
-  state.nations.south.popularSupport = clamp(state.nations.south.popularSupport + 0.3 * (days / 7), 0, 100);
+  // 국민 지지는 낮을수록 빨리 회복하는 경향이 있다 (바닥에서 영영 못 올라오는 것을 막는다)
+  state.nations.south.popularSupport = clamp(state.nations.south.popularSupport + (state.nations.south.popularSupport < ECONOMY.supportLowBelow ? ECONOMY.supportRecoveryLow : ECONOMY.supportRecovery) * (days / 7), 0, 100);
   // 월경 뒤 중공군 집결(압록강 너머에 쌓임)과 참전 타이머
   advanceChina(state);
 
   // 전쟁 피로도와 정전협상 진척
   state.warWeariness = clamp(state.warWeariness + (state.nations.south.casualties - casBefore) / 1000 * ARMISTICE.wearinessPerThousandCasualties - ARMISTICE.wearinessDecayPerWeek * (days / 7), 0, 100);
   // 사상자가 많으면 국민 지지에도 영향
-  state.nations.south.popularSupport = clamp(state.nations.south.popularSupport - (state.nations.south.casualties - casBefore) / 30000, 0, 100);
+  state.nations.south.popularSupport = clamp(state.nations.south.popularSupport - (state.nations.south.casualties - casBefore) / ECONOMY.supportPerCasualty, 0, 100);
   if (state.warWeariness > ARMISTICE.supportLossAbove) {
     state.nations.south.popularSupport = clamp(state.nations.south.popularSupport - (state.warWeariness - ARMISTICE.supportLossAbove) * 0.03 * (days / 7), 0, 100);
   }

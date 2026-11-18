@@ -10,7 +10,9 @@ export interface Policy {
   description: string;
   cost: number;
   cooldownTurns: number;
-  apply: (state: GameState, side: Side) => void;
+  apply: (state: GameState, side: Side) => string | void; // 돌려주는 문장은 시행 직후 화면에 알린다
+  /** true 이면 정책 목록에 보이지 않는다 (아직 쓸 수 없는 단계) */
+  hidden?: (state: GameState) => boolean;
   available?: (state: GameState, side: Side) => string | null; // 불가 사유 반환
 }
 
@@ -44,6 +46,7 @@ export const POLICIES: Policy[] = [
     description: '외교력을 집중해 협상 진척도 +6. (협상 개시 후에만, 국민 지지는 떨어지지 않음)',
     cost: 2,
     cooldownTurns: 3,
+    hidden: (state) => state.flags.talks !== 'on',
     available: (state) => (state.flags.talks === 'on' ? null : '정전협상이 시작되지 않았습니다.'),
     apply(state) {
       state.armisticeProgress = clamp(state.armisticeProgress + 6, 0, 100);
@@ -52,22 +55,28 @@ export const POLICIES: Policy[] = [
   {
     id: 'persuade_us',
     name: '미국 설득 (협상 지연)',
-    description: `북진을 이어가도록 미국을 설득합니다. 성공하면 협상이 ${ARMISTICE.persuadeDelay}%p 늦춰지고, 실패하면 오히려 ${ARMISTICE.persuadeBackfire}%p 앞당겨집니다. 북쪽으로 많이 올라가 있고 미국 개입도가 높을수록 성공하기 쉽습니다. (협상 개시 후에만)`,
+    description: `북진을 이어가도록 미국을 설득합니다. 성공하면 협상 예상 완료가 약 ${Math.round(ARMISTICE.persuadeDelayDays / 14)}턴 늦춰지고, 실패하면 약 ${Math.round(ARMISTICE.persuadeBackfireDays / 14)}턴 앞당겨집니다. 북쪽으로 많이 올라가 있고 미국 개입도가 높을수록 성공하기 쉽습니다.`,
     cost: 2,
     cooldownTurns: 4,
+    hidden: (state) => state.flags.talks !== 'on' || !!state.flags.earlyArmistice,
     available: (state) => (state.flags.talks === 'on' && !state.flags.earlyArmistice ? null : '협상이 진행 중일 때만 쓸 수 있습니다.'),
     apply(state) {
       const north = Object.values(state.provinces).filter((p) => p.initialOwner === 'north' && !p.external);
       const gain = north.length ? north.filter((p) => p.owner === 'south').length / north.length : 0;
       const chance = clamp(0.35 + 0.5 * gain + (state.diplomacy.usCommitment - 50) / 200, 0.15, 0.85);
+      const pct = Math.round(chance * 100);
+      let msg: string;
       if (nextRandom(state) < chance) {
-        state.armisticeProgress = clamp(state.armisticeProgress - ARMISTICE.persuadeDelay, 0, 100);
-        addLog(state, 'good', `미국 설득 성공 (성공 확률 ${Math.round(chance * 100)}%): 협상이 ${ARMISTICE.persuadeDelay}%p 늦춰졌습니다.`);
+        state.flags.armisticeDelayDays = Number(state.flags.armisticeDelayDays ?? 0) + ARMISTICE.persuadeDelayDays;
+        msg = `미국 설득 성공 (확률 ${pct}%): 협상 예상 완료가 약 ${Math.round(ARMISTICE.persuadeDelayDays / 14)}턴 늦춰졌습니다.`;
+        addLog(state, 'good', msg);
       } else {
-        state.armisticeProgress = clamp(state.armisticeProgress + ARMISTICE.persuadeBackfire, 0, 100);
+        state.flags.armisticeDelayDays = Number(state.flags.armisticeDelayDays ?? 0) - ARMISTICE.persuadeBackfireDays;
         state.diplomacy.usCommitment = clamp(state.diplomacy.usCommitment - 3, 0, 100);
-        addLog(state, 'warn', `미국 설득 실패 (성공 확률 ${Math.round(chance * 100)}%): 협상이 ${ARMISTICE.persuadeBackfire}%p 앞당겨지고 미국 개입도가 떨어졌습니다.`);
+        msg = `미국 설득 실패 (확률 ${pct}%): 협상 예상 완료가 약 ${Math.round(ARMISTICE.persuadeBackfireDays / 14)}턴 앞당겨지고 미국 개입도가 떨어졌습니다.`;
+        addLog(state, 'warn', msg);
       }
+      return msg;
     },
   },
   {
@@ -92,8 +101,8 @@ export function usePolicy(state: GameState, side: Side, id: string): Result {
   if (why) return { ok: false, reason: why };
   const cp = spendCP(state, side, pol.cost);
   if (!cp.ok) return cp;
-  pol.apply(state, side);
+  const note = pol.apply(state, side);
   n.policyCooldowns[id] = state.turn + pol.cooldownTurns;
   addLog(state, 'info', `정책 시행: ${pol.name}`);
-  return { ok: true };
+  return { ok: true, reason: typeof note === 'string' ? note : undefined };
 }

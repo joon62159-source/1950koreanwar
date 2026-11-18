@@ -165,6 +165,13 @@ export const ECONOMY = {
   fortifyCost: 1,
   repairInfraGain: 12,
   repairDamageGain: 14,
+  /** 국민 지지: 지역을 잃을 때(전략가치당) 감소 / 점령할 때 증가, 매주 회복(낮으면 더 빨리), 사상자 이만큼마다 1 감소 */
+  supportLossPerValueLost: 0.2,
+  supportGainPerValueTaken: 0.1,
+  supportRecovery: 0.3,
+  supportRecoveryLow: 1.6,
+  supportLowBelow: 50,
+  supportPerCasualty: 60000,
   stabilityOccupiedStart: 25,
   stabilityRecoveryPerDay: 2.5,
   stabilityHomeFloor: 55,
@@ -353,15 +360,15 @@ export const ARMISTICE = {
   plannedDays: 728,
   earlyDays: 84,
   wearinessBoost: 0.5,
-  wearinessPerThousandCasualties: 0.35,
-  wearinessDecayPerWeek: 0.8,
+  wearinessPerThousandCasualties: 0.16,
+  wearinessDecayPerWeek: 0.9,
   supportLossAbove: 60,
   signAt: 100,
   /** 이른 정전(38선 정전)의 점수 상한 */
   earlyScoreCap: 69,
-  /** 미국 설득: 성공하면 협상 진척이 이만큼 물러난다 / 실패하면 이만큼 앞당겨진다 */
-  persuadeDelay: 8,
-  persuadeBackfire: 3,
+  /** 미국 설득: 성공하면 협상 계획 일수가 이만큼 늘어난다(약 4턴) / 실패하면 이만큼 줄어든다(약 2턴) */
+  persuadeDelayDays: 56,
+  persuadeBackfireDays: 28,
 };
 
 /**

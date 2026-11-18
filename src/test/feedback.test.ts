@@ -201,15 +201,17 @@ describe('엔딩과 거제도', () => {
     expect(checkEvents(g)).not.toContain('geoje_pow_release');
     g.flags.talks = 'on';
     g.armisticeProgress = 50;
+    expect(checkEvents(g)).not.toContain('geoje_pow_release'); // 진척 60% 미만에서는 아직 뜨지 않는다
+    g.armisticeProgress = 65;
     expect(checkEvents(g)).toContain('geoje_pow_release');
     const ev = EVENT_BY_ID.geoje_pow_release;
     expect(ev.choices.map((c) => c.id).sort()).toEqual(['comply', 'release']);
     const a = structuredClone(g);
     resolveEvent(a, 'geoje_pow_release', 'release');
     expect(a.flags.powReleased).toBe(true);
-    expect(a.armisticeProgress).toBeLessThan(50);
+    expect(a.armisticeProgress).toBeLessThan(65);
     const b = structuredClone(g);
     resolveEvent(b, 'geoje_pow_release', 'comply');
-    expect(b.armisticeProgress).toBeGreaterThan(50);
+    expect(b.armisticeProgress).toBeGreaterThan(65);
   });
 });

@@ -296,7 +296,7 @@ export const useGame = create<Store>((set, get) => ({
   policy: (id) => {
     const r = mutate(get, set, (g) => usePolicy(g, g.playerSide, id));
     if (r && !r.ok) get().notify(r.reason ?? '시행할 수 없습니다.', 'err');
-    else get().notify('정책을 시행했습니다.');
+    else get().notify(r?.reason ?? '정책을 시행했습니다.'); // 미국 설득처럼 결과가 갈리는 정책은 그 결과를 알린다
   },
 
   toggleLanding: (key) => {

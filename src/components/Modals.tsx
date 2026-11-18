@@ -17,6 +17,7 @@ import type { BattleReport } from '../game/types';
 import { buildLandingPlan, type LandingReport } from '../game/amphibious';
 import { CasualtyPanel, ManagementBody, MobilizationPreview, MobilizedReportModalBody } from './NationPanels';
 import { useMemo } from 'react';
+import { useIsMobile } from './useIsMobile';
 
 export function Shell({ children, width = 640, z = 40 }: { children: React.ReactNode; width?: number; z?: number }) {
   return (
@@ -56,8 +57,8 @@ export function EventModal() {
   const needChoice = ev.choices.length > 0;
   return (
     <Shell width={760} z={60}>
-      <div className="overflow-hidden rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
-        <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date)} imageSrc={EVENT_IMAGES[ev.id]} />
+      <div className="overflow-clip rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
+        <EventScene kind={nar?.scene ?? 'advance'} title={ev.title} kicker={nar?.kicker} date={formatDate(game.date < ev.earliestDate ? ev.earliestDate : game.date)} imageSrc={EVENT_IMAGES[ev.id]} />
         <div className="p-5">
           {ev.isCounterfactual && <div className="mb-2"><span className="tag tag-fake">가상 시나리오</span></div>}
           {nar ? (
@@ -111,7 +112,9 @@ export function EventModal() {
               ))}
             </div>
           )}
-          <div className="mt-5 flex justify-end">
+          {/* 하단 고정: 선택지가 길어 스크롤해도 결정·확인 버튼은 항상 보인다 */}
+          <div className="sticky bottom-0 -mx-5 mt-4 flex items-center justify-end gap-3 border-t border-[#3a3220] bg-[#16130c]/95 px-5 py-3 backdrop-blur-sm">
+            {needChoice && !pick && <span className="mr-auto text-[12px] text-[#a99a6e]">선택지를 고르세요</span>}
             <button className="btn btn-primary px-6 py-2 text-[14px]" disabled={needChoice && !pick} onClick={() => { choose(ev.id, pick ?? undefined); setPick(null); }}>
               {needChoice ? '결정' : '확인'}
             </button>
@@ -212,7 +215,7 @@ export function CrossWarningModal() {
   const total = plaForceTotal(game);
   return (
     <Shell width={720} z={66}>
-      <div className="overflow-hidden rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
+      <div className="overflow-clip rounded border border-[#8a7a4f] bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)]">
         <EventScene kind="telegram" title="중국의 경고" kicker="국경 너머의 경고" date={formatDate(game.date)} />
         <div className="p-5">
           <div className="flex flex-col gap-2.5 font-serif text-[14.5px] leading-[1.8] text-[#efe6cb]">
@@ -230,7 +233,7 @@ export function CrossWarningModal() {
               <div className="mt-1 text-[12.5px] leading-[1.55] text-[#c9bd9a]">{CROSS.banDays}일({Math.ceil(CROSS.banDays / 7)}턴) 동안 원래 국경 이북을 공격할 수 없습니다. 남은 턴은 전황 개요에 표시됩니다. 기간이 끝나면 <b>이른 정전협상</b>과 <b>월경</b> 가운데 최종 결정을 내려야 합니다.</div>
             </button>
           </div>
-          <div className="mt-3 flex justify-end">
+          <div className="sticky bottom-0 -mx-5 mt-3 flex justify-end border-t border-[#3a3220] bg-[#16130c]/95 px-5 py-3 backdrop-blur-sm">
             <button className="btn px-4" onClick={() => { useGame.setState({ crossPrompt: null }); setModal(null); }}>보류 (명령 취소)</button>
           </div>
         </div>
@@ -248,7 +251,7 @@ export function EndingModal() {
   if (!o || !end) return null;
   return (
     <Shell width={760} z={65}>
-      <div className={'overflow-hidden rounded border bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)] ' + (end.tone === 'win' ? 'border-[#c9a24b]' : 'border-red-900')}>
+      <div className={'overflow-clip rounded border bg-[#16130c] text-[#e9dfc2] shadow-[0_12px_50px_rgba(0,0,0,0.8)] ' + (end.tone === 'win' ? 'border-[#c9a24b]' : 'border-red-900')}>
         <EventScene kind={end.scene} title={end.title} kicker={end.kicker} date={formatDate(game.date)} />
         <div className="p-5">
           <div className="mb-2"><span className={'tag ' + (end.tone === 'win' ? 'tag-fake' : '')}>{end.tone === 'win' ? '엔딩' : '엔딩 — 패배'}</span></div>
@@ -260,7 +263,7 @@ export function EndingModal() {
               </blockquote>
             )}
           </div>
-          <div className="mt-5 flex justify-end">
+          <div className="sticky bottom-0 -mx-5 mt-5 flex justify-end border-t border-[#3a3220] bg-[#16130c]/95 px-5 py-3 backdrop-blur-sm">
             <button className="btn btn-primary px-6 py-2 text-[14px]" onClick={() => setModal('gameover')}>결과 보기</button>
           </div>
         </div>
@@ -274,11 +277,13 @@ export function EndBanner() {
   const setModal = useGame((s) => s.setModal);
   const setScreen = useGame((s) => s.setScreen);
   const o = useGame((s) => s.game.outcome);
+  const mobile = useIsMobile();
   if (!o) return null;
+  // 상단바·지도 조작 버튼을 가리지 않도록: 데스크톱은 상단바 바로 아래 가운데, 모바일은 하단 메뉴 위
   return (
-    <div className="fixed left-1/2 top-2 z-[60] flex max-w-[96vw] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded border border-[#8a7a4f] bg-[#16130c]/95 px-3 py-2 text-[12.5px] shadow-lg">
-      <span className="font-bold text-[#e9dfc2]">{o.result === 'victory' ? '🏁 전쟁 종료' : '⚑ 전쟁 종료'} · {o.title}</span>
-      <button className="btn btn-primary !px-3 !py-1" onClick={() => setModal('gameover')}>지도 끄기 · 결과 화면</button>
+    <div className={'fixed left-1/2 z-[60] flex max-w-[96vw] -translate-x-1/2 items-center justify-center gap-2 whitespace-nowrap rounded border border-[#8a7a4f] bg-[#16130c]/95 px-2.5 py-1.5 text-[12px] shadow-lg ' + (mobile ? 'bottom-[76px]' : 'top-[64px]')}>
+      <span className="max-w-[44vw] truncate font-bold text-[#e9dfc2] sm:max-w-none">🏁 {o.title}</span>
+      <button className="btn btn-primary !px-3 !py-1" onClick={() => setModal('gameover')} title="지도를 끄고 결과 화면으로 돌아갑니다">지도 끄기</button>
       <button className="btn !px-3 !py-1" onClick={() => { setModal(null); setScreen('title'); }}>새 게임</button>
     </div>
   );

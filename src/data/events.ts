@@ -26,6 +26,8 @@ export type Condition =
   | { kind: 'flagSet'; key: string }
   /** flags[key] 에 기록된 날짜(YYYY-MM-DD)에 도달했거나 지났음 */
   | { kind: 'flagDateReached'; key: string }
+  /** 정전협상 진척도가 value% 이상 */
+  | { kind: 'armisticeAtLeast'; value: number }
   | { kind: 'warCapacityBelow'; side: Side; value: number }
   /** side 의 초기 소유 프로빈스 중 현재 잃은 지역이 min 곳 이상 */
   | { kind: 'provincesLostAtLeast'; side: Side; min: number }

@@ -293,8 +293,8 @@ export const STORY_EVENTS: HistoricalEvent[] = [
   // ── 중국군 공세: 인해전술 (훈련도·조직력은 낮지만 숫자가 압도적). 핵 투하 이후에는 일어나지 않는다 ──
   story(
     'pla_new_year_offensive',
-    '중국군 신정 공세',
-    '새해 전야, 중국군이 전 전선에서 다시 공세에 나섰습니다. 포와 차량은 부족해도 파도처럼 밀려드는 보병이 눈 덮인 능선을 넘습니다. 훈련도와 조직력은 낮지만 병력이 너무 많아 한 곳을 막으면 다른 곳이 뚫립니다.',
+    '중국군 3차 공세',
+    '한겨울, 중국군이 전 전선에서 다시 공세에 나섰습니다. 포와 차량은 부족해도 파도처럼 밀려드는 보병이 눈 덮인 능선을 넘습니다. 훈련도와 조직력은 낮지만 병력이 너무 많아 한 곳을 막으면 다른 곳이 뚫립니다.',
     [{ kind: 'flagSet', key: 'plaIntervened' }, { kind: 'flagUnset', key: 'nukeUsed' }, { kind: 'flagTurnsAgo', key: 'plaIntervenedTurn', min: 7 }],
     [
       { kind: 'spawnPla', count: 12, label: '신정공세군', provinces: ['gangye', 'sinuiju', 'hyesan', 'huichon', 'unsan', 'jeongju', 'gusong'], mass: true },
@@ -343,9 +343,10 @@ export const STORY_EVENTS: HistoricalEvent[] = [
     'geoje_pow_release',
     '거제도 — 반공 포로 석방',
     '거제도 포로수용소에는 송환을 거부하는 반공 포로가 수만 명 있습니다. 정전협정 서명이 가까워지자 대통령은 이들을 협정과 상관없이 석방하겠다고 선언했습니다. 석방하면 국민의 지지를 얻지만 협상은 틀어지고 동맹국의 신뢰를 잃습니다. 따르지 않으면 협상은 순조롭지만 포로들의 운명은 돌아올 수 없는 곳으로 넘어갑니다.',
-    [{ kind: 'flagEquals', key: 'talks', value: 'on' }],
+    // 협상이 어느 정도 진행된 뒤(진척 60% 이상)에 뜬다. 전쟁 피로가 높아 협상이 일찍 끝나는 판에서도 나올 수 있도록 날짜 범위를 넓게 잡았다
+    [{ kind: 'flagEquals', key: 'talks', value: 'on' }, { kind: 'flagUnset', key: 'earlyArmistice' }, { kind: 'armisticeAtLeast', value: 60 }],
     [],
-    ['1953-05-20', '1953-07-10'],
+    ['1952-02-01', '1953-07-10'],
     [
       {
         id: 'release',

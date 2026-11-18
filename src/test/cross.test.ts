@@ -7,11 +7,12 @@ import { advanceChina } from '../game/chinaStage';
 import { chinaStatus, crossGate, crossPhase, declareCross, declareHalt, plaForceTotal } from '../game/china';
 import { armisticeForecast } from '../game/armistice';
 import { checkOutcome } from '../game/victory';
-import { usePolicy } from '../game/policies';
+import { POLICIES, usePolicy } from '../game/policies';
 import { massQuality } from '../game/scenario';
 import { warFrontStatus } from '../game/overview';
 import { endingKey, endingMood } from '../data/endings';
 import { MAP } from '../game/map';
+import { ACHIEVEMENTS } from '../game/achievements';
 import { ARMISTICE, CROSS, DIFFICULTY } from '../game/balance';
 import { addDays } from '../game/util';
 import type { Difficulty, GameState } from '../game/types';
@@ -177,25 +178,33 @@ describe('정전협상 (1951.6~)', () => {
     g.warWeariness = 0;
     expect(armisticeForecast(g)!.turnsLeft).toBeLessThan(f0.turnsLeft);
   });
-  it('미국 설득은 협상이 진행 중일 때만 가능하고, 성공하면 협상이 늦춰지며 실패하면 앞당겨진다', () => {
+  it('미국 설득 버튼은 협상이 시작된 뒤에만 보이고, 성공하면 예상 완료가 늦춰지며 실패하면 앞당겨진다', () => {
     const g = make();
     g.nations.south.commandPoints = 20;
+    const policy = POLICIES.find((p) => p.id === 'persuade_us')!;
+    expect(policy.hidden!(g)).toBe(true); // 협상 전에는 목록에 나타나지 않는다
     expect(usePolicy(g, 'south', 'persuade_us').ok).toBe(false);
     g.flags.talks = 'on';
+    expect(policy.hidden!(g)).toBe(false);
     for (const p of Object.values(g.provinces)) if (p.initialOwner === 'north' && !p.external) p.owner = 'south'; // 북진 성과가 크면 설득이 잘 먹힌다
+    const base = armisticeForecast(g)!.turnsLeft;
     let up = 0, down = 0;
     for (let i = 0; i < 40; i++) {
       const h = structuredClone(g);
       h.rng = 1000 + i * 7919;
-      h.armisticeProgress = 50;
       h.diplomacy.usCommitment = 100;
-      expect(usePolicy(h, 'south', 'persuade_us').ok).toBe(true);
-      if (h.armisticeProgress < 50) down++;
-      if (h.armisticeProgress > 50) up++;
+      const r = usePolicy(h, 'south', 'persuade_us');
+      expect(r.ok).toBe(true);
+      expect(r.reason).toContain('미국 설득'); // 결과를 알려 준다
+      const t = armisticeForecast(h)!.turnsLeft;
+      if (t > base) up++;
+      if (t < base) down++;
     }
-    expect(down).toBeGreaterThan(0);
     expect(up).toBeGreaterThan(0);
-    expect(down).toBeGreaterThan(up); // 미국 개입도가 높으면 성공이 더 많다
+    expect(down).toBeGreaterThan(0);
+    expect(up).toBeGreaterThan(down); // 미국 개입도가 높고 북진 성과가 크면 성공이 더 많다
+    // 협상 초반(진척 0%)에도 효과가 있다
+    expect(armisticeForecast(g)!.turnsLeft).toBe(base);
   });
 });
 
@@ -209,5 +218,25 @@ describe('지도·편제 보조', () => {
     expect(massQuality('1950-12-01')).toBe(1);
     expect(massQuality('1951-09-01')).toBeLessThan(1);
     expect(massQuality('1953-06-01')).toBeGreaterThanOrEqual(0.7);
+  });
+});
+
+describe('이른 정전과 업적', () => {
+  it('이른 정전(38선 정전)은 승리 계열 업적을 주지 않는다', () => {
+    const g = make();
+    southAt(g, 'busan');
+    g.flags.talks = 'on';
+    g.flags.earlyArmistice = true;
+    g.armisticeProgress = 100;
+    g.outcome = checkOutcome(g);
+    expect(g.outcome!.title).toBe('38선에서 맺은 정전');
+    const wins = ACHIEVEMENTS.filter((a) => ['win', 'win_normal', 'low_loss', 'seoul_kept', 'grade_a'].includes(a.id));
+    expect(wins.length).toBe(5);
+    expect(wins.some((a) => a.check(g))).toBe(false);
+    const h = make();
+    southAt(h, 'busan');
+    h.armisticeProgress = 100;
+    h.outcome = checkOutcome(h);
+    expect(ACHIEVEMENTS.find((a) => a.id === 'win')!.check(h)).toBe(true);
   });
 });

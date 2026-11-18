@@ -37,6 +37,8 @@ export function conditionHolds(state: GameState, c: Condition): boolean {
       return Object.values(state.provinces).filter((p) => p.initialOwner === c.side && p.owner !== c.side).length >= c.min;
     case 'flagSet':
       return state.flags[c.key] !== undefined;
+    case 'armisticeAtLeast':
+      return state.armisticeProgress >= c.value;
     case 'flagDateReached': {
       const at = state.flags[c.key];
       return typeof at === 'string' && state.date >= at;
