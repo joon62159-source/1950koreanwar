@@ -175,7 +175,7 @@ describe('엔딩과 거제도', () => {
   const o = (title: string, result: 'victory' | 'defeat' = 'victory'): GameOutcome => ({ turn: 1, date: '1953-07-27', result, grade: 'A', title, reasons: [], score: null });
   it('결과마다 서로 다른 엔딩 장면과 음악이 있다', () => {
     const g = fresh();
-    const titles = ['한반도 전역 확보 (대체역사)', '북진 성과 속에 정전', '서울을 지킨 채 정전', '서울을 잃은 채 정전', '명목상의 생존 — 국가 기능 상실', '부산 함락', '전쟁수행능력 붕괴', '전 부대 소멸', '세계대전으로 확대'];
+    const titles = ['한반도 전역 확보 (대체역사)', '북진 성과 속에 정전', '서울을 지킨 채 정전', '서울을 잃은 채 정전 — 수도 미수복', '명목상의 생존 — 국가 기능 상실', '부산 함락', '전쟁수행능력 붕괴', '전 부대 소멸', '세계대전으로 확대'];
     const keys = titles.map((t) => endingKey(o(t)));
     expect(new Set(keys).size).toBe(titles.length);
     for (const t of titles) {

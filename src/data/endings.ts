@@ -97,9 +97,9 @@ const BASE: Record<EndingKey, Omit<Ending, 'key' | 'paragraphs'> & { paragraphs:
   armistice_seoul_lost: {
     scene: 'empty_capital',
     kicker: '임시 수도, 정전 방송',
-    title: '서울을 잃은 채 맞는 정전',
+    title: '서울을 되찾지 못한 정전',
     mood: 'solemn',
-    tone: 'win',
+    tone: 'lose',
     paragraphs: [
       '정전 방송이 흘러나오지만 환호는 없다. 부산과 대구의 임시 거처에서 사람들은 지도를 펼쳐 본다. 수도는 여전히 선 너머에 있다. 나라는 지켜냈으나 돌아갈 집은 아직 멀다.',
       '전쟁은 멈췄고 숫자는 남았다. 이 숫자들이 이 나라의 다음 세대가 짊어질 무게다.',

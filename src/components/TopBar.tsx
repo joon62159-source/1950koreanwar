@@ -5,6 +5,7 @@ import { SCENARIO } from '../game/balance';
 import { Bar, colorFor, fmt } from './common';
 import WeatherBadge from './WeatherBadge';
 import { warFrontStatus } from '../game/overview';
+import { MIN_TERRITORY_RATIO, southHomeland } from '../game/victory';
 
 function Metric({ label, value, color, children }: { label: string; value: React.ReactNode; color?: string; children?: React.ReactNode }) {
   return (
@@ -28,6 +29,7 @@ export default function TopBar() {
   const toneCls = { ok: 'text-emerald-300', warn: 'text-amber-300', bad: 'text-red-300', info: 'text-sky-300' }[chip.chip.tone];
   const days = turnDaysFor(game.date);
   const ownCount = Object.values(game.provinces).filter((p) => p.owner === game.playerSide).length;
+  const land = southHomeland(game);
   return (
     <header data-tour="topbar" className="panel flex h-[58px] shrink-0 items-stretch divide-x divide-ink-700 overflow-x-auto overflow-y-hidden whitespace-nowrap border-x-0 border-t-0 [scrollbar-width:none]">
       <div className="flex shrink-0 items-center gap-3 px-3 xl:px-4">
@@ -41,6 +43,7 @@ export default function TopBar() {
       <WeatherBadge />
       <div className="hidden xl:block"><Metric label="국가" value={<span className="text-south">대한민국</span>}>
         <span className="text-[10px] text-slate-500">지역 {ownCount}/{Object.values(game.provinces).filter((p) => !p.external).length}</span>
+        <span className={'text-[10px] ' + (land.ratio >= MIN_TERRITORY_RATIO ? 'text-emerald-400' : 'text-amber-400')} title={'승리 조건: 개전 시 남측 영토 ' + Math.round(MIN_TERRITORY_RATIO * 100) + '% 이상 보유'}>승리선 {land.kept}/{Math.ceil(land.total * MIN_TERRITORY_RATIO)}</span>
       </Metric></div>
       <Metric label="총병력" value={fmt(strength)}>
         <span className="text-[10px] text-slate-500">여단 {brigades}개</span>

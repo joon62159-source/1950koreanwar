@@ -415,6 +415,18 @@ describe('승패 조건', () => {
     expect(o.result).toBe('defeat');
     expect(o.title).toContain('명목상의 생존');
   });
+  it('승패는 영토로 가른다: 90% 미만이면 점수가 높아도 패배, 90% 이상이면 승리', () => {
+    const g = fresh();
+    g.nations.south.popularSupport = 100;
+    g.armisticeProgress = 1000;
+    const home = Object.values(g.provinces).filter((p) => p.initialOwner === 'south' && !p.external && p.id !== 'busan');
+    const lose = Math.ceil(home.length * 0.15);
+    for (const p of home.slice(0, lose)) p.owner = 'north';
+    expect(checkOutcome(g)!.result).toBe('defeat');
+    for (const p of home) p.owner = 'south';
+    for (const p of home.slice(0, Math.floor(home.length * 0.05))) p.owner = 'north';
+    expect(checkOutcome(g)!.result).toBe('victory');
+  });
   it('잃은 지역의 전쟁 피해도 평가에 반영된다', () => {
     const g = fresh();
     const base = computeScore(g).warDamage;

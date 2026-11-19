@@ -7,14 +7,11 @@ import { MAP } from './map';
 /**
  * 승패 조건 (초기 프로토타입: 대한민국 플레이)
  *  패배: (1) 부산이 북한군에 점령됨  (2) 전쟁수행능력이 붕괴(< COLLAPSE_THRESHOLD)  (3) 남측 부대가 전부 소멸
- *  승리: 시나리오 종료일(SCENARIO.endDate)까지 위 패배 조건 없이 생존하고 종합 점수가 MIN_VICTORY_SCORE 이상 → 등급 평가
- *  종료일까지 살아남았으나 점수가 미달이면 "국가 기능 상실" 패배
+ *  종료일(또는 정전)까지 살아남고 개전 시 남측 영토의 90% 이상을 보유하면 승리, 미만이면 '국토 미회복' 패배. 점수는 등급 평가용
  */
 export const COLLAPSE_THRESHOLD = 10;
-/** 종료일까지 버텨도 종합 점수가 이 값 미만이면 "명목상의 생존"으로 보아 패배 처리한다 */
-export const MIN_VICTORY_SCORE = 35;
-/** 개전 시 남측 영토 중 이 비율 이상을 보유해야 정전 승리로 인정한다 (그 미만이면 '국토 대부분 상실') */
-export const MIN_TERRITORY_RATIO = 0.5;
+/** 정전·종료 시점에 개전 시 남측 영토의 이 비율 이상을 보유해야 승리한다 (미만이면 '국토 미회복' 패배) */
+export const MIN_TERRITORY_RATIO = 0.9;
 
 /** 개전 시 남측 영토 중 지금도 보유 중인 지역 수와 비율 */
 export function southHomeland(state: GameState): { kept: number; total: number; ratio: number } {
@@ -76,17 +73,13 @@ export function checkOutcome(state: GameState): GameOutcome | null {
   const armistice = state.armisticeProgress >= ARMISTICE.signAt;
   if (state.date >= SCENARIO.endDate || armistice) {
     const score = computeScore(state);
-    if (score.total < MIN_VICTORY_SCORE) {
-      return { ...base, result: 'defeat', grade: '-', title: '명목상의 생존 — 국가 기능 상실', reasons: [`부산은 지켰지만 종합 점수 ${score.total}점으로 최소 기준(${MIN_VICTORY_SCORE}점)에 미달했습니다.`, '병력·영토·국민 지지·전쟁 피해를 종합하면 국가가 전쟁을 지속할 수 없는 상태입니다.'], score };
-    }
+    // 승패는 영토로만 가른다: 개전 시 남측 영토를 MIN_TERRITORY_RATIO 이상 보유(또는 수복)해야 승리. 점수는 등급 평가에만 쓴다.
     const land = southHomeland(state);
     if (land.ratio < MIN_TERRITORY_RATIO) {
-      return { ...base, result: 'defeat', grade: '-', title: '명목상의 생존 — 국토 대부분 상실', reasons: [`부산은 지켰지만 개전 시 남측 영토 ${land.total}곳 중 ${land.kept}곳(${Math.round(land.ratio * 100)}%)만 남았습니다. 최소 기준은 ${Math.round(MIN_TERRITORY_RATIO * 100)}%입니다.`, '국토 대부분을 잃은 채 버틴 결말은 승리로 인정되지 않습니다.'], score };
+      const pct = Math.round(land.ratio * 100);
+      return { ...base, result: 'defeat', grade: '-', title: '명목상의 생존 — 국토 미회복', reasons: [`부산은 지켰지만 개전 시 남측 영토 ${land.total}곳 중 ${land.kept}곳(${pct}%)만 되찾아 지켰습니다. 승리 기준은 ${Math.round(MIN_TERRITORY_RATIO * 100)}% 이상입니다.`, state.provinces.seoul.owner === 'south' ? '수도는 지켰지만 국토 곳곳이 아직 적의 손에 있습니다.' : '수도 서울은 아직 적의 손에 있습니다.'], score };
     }
-    // 이른 정전은 38선 부근에서 전선을 지킨 경우에만 해당한다 (서울을 잃었거나 남측 영토 대부분을 잃었다면 일반 정전 결말)
-    const southInitial = Object.values(state.provinces).filter((p) => p.initialOwner === 'south' && !p.external);
-    const holdsLine = state.provinces.seoul.owner === 'south' && southInitial.filter((p) => p.owner === 'south').length >= southInitial.length * 0.7;
-    if (state.flags.earlyArmistice && armistice && holdsLine) {
+    if (state.flags.earlyArmistice && armistice) {
       const capped = { ...score, total: Math.min(score.total, ARMISTICE.earlyScoreCap) };
       return {
         ...base,
@@ -102,17 +95,16 @@ export function checkOutcome(state: GameState): GameOutcome | null {
       };
     }
     const grade = gradeFor(score.total);
-    const seoul = state.provinces.seoul.owner === 'south';
     const gained = Object.values(state.provinces).filter((p) => p.owner === 'south' && p.initialOwner === 'north').length;
     return {
       ...base,
       result: 'victory',
       grade,
-      title: gained >= 10 ? '북진 성과 속에 정전' : seoul ? '서울을 지킨 채 정전' : '서울을 잃은 채 정전',
+      title: gained >= 10 ? '북진 성과 속에 정전' : '서울을 지킨 채 정전',
       reasons: [
         armistice ? `${formatDate(state.date)} 정전협상이 타결되었습니다.` : `${formatDate(SCENARIO.endDate)} 정전 시점까지 대한민국이 존속했습니다.`,
         `전쟁 피로도 ${Math.round(state.warWeariness)} · 북측에서 확보한 지역 ${gained}곳 — 군사적 성과가 곧 국가 이익은 아닙니다.`,
-        seoul ? '수도 서울을 수복했습니다.' : '서울은 아직 적의 손에 있습니다.',
+        '수도 서울을 수복했습니다.',
         state.flags.plaIntervened ? '북진은 중국군의 참전을 불렀습니다. 다음 단계의 전쟁이 기다리고 있습니다.' : '중국은 끝내 참전하지 않았습니다.',
       ],
       score,
