@@ -406,6 +406,21 @@ describe('승패 조건', () => {
     const o = checkOutcome(g)!;
     expect(o.result).toBe('defeat');
   });
+  it('부산 일대 몇 곳만 남은 채 종료일을 맞으면 점수와 무관하게 승리로 인정되지 않는다', () => {
+    const g = fresh();
+    for (const p of Object.values(g.provinces)) if (p.initialOwner === 'south' && !p.external && !['busan', 'jeju'].includes(p.id)) p.owner = 'north';
+    g.nations.south.popularSupport = 100;
+    g.date = SCENARIO.endDate;
+    const o = checkOutcome(g)!;
+    expect(o.result).toBe('defeat');
+    expect(o.title).toContain('명목상의 생존');
+  });
+  it('잃은 지역의 전쟁 피해도 평가에 반영된다', () => {
+    const g = fresh();
+    const base = computeScore(g).warDamage;
+    for (const p of Object.values(g.provinces)) if (p.initialOwner === 'south' && !p.external && !['busan', 'jeju'].includes(p.id)) p.owner = 'north';
+    expect(computeScore(g).warDamage).toBeLessThan(base - 5);
+  });
   it('서울을 수복하고 병력을 보존할수록 점수가 높다', () => {
     const g = fresh();
     const base = computeScore(g).total;

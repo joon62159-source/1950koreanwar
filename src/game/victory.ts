@@ -13,6 +13,15 @@ import { MAP } from './map';
 export const COLLAPSE_THRESHOLD = 10;
 /** 종료일까지 버텨도 종합 점수가 이 값 미만이면 "명목상의 생존"으로 보아 패배 처리한다 */
 export const MIN_VICTORY_SCORE = 35;
+/** 개전 시 남측 영토 중 이 비율 이상을 보유해야 정전 승리로 인정한다 (그 미만이면 '국토 대부분 상실') */
+export const MIN_TERRITORY_RATIO = 0.5;
+
+/** 개전 시 남측 영토 중 지금도 보유 중인 지역 수와 비율 */
+export function southHomeland(state: GameState): { kept: number; total: number; ratio: number } {
+  const home = Object.values(state.provinces).filter((p) => p.initialOwner === 'south' && !p.external);
+  const kept = home.filter((p) => p.owner === 'south').length;
+  return { kept, total: home.length, ratio: home.length ? kept / home.length : 1 };
+}
 
 export function computeScore(state: GameState): ScoreBreakdown {
   const init = state.initialTotals;
@@ -24,8 +33,11 @@ export function computeScore(state: GameState): ScoreBreakdown {
   const remainingForce = SCORE.maxForce * clamp(strength / baseline, 0, 1);
   const territory = SCORE.maxTerritory * clamp(owned.length / (init.southProvinces + 15), 0, 1);
   const popularSupport = SCORE.maxSupport * (state.nations.south.popularSupport / 100);
-  const popSum = owned.reduce((a, p) => a + p.population, 0) || 1;
-  const avgDamage = owned.reduce((a, p) => a + p.warDamage * p.population, 0) / popSum;
+  // 전쟁 피해: 잃은 지역도 평가 대상이다 (적에게 넘어간 개전 시 남측 영토는 피해 100으로 계산)
+  const homeland = Object.values(state.provinces).filter((p) => p.initialOwner === 'south' && !p.external);
+  const scored = [...homeland, ...owned.filter((p) => p.initialOwner !== 'south')];
+  const popSum = scored.reduce((a, p) => a + p.population, 0) || 1;
+  const avgDamage = scored.reduce((a, p) => a + (p.owner === 'south' ? p.warDamage : 100) * p.population, 0) / popSum;
   const warDamage = SCORE.maxDamage * (1 - clamp(avgDamage / 100, 0, 1));
   const casualtyPenalty = Math.min(SCORE.casualtyCap, (state.nations.south.casualties / 1000) * SCORE.casualtyPerThousand) + state.warWeariness * 0.08;
   let bonus = 0;
@@ -66,6 +78,10 @@ export function checkOutcome(state: GameState): GameOutcome | null {
     const score = computeScore(state);
     if (score.total < MIN_VICTORY_SCORE) {
       return { ...base, result: 'defeat', grade: '-', title: '명목상의 생존 — 국가 기능 상실', reasons: [`부산은 지켰지만 종합 점수 ${score.total}점으로 최소 기준(${MIN_VICTORY_SCORE}점)에 미달했습니다.`, '병력·영토·국민 지지·전쟁 피해를 종합하면 국가가 전쟁을 지속할 수 없는 상태입니다.'], score };
+    }
+    const land = southHomeland(state);
+    if (land.ratio < MIN_TERRITORY_RATIO) {
+      return { ...base, result: 'defeat', grade: '-', title: '명목상의 생존 — 국토 대부분 상실', reasons: [`부산은 지켰지만 개전 시 남측 영토 ${land.total}곳 중 ${land.kept}곳(${Math.round(land.ratio * 100)}%)만 남았습니다. 최소 기준은 ${Math.round(MIN_TERRITORY_RATIO * 100)}%입니다.`, '국토 대부분을 잃은 채 버틴 결말은 승리로 인정되지 않습니다.'], score };
     }
     // 이른 정전은 38선 부근에서 전선을 지킨 경우에만 해당한다 (서울을 잃었거나 남측 영토 대부분을 잃었다면 일반 정전 결말)
     const southInitial = Object.values(state.provinces).filter((p) => p.initialOwner === 'south' && !p.external);
